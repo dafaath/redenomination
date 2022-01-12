@@ -28,17 +28,18 @@ const swaggerOptions: swaggerJsDoc.Options = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 const app: Express = express();
 
-const main = async () => {
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-  app.use(express.json({ limit: "10mb" }) as RequestHandler);
-  app.use(
-    express.urlencoded({ extended: false, limit: "10mb" }) as RequestHandler
-  );
-  app.use(cors());
-  app.use(express.static("public"));
-  app.use(healthCheckRouter);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use(express.json({ limit: "10mb" }) as RequestHandler);
+app.use(
+  express.urlencoded({ extended: false, limit: "10mb" }) as RequestHandler
+);
+app.use(cors());
+app.use(express.static("public"));
+app.use(healthCheckRouter);
 
-  connect();
+connect();
+
+const main = async () => {
   app.listen(port, host, () => {
     log.info(`Server listing at http://${host}:${port}`);
     log.info(`Running on ${process.env.NODE_ENV} environment`);
@@ -48,3 +49,5 @@ const main = async () => {
 if (typeof require !== "undefined" && require.main === module) {
   main();
 }
+
+export default app;

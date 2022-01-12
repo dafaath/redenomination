@@ -16,26 +16,15 @@ jobs:
       - name: npm install and build
         run: |
           yarn add --dev typescript
-          npm run build --if-present
+          npm run build 
         env:
           CI: true
-      - name: npm install on dist folder and create .env file
+      - name: npm install on dist folder, create .env file, and deploy serverless
         run: |
           cd dist
           yarn install --frozen-lockfile --production
-          echo "$PROD_ENV_FILE" > production.env
+          echo "$PROD_ENV_FILE" > .env
+          npm run deploy
         env:
           PROD_ENV_FILE: ${{ secrets.PRODUCTION_DATABASE_ENV }}
-      - name: zip
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r ./bundle.zip ./dist
-      - name: default deploy
-        uses: appleboy/lambda-action@master
-        with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ap-southeast-3
-          function_name: redenomination
-          zip_file: bundle.zip
 

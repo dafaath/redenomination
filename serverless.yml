@@ -1,0 +1,21 @@
+service: redenomination
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  memorySize: 512
+  stage: prod
+  timeout: 15
+  region: ap-southeast-3
+  lambdaHashingVersion: 20201221
+
+functions:
+  redenomination:
+    handler: handler.handler
+    events:
+      - http: ANY /
+      - http: ANY /{proxy+}
+
+plugins:
+  - serverless-dotenv-plugin
