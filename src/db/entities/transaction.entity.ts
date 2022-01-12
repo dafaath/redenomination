@@ -16,15 +16,21 @@ export default class Transaction extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => Phase, (phase) => phase.bargains)
+  @ManyToOne(() => Phase, (phase) => phase.bargains, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn()
   phase: Phase;
 
-  @ManyToOne(() => Buyer, (buyer) => buyer.transactions)
+  @ManyToOne(() => Buyer, (buyer) => buyer.transactions, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn()
   buyer: Buyer;
 
-  @ManyToOne(() => Seller, (seller) => seller.transactions)
+  @ManyToOne(() => Seller, (seller) => seller.transactions, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn()
   seller: Seller;
 

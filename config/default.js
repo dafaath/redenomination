@@ -1,13 +1,23 @@
-import dotenv from "dotenv";
-dotenv.config();
+const dotenv = require('dotenv')
 
-export default {
+if (process.env.NODE_ENV === "production") {
+  dotenv.config({
+    path: "production.env"
+  })
+} else {
+  dotenv.config({
+    path: "development.env"
+  })
+}
+
+
+module.exports = {
   server: {
     port: 3000,
     host: "localhost",
   },
   database: {
-    type: "mysql",
+    type: "postgres",
     port: process.env.DB_PORT,
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,

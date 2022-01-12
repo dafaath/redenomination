@@ -1,3 +1,11 @@
 {
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.ts$",
+        "cmd": "npx prettier --write ${file}"
+      },
+    ]
+  }
 }

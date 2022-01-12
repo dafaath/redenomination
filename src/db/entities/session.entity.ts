@@ -17,7 +17,9 @@ export default class Session extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => Simulation, (simulation) => simulation.sessions)
+  @ManyToOne(() => Simulation, (simulation) => simulation.sessions, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn()
   simulation: Simulation;
 

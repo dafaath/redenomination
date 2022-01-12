@@ -1,7 +1,7 @@
-import {  createConnection } from "typeorm";
+import { createConnection } from "typeorm";
 import log from "./../common/utils/logger";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
-import config from "../config/handler";
+import config from "../config";
 
 async function connect() {
   const dbType = config.database.type as "postgres" | "mysql";
@@ -18,9 +18,14 @@ async function connect() {
     username: dbUsername,
     password: dbPassword,
     database: dbName,
-    entities: ["db/entities/*.ts"],
+    entities: ["src/db/entities/*.ts"],
     namingStrategy: new SnakeNamingStrategy(),
     synchronize: true,
+    charset: "utf8",
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
   });
   log.info(`Connected to db ${dbType}`);
 }

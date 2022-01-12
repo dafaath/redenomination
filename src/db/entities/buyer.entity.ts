@@ -22,7 +22,9 @@ export default class Buyer extends BaseEntity {
   @OneToMany(() => Transaction, (transaction) => transaction.buyer)
   transactions: Transaction[];
 
-  @ManyToOne(() => Simulation, (simulation) => simulation.buyers)
+  @ManyToOne(() => Simulation, (simulation) => simulation.buyers, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn()
   simulation: Simulation;
 
