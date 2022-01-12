@@ -1,28 +1,20 @@
-FROM node:14-alpine3.10 as ts-compiler
+FROM node:12.16.0-alpine
 
-WORKDIR /usr/app
-COPY package*.json ./
-COPY yarn.lock ./
-COPY tsconfig*.json ./
-RUN yarn install
-COPY . ./
-RUN npm run build
+RUN apk add tini
 
-FROM node:14-alpine3.10 as ts-remover
-WORKDIR /usr/app
-COPY --from=ts-compiler /usr/app/package*.json ./
-COPY --from=ts-compiler /usr/app/yarn.lock ./
-COPY --from=ts-compiler /usr/app/config ./config
-COPY --from=ts-compiler /usr/app/*.env ./
-COPY --from=ts-compiler /usr/app/dist ./
-RUN yarn install --production
+COPY package*.json /
+RUN npm install --prefix /
 
-FROM public.ecr.aws/lambda/nodejs:14
-WORKDIR /usr/app
-COPY --from=ts-remover /usr/app ./
-COPY --from=ts-remover /usr/app/package.json ${LAMBDA_TASK_ROOT}
-COPY --from=ts-remover /usr/app/app.js ${LAMBDA_TASK_ROOT}
-USER 1000
-EXPOSE 3000
-ENV NODE_ENV production
-CMD ["app.js"]
+ENV NODE_ENV=production
+ENTRYPOINT ["/sbin/tini", "--"]
+
+COPY . /app
+WORKDIR /app
+
+# noop files for non python projects and local development
+RUN echo "#!/bin/sh" > /app/migrate.sh && chmod +x /app/migrate.sh
+RUN echo "#!/bin/sh" > /usr/local/bin/start && chmod +x /usr/local/bin/start
+
+EXPOSE 80
+
+CMD ["npm", "start"]
