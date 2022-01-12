@@ -13,26 +13,13 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: npm install and build
+      - name: yarn install and npm build
         run: |
           ls
-          yarn install --frozen-lockfile
-          npm run build --if-present
+          pwd
         env:
           CI: true
-      - name: npm install on dist folder
-        working-directory: ./dist
+      - name: yarn install on dist folder
         run: |
+          cd dist/
           yarn install --frozen-lockfile --production
-      - name: zip
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r ./bundle.zip ./dist
-      - name: default deploy
-        uses: appleboy/lambda-action@master
-        with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ap-southeast-3
-          function_name: redenomination
-          zip_file: bundle.zip
