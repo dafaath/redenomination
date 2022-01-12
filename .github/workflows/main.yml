@@ -19,10 +19,13 @@ jobs:
           npm run build --if-present
         env:
           CI: true
-      - name: npm install on dist folder
+      - name: npm install on dist folder and create .env file
         run: |
           cd dist
           yarn install --frozen-lockfile --production
+          echo "$PROD_ENV_FILE" > production.env
+        env:
+          PROD_ENV_FILE: ${{ secrets.PRODUCTION_DATABASE_ENV }}
       - name: zip
         uses: montudor/action-zip@v0.1.0
         with:
