@@ -13,6 +13,12 @@ const config = {
     host: nodeConfig.get<string>("database.host"),
     name: nodeConfig.get<string>("database.name"),
   },
+  admin: {
+    password: nodeConfig.get<string>("admin.password"),
+  },
+  jwt: {
+    key: nodeConfig.get<string>("jwt.key"),
+  },
 };
 
 export default config;

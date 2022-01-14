@@ -17,6 +17,7 @@ async function connect() {
         ? ["db/entities/*.js"]
         : ["src/db/entities/*.ts"];
 
+    log.info(`Creating connection to ${dbType}@${dbHost}:${dbPort}`);
     await createConnection({
       type: dbType,
       host: dbHost,
@@ -35,6 +36,7 @@ async function connect() {
     });
     log.info(`Connected to db ${dbType}@${dbHost}:${dbPort}`);
   } catch (error) {
+    log.error(error);
     if (error instanceof Error) {
       throw error;
     } else if (typeof error === "string") {
