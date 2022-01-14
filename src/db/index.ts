@@ -14,7 +14,7 @@ async function connect() {
 
     const entitiesPath =
       process.env.NODE_ENV === "production"
-        ? ["db/entities/*.js"]
+        ? ["dist/db/entities/*.js"]
         : ["src/db/entities/*.ts"];
 
     log.info(`Creating connection to ${dbType}@${dbHost}:${dbPort}`);
