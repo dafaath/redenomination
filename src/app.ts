@@ -2,13 +2,18 @@ import express, { Express, RequestHandler } from "express";
 import cors from "cors";
 import log from "./common/utils/logger";
 import connect from "./db";
-import config from "./config";
+import config from "./configHandler";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import healthCheckRouter from "./routes/health-check";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
+
+const apisPath =
+  process.env.NODE_ENV === "production"
+    ? ["dist/routes/*.js"]
+    : ["src/routes/*.ts"];
 
 const swaggerOptions: swaggerJsDoc.Options = {
   swaggerDefinition: {
@@ -23,7 +28,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
       servers: [`http://${host}:${port}`],
     },
   },
-  apis: ["src/routes/*.ts", "routes/*.js"],
+  apis: apisPath,
 };
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 const app: Express = express();
@@ -37,9 +42,8 @@ app.use(cors());
 app.use(express.static("public"));
 app.use(healthCheckRouter);
 
-connect();
-
 const main = async () => {
+  await connect();
   app.listen(port, host, () => {
     log.info(`Server listing at http://${host}:${port}`);
     log.info(`Running on ${process.env.NODE_ENV} environment`);
@@ -49,5 +53,3 @@ const main = async () => {
 if (typeof require !== "undefined" && require.main === module) {
   main();
 }
-
-export default app;

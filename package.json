@@ -1,8 +1,8 @@
 {
-  "name": "express-boilerplate",
+  "name": "redenomination",
   "private": true,
   "scripts": {
-    "start": "node dist/app.js",
+    "start": "NODE_ENV=production node dist/app.js",
     "prod": "NODE_ENV=production ts-node src/app.ts",
     "dev": "nodemon --config nodemon.json src/app.ts",
     "build": "rimraf dist/ && tsc && copyfiles -e \"node_modules/**/*\" -e \"src/**/*\" \"**/*\" dist/",
