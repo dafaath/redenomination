@@ -7,7 +7,7 @@ import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import healthCheckRouter from "./routes/health-check";
 
-const port = config.server.port;
+const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
 
 const swaggerOptions: swaggerJsDoc.Options = {
@@ -23,7 +23,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
       servers: [`http://${host}:${port}`],
     },
   },
-  apis: ["routes/*.ts"],
+  apis: ["src/routes/*.ts", "routes/*.js"],
 };
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 const app: Express = express();

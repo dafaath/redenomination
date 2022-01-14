@@ -1,36 +1,23 @@
-name: deploy to lambda
+name: deploy google app engine
 on: [push]
 jobs:
   deploy_source:
-    name: build and deploy lambda
+    name: build and deploy google app engine
     strategy:
       matrix:
         node-version: [14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v0'
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: npm install and build
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      - name: create .env file
         run: |
-          yarn add --dev typescript
-          npm run build 
-        env:
-          CI: true
-      - name: npm install on dist folder, create .env file, and deploy serverless
-        run: |
-          cd dist
-          yarn install --frozen-lockfile --production
-          echo "$PROD_ENV_FILE" > .env
-          npm run deploy
+          echo "$PROD_ENV_FILE" > production.env
         env:
           PROD_ENV_FILE: ${{ secrets.PRODUCTION_DATABASE_ENV }}
+      - id: 'deploy'
+        uses: 'google-github-actions/deploy-appengine@v0'
 

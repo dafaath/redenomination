@@ -5,16 +5,10 @@ RUN apk add tini
 COPY package*.json /
 RUN npm install --prefix /
 
-ENV NODE_ENV=production
-ENTRYPOINT ["/sbin/tini", "--"]
-
-COPY . /app
-WORKDIR /app
-
-# noop files for non python projects and local development
-RUN echo "#!/bin/sh" > /app/migrate.sh && chmod +x /app/migrate.sh
-RUN echo "#!/bin/sh" > /usr/local/bin/start && chmod +x /usr/local/bin/start
-
-EXPOSE 80
-
-CMD ["npm", "start"]
+FROM public.ecr.aws/lambda/nodejs:14
+WORKDIR /usr/app
+COPY --from=ts-remover /usr/app ./
+USER 1000
+EXPOSE 3000
+ENV NODE_ENV production
+CMD ["app.js"]

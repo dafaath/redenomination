@@ -18,7 +18,7 @@ async function connect() {
     username: dbUsername,
     password: dbPassword,
     database: dbName,
-    entities: ["src/db/entities/*.ts"],
+    entities: ["src/db/entities/*.ts", "db/entities/*.js"],
     namingStrategy: new SnakeNamingStrategy(),
     synchronize: true,
     charset: "utf8",
