@@ -8,7 +8,7 @@ import healthCheckRouter from "./routes/health-check.route";
 import authenticationRouter from "./routes/authentication.route";
 import YAML from "yamljs";
 
-const port = (process.env.PORT as unknown as number) || config.server.port;
+const port = config.server.port;
 const host = config.server.host;
 
 const app: Express = express();

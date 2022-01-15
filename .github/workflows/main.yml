@@ -15,9 +15,9 @@ jobs:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
       - name: create .env file
         run: |
-          echo "$PROD_ENV_FILE" > production.env
+          echo "$PROD_ENV_FILE" > .env
         env:
-          PROD_ENV_FILE: ${{ secrets.PRODUCTION_DATABASE_ENV }}
+          PROD_ENV_FILE: ${{ secrets.PRODUCTION_ENV }}
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v0'
 

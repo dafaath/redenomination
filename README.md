@@ -15,7 +15,11 @@ This project can only use [yarn](https://classic.yarnpkg.com/lang/en/docs/instal
 
 **Please also install and setup [postgresql](https://www.postgresql.org/download/)**
 ### Run as development
-1. create `development.env` file in the root directory of this project, fill it with this text:
+1. Configure your database in config/default.js
+2. Run this command, `npm run dev`
+
+### Run as production build
+1. Create .env file consisting of this value
 ```
 NODE_ENV="development"
 DB_USER="your_database_username"
@@ -23,15 +27,8 @@ DB_PASSWORD="your_database_password"
 DB_HOST="your_database_host"
 DB_PORT=DATABASE_PORT
 DB_NAME="your_database_name"
+JWT_KEY="64_bit_random_string"
+ADMIN_PASSWORD="admin_password"
 ```
-example:
-```
-NODE_ENV="development"
-DB_USER="postgres"
-DB_PASSWORD=""
-DB_HOST="localhost"
-DB_PORT=5432
-DB_NAME="redenomination"
-```
-2. Run this command, `npm run dev`
-
+2. Run `npm run build`
+3. `npm start`
