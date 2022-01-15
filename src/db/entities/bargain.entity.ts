@@ -47,7 +47,7 @@ export default class Bargain extends BaseEntity {
   timeCreated: Date;
 
   @Column({
-    type: "varchar",
+    type: "text",
   })
   postedBy: string;
 }

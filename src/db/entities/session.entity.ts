@@ -2,7 +2,6 @@ import {
   Entity,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   BaseEntity,
   PrimaryGeneratedColumn,
   ManyToOne,
@@ -27,7 +26,7 @@ export default class Session extends BaseEntity {
   phases: Phase[];
 
   @Column({
-    type: "varchar",
+    type: "text",
   })
   sessionType: string;
 
@@ -45,6 +44,11 @@ export default class Session extends BaseEntity {
   })
   avgTrxPrice: number;
 
+  @Column({
+    type: "float",
+  })
+  timer: number;
+
   @CreateDateColumn({
     type: "timestamp",
   })
@@ -59,4 +63,32 @@ export default class Session extends BaseEntity {
     type: "timestamp",
   })
   timeFinish: Date;
+
+  isDone() {
+    throw new Error("Not implemented");
+  }
+
+  getAverageTrx() {
+    throw new Error("Not implemented");
+  }
+
+  getAveragePrice() {
+    throw new Error("Not implemented");
+  }
+
+  getBuyerList() {
+    throw new Error("Not implemented");
+  }
+
+  getSellerList() {
+    throw new Error("Not implemented");
+  }
+
+  getAllUnitCostValue() {
+    throw new Error("Not implemented");
+  }
+
+  getDealPriceDiff() {
+    throw new Error("Not implemented");
+  }
 }

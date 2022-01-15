@@ -29,7 +29,7 @@ export default class Buyer extends BaseEntity {
   simulation: Simulation;
 
   @Column({
-    type: "varchar",
+    type: "text",
   })
   loginToken: string;
 
@@ -39,4 +39,8 @@ export default class Buyer extends BaseEntity {
     scale: 2,
   })
   unitValue: number;
+
+  hasBought() {
+    throw new Error("Not implemented");
+  }
 }

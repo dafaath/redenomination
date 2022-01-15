@@ -8,7 +8,7 @@ import healthCheckRouter from "./routes/health-check.route";
 import authenticationRouter from "./routes/authentication.route";
 import YAML from "yamljs";
 
-const port = config.server.port;
+const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
 
 const app: Express = express();
@@ -26,7 +26,7 @@ app.use(authenticationRouter);
 
 connect()
   .then(() => {
-    app.listen(port, host, () => {
+    app.listen(port, () => {
       log.info(`Server listing at http://${host}:${port}`);
       log.info(`Running on ${process.env.NODE_ENV} environment`);
     });

@@ -19,17 +19,17 @@ export default class Seller extends BaseEntity {
   @OneToMany(() => Bargain, (bargain) => bargain.seller)
   bargains: Bargain[];
 
+  @OneToMany(() => Transaction, (transaction) => transaction.seller)
+  transactions: Transaction[];
+
   @ManyToOne(() => Simulation, (simulation) => simulation.sellers, {
     createForeignKeyConstraints: false,
   })
   @JoinColumn()
   simulation: Simulation;
 
-  @OneToMany(() => Transaction, (transaction) => transaction.seller)
-  transactions: Transaction[];
-
   @Column({
-    type: "varchar",
+    type: "text",
   })
   loginToken: string;
 
@@ -40,24 +40,7 @@ export default class Seller extends BaseEntity {
   })
   unitCost: number;
 
-  @Column({
-    type: "numeric",
-    precision: 15,
-    scale: 2,
-  })
-  pricePreRedenom: number;
-
-  @Column({
-    type: "numeric",
-    precision: 15,
-    scale: 2,
-  })
-  priceRedenom: number;
-
-  @Column({
-    type: "numeric",
-    precision: 15,
-    scale: 2,
-  })
-  pricePostRedenom: number;
+  isSold() {
+    throw new Error("Not implemented");
+  }
 }

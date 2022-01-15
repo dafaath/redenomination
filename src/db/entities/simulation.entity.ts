@@ -14,18 +14,42 @@ export default class Simulation extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
+  @OneToMany(() => Session, (session) => session.simulation)
+  sessions: Session[];
+
+  @OneToMany(() => Buyer, (buyer) => buyer.simulation)
+  buyers: Buyer[];
+
+  @OneToMany(() => Seller, (seller) => seller.simulation)
+  sellers: Seller[];
+
   @Column({
-    type: "varchar",
+    type: "text",
+  })
+  token: string;
+
+  @Column({
+    type: "text",
   })
   simulationType: string;
 
   @Column({
-    type: "varchar",
+    type: "text",
   })
   goodsType: string;
 
   @Column({
-    type: "varchar",
+    type: "text",
+  })
+  goodsName: string;
+
+  @Column({
+    type: "text",
+  })
+  goodsPic: string;
+
+  @Column({
+    type: "text",
   })
   inflationType: string;
 
@@ -63,12 +87,31 @@ export default class Simulation extends BaseEntity {
   })
   timeFinish: Date;
 
-  @OneToMany(() => Session, (session) => session.simulation)
-  sessions: Session[];
+  isDone() {
+    throw new Error("Not implemented");
+  }
 
-  @OneToMany(() => Buyer, (buyer) => buyer.simulation)
-  buyers: Buyer[];
+  getAverageTrx() {
+    throw new Error("Not implemented");
+  }
 
-  @OneToMany(() => Seller, (seller) => seller.simulation)
-  sellers: Seller[];
+  getAveragePrice() {
+    throw new Error("Not implemented");
+  }
+
+  getBuyerList() {
+    throw new Error("Not implemented");
+  }
+
+  getSellerList() {
+    throw new Error("Not implemented");
+  }
+
+  getAllUnitCostValue() {
+    throw new Error("Not implemented");
+  }
+
+  getDealPriceDiff() {
+    throw new Error("Not implemented");
+  }
 }
