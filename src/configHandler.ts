@@ -19,6 +19,7 @@ const config = {
   jwt: {
     key: nodeConfig.get<string>("jwt.key"),
   },
+  postmanApiKey: nodeConfig.get<string>("postmanApiKey"),
 };
 
 export default config;

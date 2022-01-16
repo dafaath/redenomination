@@ -9,6 +9,7 @@ import {
 } from "../schema/authentication.schema";
 import yup from "yup";
 import { loginAdmin, loginToken } from "../service/authentication.service";
+import { checkIfError } from "../common/utils/error";
 
 type adminLoginRequest = yup.InferType<typeof adminLoginSchema>;
 export async function adminLoginHandler(req: Request, res: Response) {
@@ -16,9 +17,8 @@ export async function adminLoginHandler(req: Request, res: Response) {
     const request = req as adminLoginRequest;
     const password = request.body.password;
     const jwtToken = await loginAdmin(password);
-    if (jwtToken instanceof Error) {
-      throw jwtToken;
-    }
+    checkIfError(jwtToken);
+
     handleSuccessResponse(res, 200, "Successfully login as admin", {
       jwtToken,
     });
@@ -33,9 +33,8 @@ export async function tokenLoginHandler(req: Request, res: Response) {
     const request = req as tokenLoginRequest;
     const token = request.body.token;
     const jwtToken = await loginToken(token);
-    if (jwtToken instanceof Error) {
-      throw jwtToken;
-    }
+    checkIfError(jwtToken);
+
     handleSuccessResponse(res, 200, "Successfully login as buyer/seller", {
       jwtToken,
     });

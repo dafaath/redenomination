@@ -7,3 +7,9 @@ export function errorReturnHandler(error: unknown): Error {
     return new Error("something has gone wrong");
   }
 }
+
+export function checkIfError(variable: unknown | Error) {
+  if (variable instanceof Error) {
+    throw variable;
+  }
+}

@@ -9,6 +9,12 @@ import Buyer from "./buyer.entity";
 import Seller from "./seller.entity";
 import Session from "./session.entity";
 
+export enum SimulationType {
+  POSTED_OFFER = "posted offer",
+  DOUBLE_AUCTION = "double action",
+  DECENTRALIZED = "decentralized",
+}
+
 @Entity("simulation")
 export default class Simulation extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
@@ -17,14 +23,21 @@ export default class Simulation extends BaseEntity {
   @OneToMany(() => Session, (session) => session.simulation)
   sessions: Session[];
 
-  @OneToMany(() => Buyer, (buyer) => buyer.simulation)
+  @OneToMany(() => Buyer, (buyer) => buyer.simulation, {
+    cascade: true,
+    onDelete: "CASCADE",
+  })
   buyers: Buyer[];
 
-  @OneToMany(() => Seller, (seller) => seller.simulation)
+  @OneToMany(() => Seller, (seller) => seller.simulation, {
+    cascade: true,
+    onDelete: "CASCADE",
+  })
   sellers: Seller[];
 
   @Column({
     type: "text",
+    unique: true,
   })
   token: string;
 
@@ -54,6 +67,11 @@ export default class Simulation extends BaseEntity {
   inflationType: string;
 
   @Column({
+    type: "int",
+  })
+  participantNumber: number;
+
+  @Column({
     type: "numeric",
     precision: 15,
     scale: 2,
@@ -80,12 +98,7 @@ export default class Simulation extends BaseEntity {
   @Column({
     type: "timestamp",
   })
-  timeStart: Date;
-
-  @Column({
-    type: "timestamp",
-  })
-  timeFinish: Date;
+  timeLastRun: Date;
 
   isDone() {
     throw new Error("Not implemented");

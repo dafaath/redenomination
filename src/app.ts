@@ -1,20 +1,24 @@
-import express, { Express, RequestHandler } from "express";
+import express, { Express, Request, RequestHandler, Response } from "express";
 import cors from "cors";
 import log from "./common/utils/logger";
 import connect from "./db";
 import config from "./configHandler";
-import swaggerUi from "swagger-ui-express";
 import healthCheckRouter from "./routes/health-check.route";
 import authenticationRouter from "./routes/authentication.route";
-import YAML from "yamljs";
+import sellerRouter from "./routes/seller.route";
+import buyerRouter from "./routes/buyer.route";
+import simulationRouter from "./routes/simulation.route";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
 
 const app: Express = express();
-const swaggerDocument = YAML.load("public/openapi.yaml");
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/api-docs", (_: Request, res: Response) => {
+  const postmanApiUrl =
+    "https://documenter.getpostman.com/view/14947205/UVXjLbeo#dc342197-c1bb-4dd9-95f8-9d101189622e";
+  res.redirect(postmanApiUrl);
+});
 app.use(express.json({ limit: "10mb" }) as RequestHandler);
 app.use(
   express.urlencoded({ extended: false, limit: "10mb" }) as RequestHandler
@@ -23,6 +27,9 @@ app.use(cors());
 app.use(express.static("public"));
 app.use(healthCheckRouter);
 app.use(authenticationRouter);
+app.use(sellerRouter);
+app.use(buyerRouter);
+app.use(simulationRouter);
 
 connect()
   .then(() => {
