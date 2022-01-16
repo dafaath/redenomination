@@ -10,6 +10,7 @@ import {
   deleteSimulation,
   getAllSimulation,
   getOneSimulation,
+  updateSimulation,
 } from "../service/simulation.service";
 import { checkIfError } from "../common/utils/error";
 
@@ -54,6 +55,26 @@ export async function createSimulationHandler(req: Request, res: Response) {
       res,
       201,
       "Successfully created new simulation",
+      simulation
+    );
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function updateSimulationHandler(req: Request, res: Response) {
+  try {
+    const request = req as createSimulationRequest;
+    const simulationId = req.params.id;
+    const body = request.body;
+
+    const simulation = await updateSimulation(simulationId, body);
+    checkIfError(simulation);
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully updated a simulation",
       simulation
     );
   } catch (error) {

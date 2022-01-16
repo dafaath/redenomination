@@ -94,6 +94,30 @@ export async function createSimulation(
   }
 }
 
+export async function updateSimulation(
+  simulationId: string,
+  data: createSimulationBody
+): Promise<Simulation | Error> {
+  try {
+    const simulation = await Simulation.findOne(simulationId);
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        `Simulation with id ${simulationId} is not found`
+      );
+    }
+
+    const updatedSimulationData = Object.assign(simulation, data);
+
+    const updatedSimulation = await Simulation.create({
+      ...updatedSimulationData,
+    }).save();
+
+    return updatedSimulation;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
 export async function deleteSimulation(
   simulationId: string
 ): Promise<Simulation | Error> {

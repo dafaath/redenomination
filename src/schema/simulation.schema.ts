@@ -26,3 +26,15 @@ export const createSimulationSchema = object({
       .required(),
   }),
 });
+
+export const updateSimulationSchema = object({
+  body: object({
+    simulationType: string().oneOf(Object.values(SimulationType)).required(),
+    goodsType: string().required(),
+    goodsName: string().required(),
+    goodsPic: string().required(),
+    inflationType: string().required(),
+    participantNumber: number().required(),
+    timer: number().required(),
+  }),
+});

@@ -58,7 +58,7 @@ export async function deleteSellerHandler(req: Request, res: Response) {
     const seller = await deleteSeller(sellerId);
     checkIfError(seller);
 
-    handleSuccessResponse(res, 204, "Successfully deleted a seller", seller);
+    handleSuccessResponse(res, 200, "Successfully deleted a seller", seller);
   } catch (error) {
     handleErrorResponse(res, error);
   }
