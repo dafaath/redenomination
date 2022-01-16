@@ -10,6 +10,7 @@ import {
   deleteSeller,
   getAllSeller,
   getOneSeller,
+  updateSeller,
 } from "../service/seller.service";
 import { checkIfError } from "../common/utils/error";
 
@@ -46,6 +47,21 @@ export async function createSellerHandler(req: Request, res: Response) {
     checkIfError(seller);
 
     handleSuccessResponse(res, 201, "Successfully created new seller", seller);
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function updateSellerHandler(req: Request, res: Response) {
+  try {
+    const sellerId = req.params.id;
+    const request = req as createSellerRequest;
+    const body = request.body;
+
+    const seller = await updateSeller(sellerId, body);
+    checkIfError(seller);
+
+    handleSuccessResponse(res, 200, "Successfully updated a seller", seller);
   } catch (error) {
     handleErrorResponse(res, error);
   }

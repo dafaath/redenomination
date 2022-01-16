@@ -7,7 +7,7 @@ import Simulation from "../db/entities/simulation.entity";
 
 export async function getAllSeller(): Promise<Array<Seller> | Error> {
   try {
-    const sellers = await Seller.createQueryBuilder().getMany();
+    const sellers = await Seller.find({ relations: ["simulation"] });
     if (!sellers) {
       throw createHttpError(404, "Can't get seller");
     }
@@ -20,7 +20,9 @@ export async function getAllSeller(): Promise<Array<Seller> | Error> {
 
 export async function getOneSeller(sellerId: string): Promise<Seller | Error> {
   try {
-    const seller = await Seller.findOne(sellerId);
+    const seller = await Seller.findOne(sellerId, {
+      relations: ["simulation"],
+    });
     if (!seller) {
       throw createHttpError(
         404,
@@ -49,7 +51,7 @@ export async function createSeller(
 
     const seller = Seller.create({
       simulation: simulation,
-      loginToken: createSellerBody.loginToken,
+      loginToken: simulation.token,
       unitCost: createSellerBody.unitCost,
     });
 
@@ -60,9 +62,38 @@ export async function createSeller(
   }
 }
 
+export async function updateSeller(
+  sellerId: string,
+  data: createSellerBody
+): Promise<Seller | Error> {
+  try {
+    const seller = await Seller.findOne(sellerId, {
+      relations: ["simulation"],
+    });
+    if (!seller) {
+      throw createHttpError(
+        404,
+        "Seller with id " + sellerId + " is not found"
+      );
+    }
+
+    const updatedSellerData = Object.assign(seller, data);
+
+    const updatedSeller = await Seller.create({
+      ...updatedSellerData,
+    }).save();
+
+    return updatedSeller;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
 export async function deleteSeller(sellerId: string): Promise<Seller | Error> {
   try {
-    const seller = await Seller.findOne(sellerId);
+    const seller = await Seller.findOne(sellerId, {
+      relations: ["simulation"],
+    });
     if (!seller) {
       throw createHttpError(
         404,

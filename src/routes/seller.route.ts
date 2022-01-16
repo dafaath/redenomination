@@ -4,6 +4,7 @@ import {
   deleteSellerHandler,
   getAllSellerHandler,
   getOneSellerHandler,
+  updateSellerHandler,
 } from "../controller/seller.controller";
 import validate from "../middleware/validateRequest";
 import { createSellerSchema } from "../schema/seller.schema";
@@ -12,6 +13,12 @@ const sellerRouter = Router();
 sellerRouter.get("/api/sellers", getAllSellerHandler);
 
 sellerRouter.get("/api/sellers/:id", getOneSellerHandler);
+
+sellerRouter.put(
+  "/api/sellers/:id",
+  validate(createSellerSchema),
+  updateSellerHandler
+);
 
 sellerRouter.post(
   "/api/sellers",
