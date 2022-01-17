@@ -20,18 +20,19 @@ export default class Simulation extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @OneToMany(() => Session, (session) => session.simulation)
+  @OneToMany(() => Session, (session) => session.simulation, {
+    cascade: true,
+    onDelete: "CASCADE",
+  })
   sessions: Session[];
 
   @OneToMany(() => Buyer, (buyer) => buyer.simulation, {
     cascade: true,
-    onDelete: "CASCADE",
   })
   buyers: Buyer[];
 
   @OneToMany(() => Seller, (seller) => seller.simulation, {
     cascade: true,
-    onDelete: "CASCADE",
   })
   sellers: Seller[];
 

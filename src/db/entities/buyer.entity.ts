@@ -23,7 +23,8 @@ export default class Buyer extends BaseEntity {
   transactions: Transaction[];
 
   @ManyToOne(() => Simulation, (simulation) => simulation.buyers, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   simulation: Simulation;

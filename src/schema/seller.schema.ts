@@ -6,3 +6,9 @@ export const createSellerSchema = object({
     unitCost: number().required(),
   }),
 });
+
+export const updateSellerSchema = object({
+  body: object({
+    unitCost: number().required(),
+  }),
+});

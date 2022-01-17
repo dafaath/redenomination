@@ -4,7 +4,10 @@ import {
 } from "./../common/utils/responseHandler";
 import { Request, Response } from "express";
 import yup from "yup";
-import { createSellerSchema } from "../schema/seller.schema";
+import {
+  createSellerSchema,
+  updateSellerSchema,
+} from "../schema/seller.schema";
 import {
   createSeller,
   deleteSeller,
@@ -52,10 +55,11 @@ export async function createSellerHandler(req: Request, res: Response) {
   }
 }
 
+type updateSellerRequest = yup.InferType<typeof updateSellerSchema>;
 export async function updateSellerHandler(req: Request, res: Response) {
   try {
     const sellerId = req.params.id;
-    const request = req as createSellerRequest;
+    const request = req as updateSellerRequest;
     const body = request.body;
 
     const seller = await updateSeller(sellerId, body);

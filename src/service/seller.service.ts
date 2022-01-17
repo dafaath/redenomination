@@ -1,7 +1,10 @@
 import createHttpError from "http-errors";
 import { errorReturnHandler } from "../common/utils/error";
 import Seller from "../db/entities/seller.entity";
-import { createSellerSchema } from "../schema/seller.schema";
+import {
+  createSellerSchema,
+  updateSellerSchema,
+} from "../schema/seller.schema";
 import yup from "yup";
 import Simulation from "../db/entities/simulation.entity";
 
@@ -62,9 +65,10 @@ export async function createSeller(
   }
 }
 
+type updateSellerBody = yup.InferType<typeof updateSellerSchema>["body"];
 export async function updateSeller(
   sellerId: string,
-  data: createSellerBody
+  data: updateSellerBody
 ): Promise<Seller | Error> {
   try {
     const seller = await Seller.findOne(sellerId, {

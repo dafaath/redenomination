@@ -18,7 +18,7 @@ export default class Phase extends BaseEntity {
   id: string;
 
   @ManyToOne(() => Session, (session) => session.phases, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn()
   session: Session;

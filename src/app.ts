@@ -31,13 +31,21 @@ app.use(sellerRouter);
 app.use(buyerRouter);
 app.use(simulationRouter);
 
-connect()
-  .then(() => {
-    app.listen(port, () => {
-      log.info(`Server listing at http://${host}:${port}`);
-      log.info(`Running on ${process.env.NODE_ENV} environment`);
+export async function runApplication() {
+  connect()
+    .then(() => {
+      app.listen(port, () => {
+        log.info(`Server listing at http://${host}:${port}`);
+        log.info(`Running on ${process.env.NODE_ENV} environment`);
+      });
+    })
+    .catch((error) => {
+      log.error(error);
     });
-  })
-  .catch((error) => {
-    log.error(error);
-  });
+}
+
+if (typeof require !== "undefined" && require.main === module) {
+  runApplication();
+}
+
+export default app;

@@ -2,6 +2,7 @@ import { createConnection } from "typeorm";
 import log from "./../common/utils/logger";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 import config from "../configHandler";
+import Seller from "./entities/seller.entity";
 
 async function connect() {
   try {
@@ -15,10 +16,10 @@ async function connect() {
     const entitiesPath =
       process.env.NODE_ENV === "production"
         ? ["dist/db/entities/*.js"]
-        : ["src/db/entities/*.ts"];
+        : ["src/db/entities/*.ts", Seller];
 
-    log.info(`Creating connection to ${dbType}@${dbHost}:${dbPort}`);
-    await createConnection({
+    log.info(`Creating connection to ${dbType}@${dbHost}:${dbPort}/${dbName}`);
+    const connection = await createConnection({
       type: dbType,
       host: dbHost,
       port: dbPort,
@@ -34,7 +35,8 @@ async function connect() {
           ? { rejectUnauthorized: false }
           : false,
     });
-    log.info(`Connected to db ${dbType}@${dbHost}:${dbPort}`);
+    log.info(`Connected to db ${dbType}@${dbHost}:${dbPort}/${dbName}`);
+    return connection;
   } catch (error) {
     log.error(error);
     if (error instanceof Error) {
@@ -42,6 +44,7 @@ async function connect() {
     } else if (typeof error === "string") {
       throw new Error(error);
     }
+    return null;
   }
 }
 
