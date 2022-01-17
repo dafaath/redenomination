@@ -56,12 +56,7 @@ export default class Phase extends BaseEntity {
   @Column({
     type: "timestamp",
   })
-  timeStart: Date;
-
-  @Column({
-    type: "timestamp",
-  })
-  timeFinish: Date;
+  timeLastRun: Date;
 
   isDone() {
     throw new Error("Not implemented");

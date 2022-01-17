@@ -18,6 +18,7 @@ export default class Session extends BaseEntity {
 
   @ManyToOne(() => Simulation, (simulation) => simulation.sessions, {
     createForeignKeyConstraints: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   simulation: Simulation;
@@ -57,12 +58,7 @@ export default class Session extends BaseEntity {
   @Column({
     type: "timestamp",
   })
-  timeStart: Date;
-
-  @Column({
-    type: "timestamp",
-  })
-  timeFinish: Date;
+  timeLastRun: Date;
 
   isDone() {
     throw new Error("Not implemented");

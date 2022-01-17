@@ -8,6 +8,7 @@ import authenticationRouter from "./routes/authentication.route";
 import sellerRouter from "./routes/seller.route";
 import buyerRouter from "./routes/buyer.route";
 import simulationRouter from "./routes/simulation.route";
+import sessionRouter from "./routes/session.route";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
@@ -30,6 +31,7 @@ app.use(authenticationRouter);
 app.use(sellerRouter);
 app.use(buyerRouter);
 app.use(simulationRouter);
+app.use(sessionRouter);
 
 export async function runApplication() {
   connect()
