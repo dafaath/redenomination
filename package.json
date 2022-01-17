@@ -5,7 +5,7 @@
     "start": "NODE_ENV=production node dist/app.js",
     "dev": "nodemon --config nodemon.json src/app.ts",
     "test": "NODE_ENV=test ts-node src/test/newman.ts",
-    "test-prod": "NODE_ENV=production node dist/test/newman.js",
+    "test-prod": "npm run build && NODE_ENV=production node dist/test/newman.js",
     "build": "rimraf dist/ && tsc",
     "lint": "eslint --ignore-path .gitignore . --ext .ts",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
