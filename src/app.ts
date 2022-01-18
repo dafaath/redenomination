@@ -24,7 +24,7 @@ app.use(express.json({ limit: "10mb" }) as RequestHandler);
 app.use(
   express.urlencoded({ extended: false, limit: "10mb" }) as RequestHandler
 );
-app.use(cors());
+app.use(cors({ credentials: true, origin: true }));
 app.use(express.static("public"));
 app.use(healthCheckRouter);
 app.use(authenticationRouter);

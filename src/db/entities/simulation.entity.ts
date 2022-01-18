@@ -11,7 +11,7 @@ import Session from "./session.entity";
 
 export enum SimulationType {
   POSTED_OFFER = "posted offer",
-  DOUBLE_AUCTION = "double action",
+  DOUBLE_AUCTION = "double auction",
   DECENTRALIZED = "decentralized",
 }
 
