@@ -42,12 +42,14 @@ export const io = new Server().listen(server);
 
 const onConnection = (socket: Socket) => {
   log.info(`New user has connected with id ${socket.id}`);
+  socket.emit("serverMessage", `New user has connected with id ${socket.id}`);
 
   // Importing socket event routes
   registerCheckSocketHealth(io, socket);
 
   socket.on("disconnect", () => {
     log.info(`User ${socket.id} has been disconnected`);
+    socket.emit("serverMessage", `User ${socket.id} has been disconnected`);
   });
 };
 
