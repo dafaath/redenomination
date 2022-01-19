@@ -9,7 +9,7 @@ healthCheckRouter.get("/api/", (_: Request, res: Response) => {
 
 export function registerCheckSocketHealth(io: Server, socket: Socket) {
   socket.on("checkHealth", () => {
-    io.emit("serverMessage", "Server is fine");
+    socket.emit("serverMessage", "Server is fine");
   });
 }
 
