@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { ROLE } from "../common/utils/jwt";
 import {
   createSessionHandler,
   deleteSessionHandler,
@@ -6,12 +7,15 @@ import {
   getOneSessionHandler,
   updateSessionHandler,
 } from "../controller/session.controller";
+import validateAuthentication from "../middleware/validateAuthentication";
 import validate from "../middleware/validateRequest";
 import {
   createSessionSchema,
   updateSessionSchema,
 } from "../schema/session.schema";
 const sessionRouter = Router();
+
+sessionRouter.use(validateAuthentication(ROLE.ADMIN));
 
 sessionRouter.get("/api/sessions", getAllSessionHandler);
 

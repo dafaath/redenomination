@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { ROLE } from "../common/utils/jwt";
 import {
   createSimulationHandler,
   deleteSimulationHandler,
@@ -6,12 +7,15 @@ import {
   getOneSimulationHandler,
   updateSimulationHandler,
 } from "../controller/simulation.controller";
+import validateAuthentication from "../middleware/validateAuthentication";
 import validate from "../middleware/validateRequest";
 import {
   createSimulationSchema,
   updateSimulationSchema,
 } from "../schema/simulation.schema";
 const simulationRouter = Router();
+
+simulationRouter.use(validateAuthentication(ROLE.ADMIN));
 
 simulationRouter.get("/api/simulations", getAllSimulationHandler);
 

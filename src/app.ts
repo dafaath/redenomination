@@ -3,12 +3,16 @@ import cors from "cors";
 import log from "./common/utils/logger";
 import connect from "./db";
 import config from "./configHandler";
-import healthCheckRouter from "./routes/health-check.route";
+import healthCheckRouter, {
+  registerCheckSocketHealth,
+} from "./routes/health-check.route";
 import authenticationRouter from "./routes/authentication.route";
 import sellerRouter from "./routes/seller.route";
 import buyerRouter from "./routes/buyer.route";
 import simulationRouter from "./routes/simulation.route";
 import sessionRouter from "./routes/session.route";
+import http from "http";
+import { Server, Socket } from "socket.io";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
@@ -33,10 +37,25 @@ app.use(buyerRouter);
 app.use(simulationRouter);
 app.use(sessionRouter);
 
+const server = http.createServer(app);
+export const io = new Server().listen(server);
+
+const onConnection = (socket: Socket) => {
+  log.info(`New user has connected with id ${socket.id}`);
+
+  // Importing socket event routes
+  registerCheckSocketHealth(io, socket);
+
+  socket.on("disconnect", () => {
+    log.info(`User ${socket.id} has been disconnected`);
+  });
+};
+
+io.on("connection", onConnection);
 export async function runApplication() {
   connect()
     .then(() => {
-      app.listen(port, () => {
+      server.listen(port, () => {
         log.info(`Server listing at http://${host}:${port}`);
         log.info(`Running on ${process.env.NODE_ENV} environment`);
       });
