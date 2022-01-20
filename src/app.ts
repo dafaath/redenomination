@@ -1,5 +1,6 @@
 import express, { Express, Request, RequestHandler, Response } from "express";
 import cors from "cors";
+import fileUpload from "express-fileupload";
 import log from "./common/utils/logger";
 import connect from "./db";
 import config from "./configHandler";
@@ -13,6 +14,9 @@ import simulationRouter from "./routes/simulation.route";
 import sessionRouter from "./routes/session.route";
 import http from "http";
 import { Server, Socket } from "socket.io";
+import path from "path";
+
+export const appRoot = path.join(path.resolve(__dirname), "..");
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
@@ -29,7 +33,10 @@ app.use(
   express.urlencoded({ extended: false, limit: "10mb" }) as RequestHandler
 );
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.static("public"));
+app.use("/static", express.static("public"));
+app.use(fileUpload());
+
+// Router
 app.use(healthCheckRouter);
 app.use(authenticationRouter);
 app.use(sellerRouter);

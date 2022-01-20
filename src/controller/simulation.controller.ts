@@ -10,9 +10,12 @@ import {
   deleteSimulation,
   getAllSimulation,
   getOneSimulation,
+  saveGoodsPicture,
   updateSimulation,
 } from "../service/simulation.service";
 import { checkIfError } from "../common/utils/error";
+import createHttpError from "http-errors";
+import fileUpload from "express-fileupload";
 
 export async function getAllSimulationHandler(_: Request, res: Response) {
   try {
@@ -93,6 +96,28 @@ export async function deleteSimulationHandler(req: Request, res: Response) {
       res,
       200,
       "Successfully deleted a simulation",
+      simulation
+    );
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function createGoodsPictureHandler(req: Request, res: Response) {
+  try {
+    const simulationId = req.params.id;
+    const files = req.files;
+    if (!files) {
+      throw createHttpError(400, "There is no file uploaded");
+    }
+    const goodsPicture = files.file as fileUpload.UploadedFile;
+    const simulation = await saveGoodsPicture(simulationId, goodsPicture);
+    checkIfError(simulation);
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully saved simulations picture, use {{base_url}}/static/{{simulation.goodsPic}} to see the picture",
       simulation
     );
   } catch (error) {

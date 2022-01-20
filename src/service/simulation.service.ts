@@ -2,11 +2,15 @@ import createHttpError from "http-errors";
 import { errorReturnHandler } from "../common/utils/error";
 import Simulation, { SimulationType } from "../db/entities/simulation.entity";
 import { createSimulationSchema } from "../schema/simulation.schema";
-import yup from "yup";
+import yup, { string } from "yup";
 import { randomString } from "../common/utils/other";
 import dayjs from "dayjs";
 import Seller from "../db/entities/seller.entity";
 import Buyer from "../db/entities/buyer.entity";
+import fileUpload from "express-fileupload";
+import path from "path";
+import fs from "fs";
+import { appRoot } from "../app";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -136,6 +140,45 @@ export async function deleteSimulation(
     const deletedSimulation = await simulation.remove();
 
     return deletedSimulation;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function saveGoodsPicture(
+  simulationId: string,
+  goodsPicture: fileUpload.UploadedFile
+): Promise<Simulation | Error> {
+  try {
+    const simulation = await Simulation.findOne(simulationId, {
+      relations: ["buyers", "sellers", "sessions"],
+    });
+
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        "Simulation with id " + simulationId + " is not found"
+      );
+    }
+
+    const fileExt = /[.]/.exec(goodsPicture.name)
+      ? /[^.]+$/.exec(goodsPicture.name)?.toString()
+      : string;
+    const savedFileName = simulation.id + "." + fileExt;
+
+    // remove current file if exists
+    const currentFile = path.join(appRoot, "public", simulation.goodsPic);
+    if (fs.existsSync(currentFile)) {
+      fs.unlinkSync(currentFile);
+    }
+
+    goodsPicture.mv(path.join(appRoot, "public", savedFileName));
+
+    simulation.goodsPic = savedFileName;
+
+    const updatedSimulation = await simulation.save();
+
+    return updatedSimulation;
   } catch (error) {
     return errorReturnHandler(error);
   }

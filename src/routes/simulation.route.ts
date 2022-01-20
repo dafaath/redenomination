@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ROLE } from "../common/utils/jwt";
 import {
+  createGoodsPictureHandler,
   createSimulationHandler,
   deleteSimulationHandler,
   getAllSimulationHandler,
@@ -31,6 +32,11 @@ simulationRouter.post(
   "/api/simulations",
   validate(createSimulationSchema),
   createSimulationHandler
+);
+
+simulationRouter.post(
+  "/api/simulations/:id/pictures",
+  createGoodsPictureHandler
 );
 
 simulationRouter.delete("/api/simulations/:id", deleteSimulationHandler);
