@@ -18,18 +18,21 @@ export default class Transaction extends BaseEntity {
 
   @ManyToOne(() => Phase, (phase) => phase.bargains, {
     createForeignKeyConstraints: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   phase: Phase;
 
   @ManyToOne(() => Buyer, (buyer) => buyer.transactions, {
     createForeignKeyConstraints: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   buyer: Buyer;
 
   @ManyToOne(() => Seller, (seller) => seller.transactions, {
     createForeignKeyConstraints: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   seller: Seller;

@@ -12,6 +12,11 @@ import Bargain from "./bargain.entity";
 import Session from "./session.entity";
 import Transaction from "./transaction.entity";
 
+export enum PhaseType {
+  PRE_REDENOM_PRICE = "preRedenomPrice",
+  TRANSITION_PRICE = "transitionPrice",
+  POST_REDENOM_PRICE = "postRedenomPrice",
+}
 @Entity("phase")
 export default class Phase extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
@@ -19,6 +24,7 @@ export default class Phase extends BaseEntity {
 
   @ManyToOne(() => Session, (session) => session.phases, {
     createForeignKeyConstraints: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   session: Session;
@@ -28,6 +34,12 @@ export default class Phase extends BaseEntity {
 
   @OneToMany(() => Transaction, (transaction) => transaction.phase)
   transactions: Transaction[];
+
+  @Column({
+    type: "text",
+    enum: PhaseType,
+  })
+  phaseType: PhaseType;
 
   @Column({
     type: "numeric",
@@ -57,6 +69,12 @@ export default class Phase extends BaseEntity {
     type: "timestamp",
   })
   timeLastRun: Date;
+
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  isRunning: boolean;
 
   isDone() {
     throw new Error("Not implemented");

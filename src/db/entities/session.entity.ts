@@ -23,7 +23,9 @@ export default class Session extends BaseEntity {
   @JoinColumn()
   simulation: Simulation;
 
-  @OneToMany(() => Phase, (phases) => phases.session)
+  @OneToMany(() => Phase, (phases) => phases.session, {
+    cascade: true,
+  })
   phases: Phase[];
 
   @Column({
@@ -59,6 +61,12 @@ export default class Session extends BaseEntity {
     type: "timestamp",
   })
   timeLastRun: Date;
+
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  isRunning: boolean;
 
   isDone() {
     throw new Error("Not implemented");

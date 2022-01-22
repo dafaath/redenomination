@@ -3,8 +3,10 @@ import { ROLE } from "../common/utils/jwt";
 import {
   createSessionHandler,
   deleteSessionHandler,
+  finishSessionHandler,
   getAllSessionHandler,
   getOneSessionHandler,
+  runSessionHandler,
   updateSessionHandler,
 } from "../controller/session.controller";
 import validateAuthentication from "../middleware/validateAuthentication";
@@ -32,6 +34,10 @@ sessionRouter.post(
   validate(createSessionSchema),
   createSessionHandler
 );
+
+sessionRouter.post("/api/sessions/:id/runs", runSessionHandler);
+
+sessionRouter.post("/api/sessions/:id/finishes", finishSessionHandler);
 
 sessionRouter.delete("/api/sessions/:id", deleteSessionHandler);
 

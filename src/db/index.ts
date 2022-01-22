@@ -16,7 +16,10 @@ async function connect() {
     const entitiesPath =
       process.env.NODE_ENV === "production"
         ? ["dist/db/entities/*.js"]
-        : ["src/db/entities/*.ts", Seller];
+        : ["src/db/entities/*.ts"];
+
+    // DANGER!!! Don't change to production env
+    const dropSchema = process.env.NODE_ENV === "test" ? true : false;
 
     log.info(`Creating connection to ${dbType}@${dbHost}:${dbPort}/${dbName}`);
     const connection = await createConnection({
@@ -29,6 +32,7 @@ async function connect() {
       entities: entitiesPath,
       namingStrategy: new SnakeNamingStrategy(),
       synchronize: true,
+      dropSchema: dropSchema,
       charset: "utf8",
       ssl:
         process.env.NODE_ENV === "production"
