@@ -1,6 +1,9 @@
 import { Request, Response, Router } from "express";
 import { Server, Socket } from "socket.io";
-import { handleSuccessResponse } from "../common/utils/responseHandler";
+import {
+  handleSuccessResponse,
+  socketHandleSuccessResponse,
+} from "../common/utils/responseHandler";
 const healthCheckRouter = Router();
 
 healthCheckRouter.get("/api/", (_: Request, res: Response) => {
@@ -9,7 +12,7 @@ healthCheckRouter.get("/api/", (_: Request, res: Response) => {
 
 export function registerCheckSocketHealth(io: Server, socket: Socket) {
   socket.on("checkHealth", () => {
-    socket.emit("serverMessage", "Server is fine");
+    socketHandleSuccessResponse(socket, 200, "Server is fine");
   });
 }
 

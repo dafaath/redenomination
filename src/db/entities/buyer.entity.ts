@@ -41,6 +41,20 @@ export default class Buyer extends BaseEntity {
   })
   unitValue: number;
 
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  isLoggedIn: boolean;
+
+  @Column({
+    type: "text",
+    unique: true,
+    nullable: true,
+    default: null,
+  })
+  socketId: string | null;
+
   hasBought() {
     throw new Error("Not implemented");
   }

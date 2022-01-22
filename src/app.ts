@@ -7,7 +7,9 @@ import config from "./configHandler";
 import healthCheckRouter, {
   registerCheckSocketHealth,
 } from "./routes/health-check.route";
-import authenticationRouter from "./routes/authentication.route";
+import authenticationRouter, {
+  registerAuthenticationSocket,
+} from "./routes/authentication.route";
 import sellerRouter from "./routes/seller.route";
 import buyerRouter from "./routes/buyer.route";
 import simulationRouter from "./routes/simulation.route";
@@ -15,6 +17,12 @@ import sessionRouter from "./routes/session.route";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import path from "path";
+import { disconnectTokenSocket } from "./service/authentication.service";
+import {
+  socketHandleErrorResponse,
+  socketHandleSuccessResponse,
+} from "./common/utils/responseHandler";
+import { checkIfError } from "./common/utils/error";
 
 export const appRoot = path.join(path.resolve(__dirname), "..");
 
@@ -53,10 +61,22 @@ const onConnection = (socket: Socket) => {
 
   // Importing socket event routes
   registerCheckSocketHealth(io, socket);
+  registerAuthenticationSocket(io, socket);
 
-  socket.on("disconnect", () => {
-    log.info(`User ${socket.id} has been disconnected`);
-    socket.emit("serverMessage", `User ${socket.id} has been disconnected`);
+  socket.on("disconnect", async () => {
+    try {
+      await disconnectTokenSocket(socket.id);
+      checkIfError(disconnectTokenSocket);
+
+      log.info(`User ${socket.id} has been disconnected`);
+      socketHandleSuccessResponse(
+        socket,
+        200,
+        `User ${socket.id} has been disconnected`
+      );
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
   });
 };
 

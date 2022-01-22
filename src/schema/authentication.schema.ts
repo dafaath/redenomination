@@ -11,3 +11,10 @@ export const tokenLoginSchema = object({
     token: string().required(),
   }),
 });
+
+export const tokenLoginSchemaSocket = object({
+  token: string().required(),
+})
+  .noUnknown(true)
+  .required()
+  .strict();

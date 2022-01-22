@@ -1,13 +1,16 @@
 import {
   adminLoginHandler,
-  tokenLoginHandler,
+  socketTokenLoginHandler,
 } from "./../controller/authentication.controller";
 import { Router } from "express";
 import validate from "./../middleware/validateRequest";
 import {
   adminLoginSchema,
-  tokenLoginSchema,
+  tokenLoginSchemaSocket,
 } from "./../schema/authentication.schema";
+import { Server, Socket } from "socket.io";
+import { validateSocketInput } from "../middleware/validateSocketInput";
+
 const authenticationRouter = Router();
 
 authenticationRouter.post(
@@ -16,10 +19,9 @@ authenticationRouter.post(
   adminLoginHandler
 );
 
-authenticationRouter.post(
-  "/api/sessions/tokens",
-  validate(tokenLoginSchema),
-  tokenLoginHandler
-);
+export function registerAuthenticationSocket(io: Server, socket: Socket) {
+  validateSocketInput(socket, tokenLoginSchemaSocket);
+  socketTokenLoginHandler(io, socket);
+}
 
 export default authenticationRouter;

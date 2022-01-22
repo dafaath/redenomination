@@ -2,7 +2,6 @@ import { createConnection } from "typeorm";
 import log from "./../common/utils/logger";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 import config from "../configHandler";
-import Seller from "./entities/seller.entity";
 
 async function connect() {
   try {

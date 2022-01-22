@@ -41,6 +41,20 @@ export default class Seller extends BaseEntity {
   })
   unitCost: number;
 
+  @Column({
+    type: "boolean",
+    default: false,
+  })
+  isLoggedIn: boolean;
+
+  @Column({
+    type: "text",
+    unique: true,
+    nullable: true,
+    default: null,
+  })
+  socketId: string | null;
+
   isSold() {
     throw new Error("Not implemented");
   }
