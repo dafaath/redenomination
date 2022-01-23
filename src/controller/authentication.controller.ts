@@ -18,6 +18,7 @@ import { checkIfError } from "../common/utils/error";
 import { Server, Socket } from "socket.io";
 import log from "../common/utils/logger";
 import createHttpError from "http-errors";
+import { validateSocketInput } from "../middleware/validateSocketInput";
 
 type adminLoginRequest = yup.InferType<typeof adminLoginSchema>;
 export async function adminLoginHandler(req: Request, res: Response) {
@@ -36,9 +37,12 @@ export async function adminLoginHandler(req: Request, res: Response) {
 }
 
 type socketTokenLoginRequest = yup.InferType<typeof tokenLoginSchemaSocket>;
-export async function socketTokenLoginHandler(io: Server, socket: Socket) {
-  socket.on("loginToken", async (request: socketTokenLoginRequest) => {
+export function socketTokenLoginHandler(io: Server, socket: Socket) {
+  return async (request: socketTokenLoginRequest) => {
     try {
+      const isError = validateSocketInput(request, tokenLoginSchemaSocket);
+      checkIfError(isError);
+
       if (socket.rooms.has(request.token)) {
         throw createHttpError(
           409,
@@ -57,5 +61,5 @@ export async function socketTokenLoginHandler(io: Server, socket: Socket) {
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
-  });
+  };
 }

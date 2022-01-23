@@ -74,7 +74,6 @@ export async function socketHandleErrorResponse(
   socket: Socket,
   error: unknown
 ) {
-  log.error(error);
   if (createError.isHttpError(error)) {
     const response: ResponseTemplate = {
       status: error.status,

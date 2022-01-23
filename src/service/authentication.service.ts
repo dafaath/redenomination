@@ -1,10 +1,11 @@
 import config from "../configHandler";
 import createHttpError from "http-errors";
 import { ROLE, signToken } from "../common/utils/jwt";
-import { errorReturnHandler } from "../common/utils/error";
+import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import Buyer from "../db/entities/buyer.entity";
 import Simulation from "../db/entities/simulation.entity";
 import Seller from "../db/entities/seller.entity";
+import { getManager } from "typeorm";
 
 export async function loginAdmin(password: string): Promise<string | Error> {
   try {
@@ -41,45 +42,63 @@ export async function loginTokenSocket(
       );
     }
 
-    const buyers = await Buyer.createQueryBuilder("buyer")
-      .where("buyer.loginToken=:token", { token })
-      .andWhere("buyer.isLoggedIn=false")
-      .getMany();
+    const chosenHost = await getManager().transaction(
+      async (transactionalEntityManager) => {
+        try {
+          const buyer = await transactionalEntityManager.findOne(Buyer, {
+            lock: {
+              mode: "pessimistic_write",
+            },
+            where: {
+              loginToken: token,
+              isLoggedIn: false,
+            },
+          });
 
-    const sellers = await Seller.createQueryBuilder("seller")
-      .where("seller.loginToken=:token", { token })
-      .andWhere("seller.isLoggedIn=false")
-      .getMany();
+          const seller = await transactionalEntityManager.findOne(Seller, {
+            lock: {
+              mode: "pessimistic_write",
+            },
+            where: {
+              loginToken: token,
+              isLoggedIn: false,
+            },
+          });
 
-    if (
-      (!buyers || buyers.length === 0) &&
-      (!sellers || sellers.length === 0)
-    ) {
-      throw createHttpError(404, `Simulation is full`);
-    }
+          if (!buyer && !seller) {
+            throw createHttpError(403, `Simulation is full`);
+          }
 
-    let chosenHost: undefined | ChosenHost = undefined;
-    if (buyers.length >= sellers.length) {
-      const buyer = buyers[0];
-      buyer.isLoggedIn = true;
-      buyer.socketId = socketId;
+          let chosenHost: undefined | ChosenHost = undefined;
+          if (buyer) {
+            buyer.isLoggedIn = true;
+            buyer.socketId = socketId;
 
-      chosenHost = {
-        type: ChosenHostType.BUYER,
-        detail: await buyer.save(),
-      };
+            chosenHost = {
+              type: ChosenHostType.BUYER,
+              detail: await transactionalEntityManager.save(buyer),
+            };
+          } else if (seller) {
+            seller.isLoggedIn = true;
+            seller.socketId = socketId;
+
+            chosenHost = {
+              type: ChosenHostType.SELLER,
+              detail: await transactionalEntityManager.save(seller),
+            };
+          }
+
+          return chosenHost;
+        } catch (error) {
+          errorThrowUtils(error);
+        }
+      }
+    );
+    if (chosenHost) {
+      return chosenHost;
     } else {
-      const seller = sellers[0];
-      seller.isLoggedIn = true;
-      seller.socketId = socketId;
-
-      chosenHost = {
-        type: ChosenHostType.SELLER,
-        detail: await seller.save(),
-      };
+      return new Error("something wrong");
     }
-
-    return chosenHost;
   } catch (error) {
     return errorReturnHandler(error);
   }

@@ -51,7 +51,6 @@ export default class Buyer extends BaseEntity {
     type: "text",
     unique: true,
     nullable: true,
-    default: null,
   })
   socketId: string | null;
 

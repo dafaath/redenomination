@@ -22,7 +22,7 @@ import {
   socketHandleErrorResponse,
   socketHandleSuccessResponse,
 } from "./common/utils/responseHandler";
-import { checkIfError } from "./common/utils/error";
+import { checkIfError, errorThrowUtils } from "./common/utils/error";
 
 export const appRoot = path.join(path.resolve(__dirname), "..");
 
@@ -31,11 +31,14 @@ const host = config.server.host;
 
 const app: Express = express();
 
+// Documentation
 app.get("/api-docs", (_: Request, res: Response) => {
   const postmanApiUrl =
     "https://documenter.getpostman.com/view/14947205/UVXjLbeo#dc342197-c1bb-4dd9-95f8-9d101189622e";
   res.redirect(postmanApiUrl);
 });
+
+// Middleware
 app.use(express.json({ limit: "10mb" }) as RequestHandler);
 app.use(
   express.urlencoded({ extended: false, limit: "10mb" }) as RequestHandler
@@ -52,10 +55,11 @@ app.use(buyerRouter);
 app.use(simulationRouter);
 app.use(sessionRouter);
 
+// Socket.io setup
 const server = http.createServer(app);
 export const io = new Server().listen(server);
 
-const onConnection = (socket: Socket) => {
+export const onConnection = (socket: Socket) => {
   log.info(`New user has connected with id ${socket.id}`);
   socket.emit("serverMessage", `New user has connected with id ${socket.id}`);
 
@@ -80,18 +84,20 @@ const onConnection = (socket: Socket) => {
   });
 };
 
-io.on("connection", onConnection);
 export async function runApplication() {
-  connect()
-    .then(() => {
-      server.listen(port, () => {
-        log.info(`Server listing at http://${host}:${port}`);
-        log.info(`Running on ${process.env.NODE_ENV} environment`);
-      });
-    })
-    .catch((error) => {
-      log.error(error);
+  try {
+    const dbConnection = await connect();
+    const ioConnection = io.on("connection", onConnection);
+    const serverConnection = server.listen(port, () => {
+      log.info(`Server listing at http://${host}:${port}`);
+      log.info(`Running on ${process.env.NODE_ENV} environment`);
     });
+
+    return { dbConnection, ioConnection, serverConnection };
+  } catch (error) {
+    log.error(error);
+    errorThrowUtils(error);
+  }
 }
 
 if (typeof require !== "undefined" && require.main === module) {
