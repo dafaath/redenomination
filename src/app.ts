@@ -57,7 +57,11 @@ app.use(sessionRouter);
 
 // Socket.io setup
 const server = http.createServer(app);
-export const io = new Server().listen(server);
+export const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+}).listen(server);
 
 export const onConnection = (socket: Socket) => {
   log.info(`New user has connected with id ${socket.id}`);
