@@ -17,12 +17,16 @@ import sessionRouter from "./routes/session.route";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import path from "path";
-import { disconnectTokenSocket } from "./service/authentication.service";
+import {
+  disconnectTokenSocket,
+  loggingOutAllUser,
+} from "./service/authentication.service";
 import {
   socketHandleErrorResponse,
   socketHandleSuccessResponse,
 } from "./common/utils/responseHandler";
 import { checkIfError, errorThrowUtils } from "./common/utils/error";
+import { registerGeneralSocket } from "./routes/socket.route";
 
 export const appRoot = path.join(path.resolve(__dirname), "..");
 
@@ -70,6 +74,7 @@ export const onConnection = (socket: Socket) => {
   // Importing socket event routes
   registerCheckSocketHealth(io, socket);
   registerAuthenticationSocket(io, socket);
+  registerGeneralSocket(io, socket);
 
   socket.on("disconnect", async () => {
     try {
@@ -95,6 +100,15 @@ export async function runApplication() {
     const serverConnection = server.listen(port, () => {
       log.info(`Server listing at http://${host}:${port}`);
       log.info(`Running on ${process.env.NODE_ENV} environment`);
+
+      loggingOutAllUser()
+        .then((result) => {
+          log.info(`Logging out all user finished`);
+          checkIfError(result);
+        })
+        .catch((err) => {
+          errorThrowUtils(err);
+        });
     });
 
     return { dbConnection, ioConnection, serverConnection };

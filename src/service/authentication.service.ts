@@ -130,6 +130,7 @@ export async function disconnectTokenSocket(
     if (buyer) {
       buyer.isLoggedIn = false;
       buyer.socketId = null;
+      buyer.isReady = false;
 
       success = await buyer.save();
     }
@@ -137,11 +138,55 @@ export async function disconnectTokenSocket(
     if (seller) {
       seller.isLoggedIn = false;
       seller.socketId = null;
+      seller.isReady = false;
 
       success = await seller.save();
     }
 
     return Boolean(success);
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function loggingOutAllUser(): Promise<boolean | Error> {
+  try {
+    const getBuyerPromise = Buyer.createQueryBuilder("buyer")
+      .where("buyer.isLoggedIn=true")
+      .getMany();
+
+    const getSellerPromise = Seller.createQueryBuilder("seller")
+      .where("seller.isLoggedIn=true")
+      .getMany();
+
+    const buyers = await getBuyerPromise;
+    const sellers = await getSellerPromise;
+
+    if (buyers.length === 0 && sellers.length === 0) {
+      return true;
+    }
+
+    if (buyers.length > 0) {
+      const updatedBuyers = buyers.map((b) => {
+        b.isLoggedIn = false;
+        b.socketId = null;
+        b.isReady = false;
+        return b;
+      });
+      await Buyer.save(updatedBuyers);
+    }
+
+    if (sellers.length > 0) {
+      const updatedSellers = sellers.map((s) => {
+        s.isLoggedIn = false;
+        s.socketId = null;
+        s.isReady = false;
+        return s;
+      });
+      await Seller.save(updatedSellers);
+    }
+
+    return true;
   } catch (error) {
     return errorReturnHandler(error);
   }

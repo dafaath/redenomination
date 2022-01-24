@@ -68,7 +68,7 @@ describe("Authentication", () => {
 
   afterEach((done) => {
     for (let i = 0; i < testConnection.clientSockets.length; i++) {
-      testConnection.clientSockets[i].off("serverMessage");
+      testConnection.clientSockets[i].removeAllListeners();
     }
     done();
   });
@@ -236,6 +236,73 @@ describe("Authentication", () => {
     }
   });
 
+  it("user can ready", async () => {
+    try {
+      const promises: Array<Promise<void>> = [];
+      const readyPromises: Array<Promise<void>> = [];
+
+      const totalBuyerSeller =
+        simulationResponse.buyers.length + simulationResponse.sellers.length;
+      const countReceiveMessage: Array<number> = [];
+
+      for (
+        let i = totalBuyerSeller;
+        i < testConnection.clientSockets.length;
+        i++
+      ) {
+        testConnection.clientSockets[i].on("readyMessage", (response) => {
+          expect(response).to.be.undefined;
+        });
+      }
+
+      for (let i = 0; i < totalBuyerSeller; i++) {
+        countReceiveMessage.push(0);
+        const promise = new Promise<void>((resolve) => {
+          testConnection.clientSockets[i].emit("toggleReady");
+          testConnection.clientSockets[i].on("serverMessage", (response) => {
+            expectHaveTemplateResponse(response);
+            expect(response.status).to.be.equal(200);
+            expect(response.message).to.contains("set user to");
+            expect(response.data).to.have.property("user");
+            expect(response.data.user.isReady).to.be.true;
+            expect(response.data).to.have.property("readyCount");
+
+            resolve();
+          });
+        });
+
+        const readyPromise = new Promise<void>((resolve) => {
+          testConnection.clientSockets[i].on("readyCount", (response) => {
+            expect(response).to.have.property("totalPlayer");
+            expect(response.totalPlayer).to.be.equal(totalBuyerSeller);
+            expect(response).to.have.property("numberOfReadyPlayer");
+            expect(response.numberOfReadyPlayer).to.be.greaterThan(0);
+            expect(response.numberOfReadyPlayer).to.be.lessThanOrEqual(
+              totalBuyerSeller
+            );
+
+            countReceiveMessage[i] += 1;
+
+            if (countReceiveMessage[i] >= totalBuyerSeller) {
+              expect(response.numberOfReadyPlayer).to.be.equal(
+                response.totalPlayer
+              );
+              resolve();
+            }
+          });
+        });
+
+        readyPromises.push(readyPromise);
+        promises.push(promise);
+      }
+
+      await Promise.all(promises);
+      return Promise.all(readyPromises);
+    } catch (error) {
+      errorThrowUtils(error);
+    }
+  });
+
   it("database have logged in user", async () => {
     try {
       const buyers = await Buyer.find({ loginToken: simulationResponse.token });
@@ -245,15 +312,87 @@ describe("Authentication", () => {
 
       for (let i = 0; i < buyers.length; i++) {
         expect(buyers[i].isLoggedIn).to.be.true;
+        expect(buyers[i].isReady).to.be.true;
         expect(buyers[i].socketId).to.be.not.null;
       }
 
       for (let i = 0; i < sellers.length; i++) {
         expect(sellers[i].isLoggedIn).to.be.true;
+        expect(sellers[i].isReady).to.be.true;
         expect(sellers[i].socketId).to.be.not.null;
       }
 
       return;
+    } catch (error) {
+      errorThrowUtils(error);
+    }
+  });
+
+  it("some user can unready", async () => {
+    try {
+      const promises: Array<Promise<void>> = [];
+      const readyPromises: Array<Promise<void>> = [];
+
+      const totalBuyerSeller =
+        simulationResponse.buyers.length + simulationResponse.sellers.length;
+      const countReceiveMessage: Array<number> = [];
+
+      for (
+        let i = totalBuyerSeller;
+        i < testConnection.clientSockets.length;
+        i++
+      ) {
+        testConnection.clientSockets[i].on("readyMessage", (response) => {
+          expect(response).to.be.undefined;
+        });
+      }
+
+      for (let i = 0; i < Math.floor(totalBuyerSeller / 2); i++) {
+        countReceiveMessage.push(0);
+        const promise = new Promise<void>((resolve) => {
+          testConnection.clientSockets[i].emit("toggleReady");
+          testConnection.clientSockets[i].on("serverMessage", (response) => {
+            expectHaveTemplateResponse(response);
+            expect(response.status).to.be.equal(200);
+            expect(response.message).to.contains("set user to false");
+            expect(response.data).to.have.property("user");
+            expect(response.data.user.isReady).to.be.false;
+            expect(response.data).to.have.property("readyCount");
+
+            resolve();
+          });
+        });
+
+        const readyPromise = new Promise<void>((resolve) => {
+          testConnection.clientSockets[i].on("readyCount", (response) => {
+            expect(response).to.have.property("totalPlayer");
+            expect(
+              response.totalPlayer,
+              "Total player is equal to simulation buyer + seller"
+            ).to.be.equal(totalBuyerSeller);
+            expect(response).to.have.property("numberOfReadyPlayer");
+            expect(response.numberOfReadyPlayer).to.be.greaterThan(0);
+            expect(response.numberOfReadyPlayer).to.be.lessThan(
+              totalBuyerSeller
+            );
+
+            countReceiveMessage[i] += 1;
+
+            if (countReceiveMessage[i] >= Math.floor(totalBuyerSeller / 2)) {
+              expect(response.numberOfReadyPlayer).to.be.equal(
+                Math.floor(response.totalPlayer / 2)
+              );
+              resolve();
+            }
+          });
+        });
+
+        readyPromises.push(readyPromise);
+        promises.push(promise);
+      }
+
+      await Promise.all(promises);
+      return Promise.all(readyPromises);
     } catch (error) {
       errorThrowUtils(error);
     }
@@ -292,11 +431,13 @@ describe("Authentication", () => {
 
         for (let i = 0; i < buyers.length; i++) {
           expect(buyers[i].isLoggedIn).to.be.false;
+          expect(buyers[i].isReady).to.be.false;
           expect(buyers[i].socketId).to.be.null;
         }
 
         for (let i = 0; i < sellers.length; i++) {
           expect(sellers[i].isLoggedIn).to.be.false;
+          expect(sellers[i].isReady).to.be.false;
           expect(sellers[i].socketId).to.be.null;
         }
 

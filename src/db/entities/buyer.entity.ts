@@ -48,6 +48,12 @@ export default class Buyer extends BaseEntity {
   isLoggedIn: boolean;
 
   @Column({
+    type: "boolean",
+    default: false,
+  })
+  isReady: boolean;
+
+  @Column({
     type: "text",
     unique: true,
     nullable: true,

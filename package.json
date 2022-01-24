@@ -5,6 +5,7 @@
     "start": "NODE_ENV=production node dist/app.js",
     "dev": "nodemon --config nodemon.json src/app.ts",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha --exit -r ts-node/register 'src/test/**/*.test.ts'",
+    "test-file": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha --exit -r ts-node/register",
     "build": "rimraf dist/ && tsc",
     "lint": "eslint --ignore-path .gitignore . --ext .ts",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",

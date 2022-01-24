@@ -24,7 +24,10 @@ export async function handleSuccessResponse(
 }
 
 export async function handleErrorResponse(res: Response, error: unknown) {
-  log.error(error);
+  if (!createError.isHttpError(error)) {
+    log.error(error);
+  }
+
   if (createError.isHttpError(error)) {
     const response: ResponseTemplate = {
       status: error.status,
@@ -74,6 +77,10 @@ export async function socketHandleErrorResponse(
   socket: Socket,
   error: unknown
 ) {
+  if (!createError.isHttpError(error)) {
+    log.error(error);
+  }
+
   if (createError.isHttpError(error)) {
     const response: ResponseTemplate = {
       status: error.status,
