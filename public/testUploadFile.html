@@ -16,21 +16,51 @@
 
   <script>
     function submitFile(e) {
-      console.log("fuck")
       let input = document.querySelector('input[type="file"]')
 
       let data = new FormData()
       data.append('file', input.files[0])
+      const url = window.location.origin
 
-      fetch('http://localhost:3000/api/simulations/be57d109-68e1-4d37-9440-22d67f62136a/pictures', {
+      let adminPassword;
+      if (url.includes("localhost")) {
+        adminPassword = "test_password"
+      } else {
+        adminPassword = "IpB_b3rc4nd4"
+      }
+
+      let passwordData = new FormData()
+      passwordData.append("password", adminPassword)
+
+      fetch(url + '/api/sessions/admins', {
         method: 'POST',
-        headers: {
-          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpYXQiOjE2NDI1OTk3MDZ9.-MAnLMIzCelZTTpf5541N0jSAa0loOasd4g1h7rNg1o"
-        },
-        body: data
+        body: passwordData
       }).then(response => response.json()).then(json => {
         console.log(json)
+        let token = json.data.jwtToken
+
+        fetch(url + '/api/simulations', {
+          method: 'GET',
+          headers: {
+            Authorization: "Bearer " + token
+          }
+        }).then(response => response.json()).then(json => {
+          console.log(json)
+          let simulationId = json.data[0].id
+
+          fetch(url + `/api/simulations/${simulationId}/pictures`, {
+            method: 'POST',
+            headers: {
+              Authorization: "Bearer " + token
+            },
+            body: data
+          }).then(response => response.json()).then(json => {
+            console.log(json)
+          })
+        })
       })
+
+
     }
   </script>
 

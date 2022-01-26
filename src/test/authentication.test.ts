@@ -1,50 +1,17 @@
-import axios from "axios";
 import { expect } from "chai";
 import { afterEach } from "mocha";
 import { errorThrowUtils } from "../common/utils/error";
 import {
+  createSimulationTest,
+  deleteSimulationTest,
   expectHaveTemplateResponse,
   handleAfterTest,
   HandleBeforeTest,
+  SimulationResponse,
   TestConnection,
 } from "../common/utils/testUtil";
-import config from "../configHandler";
 import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
-
-export interface SimulationResponse {
-  token: string;
-  simulationType: string;
-  goodsType: string;
-  goodsName: string;
-  inflationType: string;
-  participantNumber: number;
-  avgTrxOccurrence: number;
-  avgTrxPrice: number;
-  timer: number;
-  timeCreated: string;
-  timeLastRun: string;
-  buyers: BuyerInterface[];
-  sellers: SellerInterface[];
-  goodsPic: null;
-  id: string;
-}
-
-export interface BuyerInterface {
-  loginToken: string;
-  unitValue: number;
-  socketId: null;
-  id: string;
-  isLoggedIn: boolean;
-}
-
-export interface SellerInterface {
-  loginToken: string;
-  socketId: null;
-  id: string;
-  isLoggedIn: boolean;
-  unitCost: number;
-}
 
 describe("Authentication", () => {
   const clientConnectionTotal = 10;
@@ -74,52 +41,7 @@ describe("Authentication", () => {
   });
 
   it("should create simulation", async () => {
-    const adminLoginResponse = await axios.post(
-      `http://localhost:${config.server.port}/api/sessions/admins`,
-      {
-        password: "test_password",
-      }
-    );
-    expect(adminLoginResponse.data.data).to.have.property("jwtToken");
-    const response = await axios.post(
-      `http://localhost:${config.server.port}/api/simulations`,
-      {
-        simulationType: "posted offer",
-        goodsType: "goodsType",
-        goodsName: "goodsName",
-        inflationType: "inflationType",
-        participantNumber: 10,
-        timer: 0,
-        seller: [
-          {
-            unitCost: 12000,
-          },
-          {
-            unitCost: 15000,
-          },
-          {
-            unitCost: 20000,
-          },
-        ],
-        buyer: [
-          {
-            unitValue: 13333,
-          },
-          {
-            unitValue: 16333,
-          },
-          {
-            unitValue: 12333,
-          },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${adminLoginResponse.data.data.jwtToken}`,
-        },
-      }
-    );
-    simulationResponse = response.data.data;
+    simulationResponse = await createSimulationTest();
     expect(simulationResponse).to.have.property("sellers");
     expect(simulationResponse).to.have.property("buyers");
     return;
@@ -450,22 +372,7 @@ describe("Authentication", () => {
   }).timeout(3000);
 
   it("can delete simulations", async () => {
-    const adminLoginResponse = await axios.post(
-      `http://localhost:${config.server.port}/api/sessions/admins`,
-      {
-        password: "test_password",
-      }
-    );
-
-    const response = await axios.delete(
-      `http://localhost:${config.server.port}/api/simulations/${simulationResponse.id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${adminLoginResponse.data.data.jwtToken}`,
-        },
-      }
-    );
-
+    const response = await deleteSimulationTest(simulationResponse.id);
     expect(response.status).to.equal(200);
   });
 });

@@ -22,6 +22,13 @@ describe("Socket server", () => {
       .catch((err) => errorThrowUtils(err));
   });
 
+  afterEach((done) => {
+    for (let i = 0; i < testConnection.clientSockets.length; i++) {
+      testConnection.clientSockets[i].removeAllListeners();
+    }
+    done();
+  });
+
   after(() => {
     handleAfterTest(testConnection);
   });

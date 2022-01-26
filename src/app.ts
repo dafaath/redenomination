@@ -22,11 +22,15 @@ import {
   loggingOutAllUser,
 } from "./service/authentication.service";
 import {
+  handleErrorResponse,
+  handleSuccessResponse,
   socketHandleErrorResponse,
   socketHandleSuccessResponse,
 } from "./common/utils/responseHandler";
 import { checkIfError, errorThrowUtils } from "./common/utils/error";
 import { registerGeneralSocket } from "./routes/socket.route";
+import { registerPostedOffer } from "./routes/postedOffer.route";
+import fs from "fs";
 
 export const appRoot = path.join(path.resolve(__dirname), "..");
 
@@ -49,6 +53,20 @@ app.use(
 );
 app.use(cors({ credentials: true, origin: true }));
 app.use("/static", express.static("public"));
+app.get("/api/static", (_: Request, res: Response) => {
+  try {
+    const allPublicFiles = fs.readdirSync(path.join(appRoot, "public"));
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully get all public files",
+      allPublicFiles
+    );
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+});
 app.use(fileUpload());
 
 // Router
@@ -75,12 +93,14 @@ export const onConnection = (socket: Socket) => {
   registerCheckSocketHealth(io, socket);
   registerAuthenticationSocket(io, socket);
   registerGeneralSocket(io, socket);
+  registerPostedOffer(io, socket);
 
   socket.on("disconnect", async () => {
     try {
       await disconnectTokenSocket(socket.id);
       checkIfError(disconnectTokenSocket);
 
+      socket.disconnect();
       log.info(`User ${socket.id} has been disconnected`);
       socketHandleSuccessResponse(
         socket,

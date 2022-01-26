@@ -42,6 +42,7 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
     try {
       const isError = validateSocketInput(request, tokenLoginSchemaSocket);
       checkIfError(isError);
+      log.info(`socket ${socket.id} requested to join room`);
 
       if (socket.rooms.has(request.token)) {
         throw createHttpError(
