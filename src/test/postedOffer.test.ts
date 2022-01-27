@@ -78,15 +78,9 @@ describe("Posted offer", () => {
           testConnection.clientSockets[i].emit("loginToken", {
             token: simulationResponse.token,
           });
-          console.log(
-            "send login token",
-            testConnection.clientSockets[i].id,
-            i
-          );
           testConnection.clientSockets[i].on(
             "serverMessage",
             async (response) => {
-              console.log(response);
               expectHaveTemplateResponse(response);
               expect(response.status).to.be.equal(200);
               expect(response.message).to.contains("join room");

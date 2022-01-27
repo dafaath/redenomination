@@ -114,12 +114,14 @@ export async function createGoodsPictureHandler(req: Request, res: Response) {
     const simulation = await saveGoodsPicture(simulationId, goodsPicture);
     checkIfError(simulation);
 
-    handleSuccessResponse(
-      res,
-      200,
-      "Successfully saved simulations picture, use {{base_url}}/static/{{simulation.goodsPic}} to see the picture",
-      simulation
-    );
+    if (!(simulation instanceof Error)) {
+      handleSuccessResponse(
+        res,
+        201,
+        `Successfully saved simulations picture, use https://storage.googleapis.com/carbide-bongo-338115.appspot.com/${simulation.goodsPic} to see the picture`,
+        simulation
+      );
+    }
   } catch (error) {
     handleErrorResponse(res, error);
   }

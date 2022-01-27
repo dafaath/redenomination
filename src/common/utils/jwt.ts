@@ -51,7 +51,6 @@ export function decode(token: string): decodedResponse {
         decoded: null,
       };
     } else {
-      console.log(error);
       return {
         valid: false,
         expired: false,

@@ -20,6 +20,10 @@ const config = {
     key: nodeConfig.get<string>("jwt.key"),
   },
   postmanApiKey: nodeConfig.get<string>("postmanApiKey"),
+  googleCloudStorage: {
+    projectName: nodeConfig.get<string>("googleCloudStorage.projectName"),
+    bucketName: nodeConfig.get<string>("googleCloudStorage.bucketName"),
+  },
 };
 
 export default config;

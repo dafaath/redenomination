@@ -75,7 +75,6 @@ export function handleAfterTest(testConnection: TestConnection) {
     testConnection.dbConnection?.close().then(() => {
       log.info("finished closing database");
     });
-    console.log(testConnection.ioConnection);
   } catch (error) {
     errorThrowUtils(error);
   }

@@ -2,15 +2,14 @@ import createHttpError from "http-errors";
 import { errorReturnHandler } from "../common/utils/error";
 import Simulation, { SimulationType } from "../db/entities/simulation.entity";
 import { createSimulationSchema } from "../schema/simulation.schema";
-import yup, { string } from "yup";
+import yup from "yup";
 import { randomString } from "../common/utils/other";
 import dayjs from "dayjs";
 import Seller from "../db/entities/seller.entity";
 import Buyer from "../db/entities/buyer.entity";
 import fileUpload from "express-fileupload";
-import path from "path";
-import fs from "fs";
-import { appRoot } from "../app";
+import { googleCloud } from "../app";
+import config from "../configHandler";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -161,21 +160,43 @@ export async function saveGoodsPicture(
       );
     }
 
-    const fileExt = /[.]/.exec(goodsPicture.name)
-      ? /[^.]+$/.exec(goodsPicture.name)?.toString()
-      : string;
-    const savedFileName = simulation.id + "." + fileExt;
-
-    // remove current file if exists
-    const currentFile = path.join(appRoot, "public", simulation.goodsPic);
-    if (fs.existsSync(currentFile)) {
-      fs.unlinkSync(currentFile);
+    const validImageTypes = ["image/jpeg", "image/png"];
+    if (!validImageTypes.includes(goodsPicture.mimetype)) {
+      throw createHttpError(
+        403,
+        `Image with type ${goodsPicture.mimetype} can't be uploaded, please use one of this: ${validImageTypes}`
+      );
+    }
+    const fileExt = goodsPicture.name.split(".").pop();
+    if (!fileExt) {
+      throw createHttpError(403, "Please make sure the file have an extension");
     }
 
-    goodsPicture.mv(path.join(appRoot, "public", savedFileName));
+    const savedFileName = simulation.id + "." + fileExt;
+    if (simulation.goodsPic !== null) {
+      // remove current file if exists
+      const currentFile = googleCloud
+        .bucket(config.googleCloudStorage.bucketName)
+        .file(simulation.goodsPic);
 
+      const [isFileExists] = await currentFile.exists();
+
+      if (isFileExists) {
+        await currentFile.delete();
+      }
+    }
+
+    // save our file
+    const savedFile = googleCloud
+      .bucket(config.googleCloudStorage.bucketName)
+      .file(savedFileName);
+    await savedFile.save(goodsPicture.data, {
+      gzip: true,
+      resumable: false,
+    });
+
+    // update database with saved filename
     simulation.goodsPic = savedFileName;
-
     const updatedSimulation = await simulation.save();
 
     return updatedSimulation;
