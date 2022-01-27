@@ -1,16 +1,19 @@
 import { expect } from "chai";
 import { errorThrowUtils } from "../common/utils/error";
+import { getRandomNumberBetween } from "../common/utils/other";
 import {
   createSessionTest,
   createSimulationTest,
   deleteSimulationTest,
   expectHaveTemplateResponse,
+  getRandomArrayOfPhaseType,
   handleAfterTest,
   HandleBeforeTest,
   SessionResponse,
   SimulationResponse,
   TestConnection,
 } from "../common/utils/testUtil";
+import { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 
 type PostedOfferResponse = {
@@ -118,85 +121,314 @@ describe("Posted offer", () => {
     }
   });
 
-  it("seller should be able to input price", async () => {
-    try {
-      const promises: Array<Promise<void>> = [];
-      const postedOfferPromises: Array<Promise<void>> = [];
-      const totalBuyerSeller =
-        simulationResponse.buyers.length + simulationResponse.sellers.length;
-      const countReceiveMessage: Array<number> = [];
+  async function shouldNotBeAbleToInputPrice(phaseType: PhaseType) {
+    const promises: Array<Promise<void>> = [];
+    const totalBuyerSeller =
+      simulationResponse.buyers.length + simulationResponse.sellers.length;
+    const countReceiveMessage: Array<number> = [];
 
-      for (
-        let i = totalBuyerSeller;
-        i < testConnection.clientSockets.length;
-        i++
-      ) {
-        testConnection.clientSockets[i].on("readyMessage", (response) => {
-          expect(response).to.be.undefined;
+    for (
+      let i = totalBuyerSeller;
+      i < testConnection.clientSockets.length;
+      i++
+    ) {
+      testConnection.clientSockets[i].on("readyMessage", (response) => {
+        expect(response).to.be.undefined;
+      });
+    }
+
+    const buyersSocketId = connectedSocketData
+      .filter((s) => s.type === "buyer")
+      .map((s) => s.detail.socketId);
+    const sellersSocketId = connectedSocketData
+      .filter((s) => s.type === "seller")
+      .map((s) => s.detail.socketId);
+
+    for (let i = 0; i < clientConnectionTotal; i++) {
+      countReceiveMessage.push(0);
+
+      const promise = new Promise<void>((resolve) => {
+        const thisSocketUserData = connectedSocketData.find(
+          (s) => s.detail.socketId === testConnection.clientSockets[i].id
+        );
+        const unitCost = thisSocketUserData
+          ? thisSocketUserData.detail.unitCost
+            ? thisSocketUserData.detail.unitCost
+            : 2000
+          : 2000;
+        let price = unitCost - 1000;
+
+        if (phaseType === PhaseType.TRANSITION_PRICE) {
+          const rand = getRandomNumberBetween(0, 1);
+          if (rand === 0) {
+            price = price / 1000;
+          }
+        } else if (phaseType === PhaseType.POST_REDENOM_PRICE) {
+          price = price / 1000;
+        }
+
+        const phase = sessionResponse.phases.find(
+          (p) => p.phaseType === phaseType
+        );
+        const phaseId = phase?.id;
+        testConnection.clientSockets[i].emit("po:inputSellerPrice", {
+          price: price,
+          phaseId: phaseId,
         });
-      }
 
-      const buyersSocketId = connectedSocketData
-        .filter((s) => s.type === "buyer")
-        .map((s) => s.detail.socketId);
-      const sellersSocketId = connectedSocketData
-        .filter((s) => s.type === "seller")
-        .map((s) => s.detail.socketId);
+        testConnection.clientSockets[i].on("serverMessage", (response) => {
+          expectHaveTemplateResponse(response);
 
-      for (let i = 0; i < clientConnectionTotal; i++) {
-        countReceiveMessage.push(0);
-        const promise = new Promise<void>((resolve) => {
-          testConnection.clientSockets[i].emit("po:inputSellerPrice", {
-            price: 2000,
-          });
-          testConnection.clientSockets[i].on("serverMessage", (response) => {
-            expectHaveTemplateResponse(response);
+          if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
+            expect(response.status).to.be.equal(403);
+            expect(response.message).to.contains("not a seller");
+          }
 
-            if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
-              // Buyer can't
-              expect(response.status).to.be.equal(403);
-              expect(response.message).to.contains("not a seller");
-            }
-
-            if (sellersSocketId.includes(testConnection.clientSockets[i].id)) {
-              // Seller can
-              expect(response.status).to.be.equal(200);
-              expect(response.message).to.contains("Successfully input");
-
-              expect(response.data.length).to.be.greaterThan(0);
-              expect(Array.isArray(response.data)).to.be.true;
-            }
-
-            resolve();
-          });
-        });
-
-        promises.push(promise);
-      }
-
-      for (let i = 0; i < totalBuyerSeller; i++) {
-        const postedOfferPromise = new Promise<void>((resolve) => {
-          testConnection.clientSockets[i].on("postedOfferList", (response) => {
-            expect(Array.isArray(response)).to.be.true;
-            expect(response.length).to.be.greaterThan(0);
-            expect(response.length).to.be.lessThanOrEqual(
-              simulationResponse.sellers.length
+          if (sellersSocketId.includes(testConnection.clientSockets[i].id)) {
+            expect(response.status).to.be.equal(400);
+            expect(response.message).to.contains(
+              `must be higher than seller unit cost`
             );
+          }
 
-            countReceiveMessage[i] += 1;
+          resolve();
+        });
+      });
 
-            if (countReceiveMessage[i] >= sellersSocketId.length) {
-              postedOffersResponse = response;
+      promises.push(promise);
+    }
+
+    return await Promise.all(promises).then(() =>
+      console.log("promise one finished")
+    );
+  }
+
+  it("seller should NOT be able to input price bellow unit cost in pre redenom", async () => {
+    try {
+      const phaseTypes = [
+        PhaseType.PRE_REDENOM_PRICE,
+        PhaseType.TRANSITION_PRICE,
+        PhaseType.TRANSITION_PRICE,
+        PhaseType.POST_REDENOM_PRICE,
+      ];
+      for (let i = 0; i < 4; i++) {
+        await shouldNotBeAbleToInputPrice(phaseTypes[i]);
+      }
+    } catch (error) {
+      errorThrowUtils(error);
+    }
+  }).timeout(5000);
+
+  it("seller should NOT be able to input price not in phaseType", async () => {
+    try {
+      const phaseTypes = [
+        PhaseType.PRE_REDENOM_PRICE,
+        PhaseType.POST_REDENOM_PRICE,
+      ];
+      for (let z = 0; z < phaseTypes.length; z++) {
+        const phaseType = phaseTypes[z];
+        const promises: Array<Promise<void>> = [];
+        const totalBuyerSeller =
+          simulationResponse.buyers.length + simulationResponse.sellers.length;
+        const countReceiveMessage: Array<number> = [];
+
+        for (
+          let i = totalBuyerSeller;
+          i < testConnection.clientSockets.length;
+          i++
+        ) {
+          testConnection.clientSockets[i].on("readyMessage", (response) => {
+            expect(response).to.be.undefined;
+          });
+        }
+
+        const buyersSocketId = connectedSocketData
+          .filter((s) => s.type === "buyer")
+          .map((s) => s.detail.socketId);
+        const sellersSocketId = connectedSocketData
+          .filter((s) => s.type === "seller")
+          .map((s) => s.detail.socketId);
+
+        for (let i = 0; i < clientConnectionTotal; i++) {
+          countReceiveMessage.push(0);
+
+          const promise = new Promise<void>((resolve) => {
+            const thisSocketUserData = connectedSocketData.find(
+              (s) => s.detail.socketId === testConnection.clientSockets[i].id
+            );
+            const unitCost = thisSocketUserData
+              ? thisSocketUserData.detail.unitCost
+                ? thisSocketUserData.detail.unitCost
+                : 2000
+              : 2000;
+            let price = getRandomNumberBetween(unitCost, unitCost + 2000);
+
+            if (phaseType === PhaseType.PRE_REDENOM_PRICE) {
+              price = price / 1000;
+            }
+
+            const phase = sessionResponse.phases.find(
+              (p) => p.phaseType === phaseType
+            );
+            const phaseId = phase?.id;
+            testConnection.clientSockets[i].emit("po:inputSellerPrice", {
+              price: price,
+              phaseId: phaseId,
+            });
+
+            testConnection.clientSockets[i].on("serverMessage", (response) => {
+              expectHaveTemplateResponse(response);
+
+              if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
+                expect(response.status).to.be.equal(403);
+                expect(response.message).to.contains("not a seller");
+              }
+
+              if (
+                sellersSocketId.includes(testConnection.clientSockets[i].id)
+              ) {
+                expect(response.status).to.be.equal(400);
+                expect(response.message).to.contains(`redenomination`);
+              }
 
               resolve();
-            }
+            });
           });
-        });
-        postedOfferPromises.push(postedOfferPromise);
-      }
 
-      await Promise.all(promises);
-      return Promise.all(postedOfferPromises);
+          promises.push(promise);
+        }
+
+        await Promise.all(promises).then(() =>
+          console.log("promise one finished")
+        );
+      }
+    } catch (error) {
+      errorThrowUtils(error);
+    }
+  }).timeout(5000);
+
+  it("seller should be able to input price", async () => {
+    try {
+      const phaseTypes = [
+        PhaseType.PRE_REDENOM_PRICE,
+        PhaseType.TRANSITION_PRICE,
+        PhaseType.TRANSITION_PRICE,
+        PhaseType.POST_REDENOM_PRICE,
+      ];
+      for (let z = 0; z < phaseTypes.length; z++) {
+        const phaseType = phaseTypes[z];
+
+        const promises: Array<Promise<void>> = [];
+        const postedOfferPromises: Array<Promise<void>> = [];
+        const totalBuyerSeller =
+          simulationResponse.buyers.length + simulationResponse.sellers.length;
+        const countReceiveMessage: Array<number> = [];
+
+        for (
+          let i = totalBuyerSeller;
+          i < testConnection.clientSockets.length;
+          i++
+        ) {
+          testConnection.clientSockets[i].on("readyMessage", (response) => {
+            expect(response).to.be.undefined;
+          });
+        }
+
+        const buyersSocketId = connectedSocketData
+          .filter((s) => s.type === "buyer")
+          .map((s) => s.detail.socketId);
+        const sellersSocketId = connectedSocketData
+          .filter((s) => s.type === "seller")
+          .map((s) => s.detail.socketId);
+
+        for (let i = 0; i < clientConnectionTotal; i++) {
+          countReceiveMessage.push(0);
+          const promise = new Promise<void>((resolve) => {
+            const thisSocketUserData = connectedSocketData.find(
+              (s) => s.detail.socketId === testConnection.clientSockets[i].id
+            );
+            const unitCost = thisSocketUserData
+              ? thisSocketUserData.detail.unitCost
+                ? thisSocketUserData.detail.unitCost
+                : 2000
+              : 2000;
+            let price = getRandomNumberBetween(unitCost, unitCost + 2000);
+
+            if (phaseType === PhaseType.TRANSITION_PRICE) {
+              const random = getRandomNumberBetween(0, 1);
+              if (random === 0) {
+                price = price / 1000;
+              }
+            }
+
+            if (phaseType === PhaseType.POST_REDENOM_PRICE) {
+              price = price / 1000;
+            }
+
+            testConnection.clientSockets[i].emit("po:inputSellerPrice", {
+              price: price,
+              phaseId: sessionResponse.phases.find(
+                (p) => p.phaseType === phaseType
+              )?.id,
+            });
+            testConnection.clientSockets[i].on("serverMessage", (response) => {
+              expectHaveTemplateResponse(response);
+
+              if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
+                // Buyer can't
+                expect(response.status).to.be.equal(403);
+                expect(response.message).to.contains("not a seller");
+              }
+
+              if (
+                sellersSocketId.includes(testConnection.clientSockets[i].id)
+              ) {
+                // Seller can
+                expect(response.status).to.be.equal(200);
+                expect(response.message).to.contains("Successfully input");
+
+                expect(response.data.length).to.be.greaterThan(0);
+                expect(Array.isArray(response.data)).to.be.true;
+              }
+
+              resolve();
+            });
+          });
+
+          promises.push(promise);
+        }
+
+        for (let i = 0; i < totalBuyerSeller; i++) {
+          const postedOfferPromise = new Promise<void>((resolve) => {
+            testConnection.clientSockets[i].on(
+              "postedOfferList",
+              (response) => {
+                expect(Array.isArray(response)).to.be.true;
+                expect(response.length).to.be.greaterThan(0);
+                expect(response.length).to.be.lessThanOrEqual(
+                  simulationResponse.sellers.length * phaseTypes.length
+                );
+
+                countReceiveMessage[i] += 1;
+
+                if (countReceiveMessage[i] >= sellersSocketId.length) {
+                  postedOffersResponse = response;
+
+                  resolve();
+                }
+              }
+            );
+          });
+          postedOfferPromises.push(postedOfferPromise);
+        }
+
+        await Promise.all(promises).then(() => {
+          console.log("promise one complete");
+        });
+        await Promise.all(postedOfferPromises).then(() => {
+          console.log("promise two complete");
+        });
+      }
     } catch (error) {
       errorThrowUtils(error);
     }
@@ -228,15 +460,9 @@ describe("Posted offer", () => {
         .filter((s) => s.type === "seller")
         .map((s) => s.detail.socketId);
 
-      let buyCount = -1;
+      let buyCount = 0;
 
       for (let i = 0; i < buyersSocketId.length + sellersSocketId.length; i++) {
-        if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
-          if (buyCount < buyersSocketId.length - 1) {
-            buyCount++;
-          }
-        }
-
         for (let j = 0; j < 3; j++) {
           testConnection.clientSockets[i].emit("po:buy", {
             postedOfferId: postedOffersResponse[buyCount].id,
@@ -256,8 +482,8 @@ describe("Posted offer", () => {
                   expect(Array.isArray(response.data)).to.be.true;
                   hasReceivePositiveMessage = true;
                 } else {
-                  expect(response.status).to.be.equal(403, `this is loop ${j}`);
-                  expect(response.message).to.contains("has been sold");
+                  expect(response.status).to.be.equal(403);
+                  expect(response.message).to.contains("only bought once");
                 }
               }
 
@@ -275,6 +501,12 @@ describe("Posted offer", () => {
 
           promises.push(promise);
         }
+
+        if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
+          if (buyCount < buyersSocketId.length - 1) {
+            buyCount++;
+          }
+        }
       }
 
       for (let i = 0; i < totalBuyerSeller; i++) {
@@ -282,9 +514,6 @@ describe("Posted offer", () => {
           testConnection.clientSockets[i].on("postedOfferList", (response) => {
             expect(Array.isArray(response)).to.be.true;
             expect(response.length).to.be.greaterThan(0);
-            expect(response.length).to.be.lessThanOrEqual(
-              simulationResponse.sellers.length
-            );
             const haveIsSold = response.find((r: any) => r.isSold === true);
             expect(haveIsSold).to.not.be.undefined;
 

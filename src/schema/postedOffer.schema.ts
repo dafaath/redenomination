@@ -2,6 +2,7 @@ import { number, object, string } from "yup";
 
 export const inputSellerPriceSchema = object({
   price: number().required(),
+  phaseId: string().uuid().required(),
 })
   .noUnknown(true)
   .required()

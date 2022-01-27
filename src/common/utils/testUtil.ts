@@ -9,6 +9,8 @@ import { errorThrowUtils } from "./error";
 import axios, { AxiosResponse } from "axios";
 import log from "./logger";
 import { Server } from "socket.io";
+import { getRandomNumberBetween } from "./other";
+import { PhaseType } from "../../db/entities/phase.entity";
 
 export function expectHaveTemplateResponse(response: unknown) {
   expect(response).to.not.undefined;
@@ -144,24 +146,24 @@ export async function createSimulationTest(): Promise<SimulationResponse> {
       timer: 0,
       seller: [
         {
-          unitCost: 12000,
+          unitCost: 4000,
         },
         {
-          unitCost: 15000,
+          unitCost: 6000,
         },
         {
-          unitCost: 20000,
+          unitCost: 7000,
         },
       ],
       buyer: [
         {
-          unitValue: 13333,
+          unitValue: 8000,
         },
         {
-          unitValue: 16333,
+          unitValue: 9000,
         },
         {
-          unitValue: 12333,
+          unitValue: 10000,
         },
       ],
     },
@@ -257,4 +259,20 @@ export async function deleteSimulationTest(id: string): Promise<AxiosResponse> {
     }
   );
   return response;
+}
+
+export function getRandomArrayOfPhaseType(length: number) {
+  const phaseTypes = [
+    PhaseType.PRE_REDENOM_PRICE,
+    PhaseType.TRANSITION_PRICE,
+    PhaseType.POST_REDENOM_PRICE,
+  ];
+  const returnPhaseType = [];
+  for (let i = 0; i < length; i++) {
+    const randomNumber = getRandomNumberBetween(0, phaseTypes.length - 1);
+    const randomPhaseType = phaseTypes[randomNumber];
+    returnPhaseType.push(randomPhaseType);
+  }
+
+  return returnPhaseType;
 }

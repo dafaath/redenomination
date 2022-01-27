@@ -6,6 +6,7 @@ import Buyer from "../db/entities/buyer.entity";
 import Simulation from "../db/entities/simulation.entity";
 import Seller from "../db/entities/seller.entity";
 import { getManager } from "typeorm";
+import { getRandomNumberBetween } from "../common/utils/other";
 
 export async function loginAdmin(password: string): Promise<string | Error> {
   try {
@@ -69,23 +70,45 @@ export async function loginTokenSocket(
             throw createHttpError(403, `Simulation is full`);
           }
 
+          const randomNumber = getRandomNumberBetween(0, 1);
+
           let chosenHost: undefined | ChosenHost = undefined;
-          if (buyer) {
-            buyer.isLoggedIn = true;
-            buyer.socketId = socketId;
+          if (randomNumber === 0) {
+            if (buyer) {
+              buyer.isLoggedIn = true;
+              buyer.socketId = socketId;
 
-            chosenHost = {
-              type: ChosenHostType.BUYER,
-              detail: await transactionalEntityManager.save(buyer),
-            };
-          } else if (seller) {
-            seller.isLoggedIn = true;
-            seller.socketId = socketId;
+              chosenHost = {
+                type: ChosenHostType.BUYER,
+                detail: await transactionalEntityManager.save(buyer),
+              };
+            } else if (seller) {
+              seller.isLoggedIn = true;
+              seller.socketId = socketId;
 
-            chosenHost = {
-              type: ChosenHostType.SELLER,
-              detail: await transactionalEntityManager.save(seller),
-            };
+              chosenHost = {
+                type: ChosenHostType.SELLER,
+                detail: await transactionalEntityManager.save(seller),
+              };
+            }
+          } else {
+            if (seller) {
+              seller.isLoggedIn = true;
+              seller.socketId = socketId;
+
+              chosenHost = {
+                type: ChosenHostType.SELLER,
+                detail: await transactionalEntityManager.save(seller),
+              };
+            } else if (buyer) {
+              buyer.isLoggedIn = true;
+              buyer.socketId = socketId;
+
+              chosenHost = {
+                type: ChosenHostType.BUYER,
+                detail: await transactionalEntityManager.save(buyer),
+              };
+            }
           }
 
           return chosenHost;

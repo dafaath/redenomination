@@ -22,7 +22,11 @@ export function inputSellerPriceHandler(io: Server, socket: Socket) {
       const isValid = validateSocketInput(request, inputSellerPriceSchema);
       checkIfError(isValid);
 
-      const postedOffers = await inputSellerPrice(socket.id, request.price);
+      const postedOffers = await inputSellerPrice(
+        socket.id,
+        request.price,
+        request.phaseId
+      );
       checkIfError(postedOffers);
 
       const joinedRoom = Array.from(socket.rooms);
