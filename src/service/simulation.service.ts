@@ -136,6 +136,18 @@ export async function deleteSimulation(
       );
     }
 
+    if (simulation.goodsPic !== null) {
+      const currentFile = googleCloud
+        .bucket(config.googleCloudStorage.bucketName)
+        .file(simulation.goodsPic);
+
+      const [isFileExists] = await currentFile.exists();
+
+      if (isFileExists) {
+        await currentFile.delete();
+      }
+    }
+
     const deletedSimulation = await simulation.remove();
 
     return deletedSimulation;
