@@ -136,7 +136,7 @@ export async function deleteSimulation(
       );
     }
 
-    if (simulation.goodsPic !== null) {
+    if (simulation.goodsPic) {
       const currentFile = googleCloud
         .bucket(config.googleCloudStorage.bucketName)
         .file(simulation.goodsPic);
