@@ -16,11 +16,13 @@ jobs:
       - name: create .env file
         run: |
           echo "$PROD_ENV_FILE" > .env
+          echo "$GOOGLE_CLOUD_KEY_DATA" > google-key.json
           echo "$PROD_ENV_FILE"
           ls -la
           cat .env
         env:
           PROD_ENV_FILE: '${{secrets.PRODUCTION_ENV}}'
+          GOOGLE_CLOUD_KEY_DATA: '${{secrets.GOOGLE_CLOUD_KEY}}'
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v0'
 
