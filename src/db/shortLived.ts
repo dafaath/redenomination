@@ -7,12 +7,14 @@ export class PostedOffer {
   sellerId: string;
   isSold: boolean;
   buyerId: string | null;
+  phaseId: string;
   price: number;
   timeCreated: Date;
 
-  constructor(sellerId: string, price: number) {
+  constructor(sellerId: string, price: number, phaseId: string) {
     this.sellerId = sellerId;
     this.price = price;
+    this.phaseId = phaseId;
 
     this.id = randomString(16);
     this.isSold = false;

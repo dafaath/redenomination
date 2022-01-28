@@ -307,19 +307,11 @@ describe("Posted offer", () => {
     }
   }).timeout(5000);
 
-  it("seller should be able to input price", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let z = 0; z < phaseTypes.length; z++) {
-        const phaseType = phaseTypes[z];
-
+  const phaseTypes = getRandomArrayOfPhaseType(20);
+  phaseTypes.forEach((phaseType) => {
+    it("should be able start phase", async () => {
+      try {
         const promises: Array<Promise<void>> = [];
-        const postedOfferPromises: Array<Promise<void>> = [];
         const totalBuyerSeller =
           simulationResponse.buyers.length + simulationResponse.sellers.length;
         const countReceiveMessage: Array<number> = [];
@@ -334,39 +326,10 @@ describe("Posted offer", () => {
           });
         }
 
-        const buyersSocketId = connectedSocketData
-          .filter((s) => s.type === "buyer")
-          .map((s) => s.detail.socketId);
-        const sellersSocketId = connectedSocketData
-          .filter((s) => s.type === "seller")
-          .map((s) => s.detail.socketId);
-
         for (let i = 0; i < clientConnectionTotal; i++) {
           countReceiveMessage.push(0);
           const promise = new Promise<void>((resolve) => {
-            const thisSocketUserData = connectedSocketData.find(
-              (s) => s.detail.socketId === testConnection.clientSockets[i].id
-            );
-            const unitCost = thisSocketUserData
-              ? thisSocketUserData.detail.unitCost
-                ? thisSocketUserData.detail.unitCost
-                : 2000
-              : 2000;
-            let price = getRandomNumberBetween(unitCost, unitCost + 2000);
-
-            if (phaseType === PhaseType.TRANSITION_PRICE) {
-              const random = getRandomNumberBetween(0, 1);
-              if (random === 0) {
-                price = price / 1000;
-              }
-            }
-
-            if (phaseType === PhaseType.POST_REDENOM_PRICE) {
-              price = price / 1000;
-            }
-
-            testConnection.clientSockets[i].emit("po:inputSellerPrice", {
-              price: price,
+            testConnection.clientSockets[i].emit("startPhase", {
               phaseId: sessionResponse.phases.find(
                 (p) => p.phaseType === phaseType
               )?.id,
@@ -374,126 +337,330 @@ describe("Posted offer", () => {
             testConnection.clientSockets[i].on("serverMessage", (response) => {
               expectHaveTemplateResponse(response);
 
-              if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
-                // Buyer can't
-                expect(response.status).to.be.equal(403);
-                expect(response.message).to.contains("not a seller");
-              }
-
-              if (
-                sellersSocketId.includes(testConnection.clientSockets[i].id)
-              ) {
-                // Seller can
-                expect(response.status).to.be.equal(200);
-                expect(response.message).to.contains("Successfully input");
-
-                expect(response.data.length).to.be.greaterThan(0);
-                expect(Array.isArray(response.data)).to.be.true;
-              }
+              expect(response.status).to.be.equal(200);
+              expect(response.message).to.contains("Successfully start");
 
               resolve();
             });
           });
 
           promises.push(promise);
-        }
-
-        for (let i = 0; i < totalBuyerSeller; i++) {
-          const postedOfferPromise = new Promise<void>((resolve) => {
-            testConnection.clientSockets[i].on(
-              "postedOfferList",
-              (response) => {
-                expect(Array.isArray(response)).to.be.true;
-                expect(response.length).to.be.greaterThan(0);
-                expect(response.length).to.be.lessThanOrEqual(
-                  simulationResponse.sellers.length * phaseTypes.length
-                );
-
-                countReceiveMessage[i] += 1;
-
-                if (countReceiveMessage[i] >= sellersSocketId.length) {
-                  postedOffersResponse = response;
-
-                  resolve();
-                }
-              }
-            );
-          });
-          postedOfferPromises.push(postedOfferPromise);
         }
 
         await Promise.all(promises).then(() => {
           console.log("promise one complete");
         });
-        await Promise.all(postedOfferPromises).then(() => {
-          console.log("promise two complete");
-        });
+      } catch (error) {
+        errorThrowUtils(error);
       }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(5000);
+    }).timeout(5000);
 
-  it("buyer should be able to buy posted offer", async () => {
-    try {
-      const promises: Array<Promise<void>> = [];
-      const postedOfferPromises: Array<Promise<void>> = [];
-      const totalBuyerSeller =
-        simulationResponse.buyers.length + simulationResponse.sellers.length;
-      const countReceiveMessage: Array<number> = [];
+    it(
+      "seller should be able to input price in phase " + phaseType,
+      async () => {
+        try {
+          const promises: Array<Promise<void>> = [];
+          const postedOfferPromises: Array<Promise<void>> = [];
+          const totalBuyerSeller =
+            simulationResponse.buyers.length +
+            simulationResponse.sellers.length;
+          const countReceiveMessage: Array<number> = [];
+          const sentPrice: Array<number> = [];
 
-      for (
-        let i = totalBuyerSeller;
-        i < testConnection.clientSockets.length;
-        i++
-      ) {
-        testConnection.clientSockets[i].on("readyMessage", (response) => {
-          expect(response, "Socket outside of room should not able to listen")
-            .to.be.undefined;
-        });
-      }
+          for (
+            let i = totalBuyerSeller;
+            i < testConnection.clientSockets.length;
+            i++
+          ) {
+            testConnection.clientSockets[i].on("readyMessage", (response) => {
+              expect(response).to.be.undefined;
+            });
+          }
 
-      const buyersSocketId = connectedSocketData
-        .filter((s) => s.type === "buyer")
-        .map((s) => s.detail.socketId);
-      const sellersSocketId = connectedSocketData
-        .filter((s) => s.type === "seller")
-        .map((s) => s.detail.socketId);
+          const buyersSocketId = connectedSocketData
+            .filter((s) => s.type === "buyer")
+            .map((s) => s.detail.socketId);
+          const sellersSocketId = connectedSocketData
+            .filter((s) => s.type === "seller")
+            .map((s) => s.detail.socketId);
 
-      let buyCount = 0;
-
-      for (let i = 0; i < buyersSocketId.length + sellersSocketId.length; i++) {
-        for (let j = 0; j < 3; j++) {
-          testConnection.clientSockets[i].emit("po:buy", {
-            postedOfferId: postedOffersResponse[buyCount].id,
-            phaseId: sessionResponse.phases[0].id,
-          });
-
-          countReceiveMessage.push(0);
-          let hasReceivePositiveMessage = false;
-          const promise = new Promise<void>((resolve) => {
-            testConnection.clientSockets[i].on("serverMessage", (response) => {
-              expectHaveTemplateResponse(response);
-
-              if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
-                if (!hasReceivePositiveMessage) {
-                  expect(response.status).to.be.equal(200);
-                  expect(response.message).to.contains("Successfully buy");
-                  expect(Array.isArray(response.data)).to.be.true;
-                  hasReceivePositiveMessage = true;
-                } else {
-                  expect(response.status).to.be.equal(403);
-                  expect(response.message).to.contains("only bought once");
-                }
-              }
+          for (let i = 0; i < clientConnectionTotal; i++) {
+            countReceiveMessage.push(0);
+            const promise = new Promise<void>((resolve) => {
+              const thisSocketUserData = connectedSocketData.find(
+                (s) => s.detail.socketId === testConnection.clientSockets[i].id
+              );
+              const unitCost = thisSocketUserData
+                ? thisSocketUserData.detail.unitCost
+                  ? thisSocketUserData.detail.unitCost
+                  : 2000
+                : 2000;
+              let price = getRandomNumberBetween(unitCost, unitCost + 2000);
 
               if (
                 sellersSocketId.includes(testConnection.clientSockets[i].id)
               ) {
-                // Seller can't
-                expect(response.status).to.be.equal(403);
-                expect(response.message).to.contains("not a buyer");
+                sentPrice.push(price);
               }
+
+              if (phaseType === PhaseType.TRANSITION_PRICE) {
+                const random = getRandomNumberBetween(0, 1);
+                if (random === 0) {
+                  price = price / 1000;
+                }
+              }
+
+              if (phaseType === PhaseType.POST_REDENOM_PRICE) {
+                price = price / 1000;
+              }
+
+              testConnection.clientSockets[i].emit("po:inputSellerPrice", {
+                price: price,
+                phaseId: sessionResponse.phases.find(
+                  (p) => p.phaseType === phaseType
+                )?.id,
+              });
+              testConnection.clientSockets[i].on(
+                "serverMessage",
+                (response) => {
+                  expectHaveTemplateResponse(response);
+
+                  if (
+                    buyersSocketId.includes(testConnection.clientSockets[i].id)
+                  ) {
+                    // Buyer can't
+                    expect(response.status).to.be.equal(403);
+                    expect(response.message).to.contains("not a seller");
+                  }
+
+                  if (
+                    sellersSocketId.includes(testConnection.clientSockets[i].id)
+                  ) {
+                    // Seller can
+                    expect(response.status).to.be.equal(200);
+                    expect(response.message).to.contains("Successfully input");
+
+                    expect(response.data.length).to.be.greaterThan(0);
+                    expect(Array.isArray(response.data)).to.be.true;
+                  }
+
+                  resolve();
+                }
+              );
+            });
+
+            promises.push(promise);
+          }
+
+          for (let i = 0; i < totalBuyerSeller; i++) {
+            const postedOfferPromise = new Promise<void>((resolve) => {
+              testConnection.clientSockets[i].on(
+                "postedOfferList",
+                (response) => {
+                  expect(Array.isArray(response)).to.be.true;
+                  expect(response.length).to.be.greaterThan(0);
+                  expect(response.length).to.be.lessThanOrEqual(
+                    simulationResponse.sellers.length * phaseTypes.length
+                  );
+                  console.log(sentPrice);
+                  console.log(response);
+
+                  response.forEach((r: any) => {
+                    expect(sentPrice.includes(r.price)).to.be.true;
+                  });
+
+                  countReceiveMessage[i] += 1;
+
+                  if (countReceiveMessage[i] >= sellersSocketId.length) {
+                    postedOffersResponse = response;
+
+                    resolve();
+                  }
+                }
+              );
+            });
+            postedOfferPromises.push(postedOfferPromise);
+          }
+
+          await Promise.all(promises).then(() => {
+            console.log("promise one complete");
+          });
+          await Promise.all(postedOfferPromises).then(() => {
+            console.log("promise two complete");
+          });
+        } catch (error) {
+          errorThrowUtils(error);
+        }
+      }
+    ).timeout(5000);
+
+    it(
+      "buyer should be able to buy posted offer in phase " + phaseType,
+      async () => {
+        try {
+          const promises: Array<Promise<void>> = [];
+          const postedOfferPromises: Array<Promise<void>> = [];
+          const totalBuyerSeller =
+            simulationResponse.buyers.length +
+            simulationResponse.sellers.length;
+          const countReceiveMessage: Array<number> = [];
+
+          for (
+            let i = totalBuyerSeller;
+            i < testConnection.clientSockets.length;
+            i++
+          ) {
+            testConnection.clientSockets[i].on("readyMessage", (response) => {
+              expect(
+                response,
+                "Socket outside of room should not able to listen"
+              ).to.be.undefined;
+            });
+          }
+
+          const buyersSocketId = connectedSocketData
+            .filter((s) => s.type === "buyer")
+            .map((s) => s.detail.socketId);
+          const sellersSocketId = connectedSocketData
+            .filter((s) => s.type === "seller")
+            .map((s) => s.detail.socketId);
+
+          let buyCount = 0;
+
+          for (
+            let i = 0;
+            i < buyersSocketId.length + sellersSocketId.length;
+            i++
+          ) {
+            for (let j = 0; j < 3; j++) {
+              testConnection.clientSockets[i].emit("po:buy", {
+                postedOfferId: postedOffersResponse[buyCount].id,
+                phaseId: sessionResponse.phases.find(
+                  (p) => p.phaseType === phaseType
+                )?.id,
+              });
+
+              countReceiveMessage.push(0);
+              let hasReceivePositiveMessage = false;
+              const promise = new Promise<void>((resolve) => {
+                testConnection.clientSockets[i].on(
+                  "serverMessage",
+                  (response) => {
+                    expectHaveTemplateResponse(response);
+
+                    if (
+                      buyersSocketId.includes(
+                        testConnection.clientSockets[i].id
+                      )
+                    ) {
+                      if (!hasReceivePositiveMessage) {
+                        expect(response.status).to.be.equal(200);
+                        expect(response.message).to.contains(
+                          "Successfully buy"
+                        );
+                        expect(Array.isArray(response.data)).to.be.true;
+                        hasReceivePositiveMessage = true;
+                      } else {
+                        expect(response.status).to.be.equal(403);
+                        expect(response.message).to.contains(
+                          "only bought once"
+                        );
+                      }
+                    }
+
+                    if (
+                      sellersSocketId.includes(
+                        testConnection.clientSockets[i].id
+                      )
+                    ) {
+                      // Seller can't
+                      expect(response.status).to.be.equal(403);
+                      expect(response.message).to.contains("not a buyer");
+                    }
+
+                    resolve();
+                  }
+                );
+              });
+
+              promises.push(promise);
+            }
+
+            if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
+              if (buyCount < buyersSocketId.length - 1) {
+                buyCount++;
+              }
+            }
+          }
+
+          for (let i = 0; i < totalBuyerSeller; i++) {
+            const postedOfferPromise = new Promise<void>((resolve) => {
+              testConnection.clientSockets[i].on(
+                "postedOfferList",
+                (response) => {
+                  expect(Array.isArray(response)).to.be.true;
+                  expect(response.length).to.be.greaterThan(0);
+                  const haveIsSold = response.find(
+                    (r: any) => r.isSold === true
+                  );
+                  expect(haveIsSold).to.not.be.undefined;
+
+                  countReceiveMessage[i] += 1;
+
+                  if (countReceiveMessage[i] >= sellersSocketId.length) {
+                    let isAllSold = true;
+                    for (let j = 0; j < response.length; j++) {
+                      if (response.isSold === false) {
+                        isAllSold = false;
+                      }
+                    }
+                    expect(isAllSold).to.be.true;
+                    resolve();
+                  }
+                }
+              );
+            });
+            postedOfferPromises.push(postedOfferPromise);
+          }
+
+          await Promise.all(promises);
+          return Promise.all(postedOfferPromises);
+        } catch (error) {
+          errorThrowUtils(error);
+        }
+      }
+    ).timeout(5000);
+
+    it("should be able to end simulation in phase " + phaseType, async () => {
+      try {
+        const promises: Array<Promise<void>> = [];
+        const totalBuyerSeller =
+          simulationResponse.buyers.length + simulationResponse.sellers.length;
+        const countReceiveMessage: Array<number> = [];
+
+        for (
+          let i = totalBuyerSeller;
+          i < testConnection.clientSockets.length;
+          i++
+        ) {
+          testConnection.clientSockets[i].on("readyMessage", (response) => {
+            expect(response).to.be.undefined;
+          });
+        }
+
+        for (let i = 0; i < clientConnectionTotal; i++) {
+          countReceiveMessage.push(0);
+          const promise = new Promise<void>((resolve) => {
+            testConnection.clientSockets[i].emit("finishPhase", {
+              phaseId: sessionResponse.phases.find(
+                (p) => p.phaseType === phaseType
+              )?.id,
+            });
+            testConnection.clientSockets[i].on("serverMessage", (response) => {
+              expectHaveTemplateResponse(response);
+
+              expect(response.status).to.be.equal(200);
+              expect(response.message).to.contains("Successfully finish");
 
               resolve();
             });
@@ -502,49 +669,33 @@ describe("Posted offer", () => {
           promises.push(promise);
         }
 
-        if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
-          if (buyCount < buyersSocketId.length - 1) {
-            buyCount++;
-          }
-        }
-      }
-
-      for (let i = 0; i < totalBuyerSeller; i++) {
-        const postedOfferPromise = new Promise<void>((resolve) => {
-          testConnection.clientSockets[i].on("postedOfferList", (response) => {
-            expect(Array.isArray(response)).to.be.true;
-            expect(response.length).to.be.greaterThan(0);
-            const haveIsSold = response.find((r: any) => r.isSold === true);
-            expect(haveIsSold).to.not.be.undefined;
-
-            countReceiveMessage[i] += 1;
-
-            if (countReceiveMessage[i] >= sellersSocketId.length) {
-              let isAllSold = true;
-              for (let j = 0; j < response.length; j++) {
-                if (response.isSold === false) {
-                  isAllSold = false;
-                }
-              }
-              expect(isAllSold).to.be.true;
-              resolve();
-            }
-          });
+        await Promise.all(promises).then(() => {
+          console.log("promise one complete");
         });
-        postedOfferPromises.push(postedOfferPromise);
+      } catch (error) {
+        errorThrowUtils(error);
       }
-
-      await Promise.all(promises);
-      return Promise.all(postedOfferPromises);
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(5000);
+    }).timeout(5000);
+  });
 
   it("have transaction in database", async () => {
-    const transactions = await Transaction.find();
+    const transactions = await Transaction.find({
+      relations: ["phase", "buyer", "seller"],
+    });
     expect(transactions.length).to.be.greaterThan(0);
-    expect(transactions.length).to.be.equal(simulationResponse.sellers.length);
+    expect(transactions.length).to.be.equal(
+      simulationResponse.sellers.length * phaseTypes.length
+    );
+
+    transactions.forEach((t) => {
+      expect(Boolean(t.buyer), "Have buyer").to.be.true;
+      expect(Boolean(t.seller), "Have seller").to.be.true;
+      expect(Boolean(t.price), "Have price").to.be.true;
+      expect(Boolean(t.timeCreated), "Have time created").to.be.true;
+      expect(Object.keys(t.buyer).length).to.be.greaterThan(0);
+      expect(Object.keys(t.seller).length).to.be.greaterThan(0);
+      expect(Object.keys(t.phase).length).to.be.greaterThan(0);
+    });
   });
 
   it("can delete simulations", async () => {

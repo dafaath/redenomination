@@ -3,6 +3,7 @@ import { getManager } from "typeorm";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
+import { postedOffers } from "../db/shortLived";
 
 export async function toggleReady(
   socketId: string
@@ -117,6 +118,23 @@ export async function countReadyUser(
     } else {
       return new Error("something wrong");
     }
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function deleteShortLivedData(
+  phaseId: string
+): Promise<undefined | Error> {
+  try {
+    let index: number;
+
+    do {
+      index = postedOffers.findIndex((po) => po.phaseId === phaseId);
+      if (index !== -1) {
+        postedOffers.splice(index, 1);
+      }
+    } while (index !== -1);
   } catch (error) {
     return errorReturnHandler(error);
   }

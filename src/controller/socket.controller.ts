@@ -1,10 +1,18 @@
 import { Server, Socket } from "socket.io";
 import { checkIfError } from "../common/utils/error";
+import log from "../common/utils/logger";
 import {
   socketHandleErrorResponse,
   socketHandleSuccessResponse,
 } from "../common/utils/responseHandler";
-import { countReadyUser, toggleReady } from "../service/socket.service";
+import {
+  countReadyUser,
+  deleteShortLivedData,
+  toggleReady,
+} from "../service/socket.service";
+import yup from "yup";
+import { finishPhaseSchema, startPhaseSchema } from "../schema/socket.schema";
+import { validateSocketInput } from "../middleware/validateSocketInput";
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
   return async () => {
@@ -25,6 +33,40 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
           { user, readyCount }
         );
       }
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+type startPhaseRequest = yup.InferType<typeof startPhaseSchema>;
+export function startPhaseHandler(io: Server, socket: Socket) {
+  return async (request: startPhaseRequest) => {
+    try {
+      const validationError = validateSocketInput(request, startPhaseSchema);
+      checkIfError(validationError);
+      socketHandleSuccessResponse(socket, 200, "Successfully start this phase");
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+type finishPhaseRequest = yup.InferType<typeof finishPhaseSchema>;
+export function finishPhaseHandler(io: Server, socket: Socket) {
+  return async (request: finishPhaseRequest) => {
+    try {
+      const validationError = validateSocketInput(request, finishPhaseSchema);
+      checkIfError(validationError);
+
+      const error = await deleteShortLivedData(request.phaseId);
+      checkIfError(error);
+
+      socketHandleSuccessResponse(
+        socket,
+        200,
+        "Successfully finish this phase"
+      );
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

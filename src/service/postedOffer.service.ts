@@ -84,10 +84,10 @@ export async function inputSellerPrice(
       priceUpdated = price * 1000;
     }
 
-    const postedOffer = new PostedOffer(seller.id, priceUpdated);
+    const postedOffer = new PostedOffer(seller.id, priceUpdated, phaseId);
 
     postedOffers.push(postedOffer);
-    return postedOffers;
+    return postedOffers.filter((po) => po.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -173,7 +173,7 @@ export async function buyPostedOffer(
       }
     });
 
-    return postedOffers;
+    return postedOffers.filter((po) => po.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
   }
