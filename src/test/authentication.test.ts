@@ -1,3 +1,4 @@
+import axios from "axios";
 import { expect } from "chai";
 import { afterEach } from "mocha";
 import { errorThrowUtils } from "../common/utils/error";
@@ -5,11 +6,13 @@ import {
   createSimulationTest,
   deleteSimulationTest,
   expectHaveTemplateResponse,
+  getAdminJwtToken,
   handleAfterTest,
   HandleBeforeTest,
   SimulationResponse,
   TestConnection,
 } from "../common/utils/testUtil";
+import config from "../configHandler";
 import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
 
@@ -227,6 +230,30 @@ describe("Authentication", () => {
     } catch (error) {
       errorThrowUtils(error);
     }
+  });
+
+  it("admin can get ready count", (done) => {
+    getAdminJwtToken().then((jwtToken) => {
+      const url = `http://localhost:${config.server.port}/api/simulations/${simulationResponse.id}/readyCount`;
+      axios
+        .get(url, {
+          headers: {
+            Authorization: "Bearer " + jwtToken,
+          },
+        })
+        .then((res) => {
+          const readyData = res.data.data;
+          expect(readyData).to.have.property("numberOfReadyPlayer");
+          expect(readyData).to.have.property("totalPlayer");
+          expect(readyData.numberOfReadyPlayer).to.be.equal(
+            simulationResponse.buyers.length + simulationResponse.sellers.length
+          );
+          expect(readyData.totalPlayer).to.be.equal(
+            readyData.numberOfReadyPlayer
+          );
+          done();
+        });
+    });
   });
 
   it("database have logged in user", async () => {

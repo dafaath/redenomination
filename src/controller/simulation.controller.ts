@@ -6,6 +6,7 @@ import { Request, Response } from "express";
 import yup from "yup";
 import { createSimulationSchema } from "../schema/simulation.schema";
 import {
+  countReadyUser,
   createSimulation,
   deleteSimulation,
   getAllSimulation,
@@ -122,6 +123,24 @@ export async function createGoodsPictureHandler(req: Request, res: Response) {
         simulation
       );
     }
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function getReadyCountHandler(req: Request, res: Response) {
+  try {
+    const simulationId = req.params.id;
+
+    const readyUserCount = await countReadyUser(simulationId);
+    checkIfError(readyUserCount);
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully get simulation ready count",
+      readyUserCount
+    );
   } catch (error) {
     handleErrorResponse(res, error);
   }

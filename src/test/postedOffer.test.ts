@@ -307,7 +307,11 @@ describe("Posted offer", () => {
     }
   }).timeout(5000);
 
-  const phaseTypes = getRandomArrayOfPhaseType(20);
+  const phaseTypes = [
+    PhaseType.PRE_REDENOM_PRICE,
+    PhaseType.TRANSITION_PRICE,
+    PhaseType.POST_REDENOM_PRICE,
+  ];
   phaseTypes.forEach((phaseType) => {
     it("should be able start phase", async () => {
       try {
@@ -339,6 +343,7 @@ describe("Posted offer", () => {
 
               expect(response.status).to.be.equal(200);
               expect(response.message).to.contains("Successfully start");
+              expect(response.data).to.have.property("phaseId");
 
               resolve();
             });
@@ -462,8 +467,6 @@ describe("Posted offer", () => {
                   expect(response.length).to.be.lessThanOrEqual(
                     simulationResponse.sellers.length * phaseTypes.length
                   );
-                  console.log(sentPrice);
-                  console.log(response);
 
                   response.forEach((r: any) => {
                     expect(sentPrice.includes(r.price)).to.be.true;
@@ -661,6 +664,7 @@ describe("Posted offer", () => {
 
               expect(response.status).to.be.equal(200);
               expect(response.message).to.contains("Successfully finish");
+              expect(response.data).to.have.property("phaseId");
 
               resolve();
             });

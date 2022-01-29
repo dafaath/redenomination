@@ -1,5 +1,5 @@
 import createHttpError from "http-errors";
-import { errorReturnHandler } from "../common/utils/error";
+import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import Simulation, { SimulationType } from "../db/entities/simulation.entity";
 import { createSimulationSchema } from "../schema/simulation.schema";
 import yup from "yup";
@@ -10,6 +10,7 @@ import Buyer from "../db/entities/buyer.entity";
 import fileUpload from "express-fileupload";
 import { googleCloud } from "../app";
 import config from "../configHandler";
+import { getManager } from "typeorm";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -215,6 +216,74 @@ export async function saveGoodsPicture(
     const updatedSimulation = await simulation.save();
 
     return updatedSimulation;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+type ReadyCount = {
+  numberOfReadyPlayer: number;
+  totalPlayer: number;
+};
+export async function countReadyUser(
+  simulationId: string
+): Promise<ReadyCount | Error> {
+  try {
+    const chosenHost = await getManager().transaction(
+      async (transactionalEntityManager) => {
+        try {
+          const simulation = await Simulation.findOne({ id: simulationId });
+
+          if (!simulation) {
+            throw createHttpError(
+              404,
+              `There is no simulation with id ${simulationId}`
+            );
+          }
+
+          const buyers = await transactionalEntityManager.find(Buyer, {
+            lock: {
+              mode: "pessimistic_read",
+            },
+            where: {
+              simulation: simulation,
+            },
+          });
+          const buyersCount = buyers.length;
+
+          const sellers = await transactionalEntityManager.find(Seller, {
+            lock: {
+              mode: "pessimistic_read",
+            },
+            where: {
+              simulation: simulation,
+            },
+          });
+          const sellersCount = sellers.length;
+
+          const numberOfReadyBuyers = buyers.filter(
+            (b) => b.isReady === true
+          ).length;
+          const numberOfReadySellers = sellers.filter(
+            (s) => s.isReady === true
+          ).length;
+
+          const readyCount: ReadyCount = {
+            numberOfReadyPlayer: numberOfReadyBuyers + numberOfReadySellers,
+            totalPlayer: buyersCount + sellersCount,
+          };
+
+          return readyCount;
+        } catch (error) {
+          errorThrowUtils(error);
+        }
+      }
+    );
+    if (chosenHost) {
+      return chosenHost;
+    } else {
+      return new Error("something wrong");
+    }
   } catch (error) {
     return errorReturnHandler(error);
   }

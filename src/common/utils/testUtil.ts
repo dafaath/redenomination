@@ -127,7 +127,7 @@ export interface SellerInterface {
   unitCost: number;
 }
 
-export async function createSimulationTest(): Promise<SimulationResponse> {
+export async function getAdminJwtToken() {
   const adminLoginResponse = await axios.post(
     `http://localhost:${config.server.port}/api/sessions/admins`,
     {
@@ -135,6 +135,11 @@ export async function createSimulationTest(): Promise<SimulationResponse> {
     }
   );
   expect(adminLoginResponse.data.data).to.have.property("jwtToken");
+  return adminLoginResponse.data.data.jwtToken;
+}
+
+export async function createSimulationTest(): Promise<SimulationResponse> {
+  const jwtToken = await getAdminJwtToken();
   const response = await axios.post(
     `http://localhost:${config.server.port}/api/simulations`,
     {
@@ -169,7 +174,7 @@ export async function createSimulationTest(): Promise<SimulationResponse> {
     },
     {
       headers: {
-        Authorization: `Bearer ${adminLoginResponse.data.data.jwtToken}`,
+        Authorization: `Bearer ${jwtToken}`,
       },
     }
   );
@@ -219,14 +224,8 @@ export interface Simulation {
 export async function createSessionTest(
   simulationId: string
 ): Promise<SessionResponse> {
-  const adminLoginResponse = await axios.post(
-    `http://localhost:${config.server.port}/api/sessions/admins`,
-    {
-      password: "test_password",
-    }
-  );
+  const jwtToken = await getAdminJwtToken();
 
-  expect(adminLoginResponse.data.data).to.have.property("jwtToken");
   const response = await axios.post(
     `http://localhost:${config.server.port}/api/sessions`,
     {
@@ -236,25 +235,20 @@ export async function createSessionTest(
     },
     {
       headers: {
-        Authorization: `Bearer ${adminLoginResponse.data.data.jwtToken}`,
+        Authorization: `Bearer ${jwtToken}`,
       },
     }
   );
   return response.data.data;
 }
 export async function deleteSimulationTest(id: string): Promise<AxiosResponse> {
-  const adminLoginResponse = await axios.post(
-    `http://localhost:${config.server.port}/api/sessions/admins`,
-    {
-      password: "test_password",
-    }
-  );
+  const jwtToken = await getAdminJwtToken();
 
   const response = await axios.delete(
     `http://localhost:${config.server.port}/api/simulations/${id}`,
     {
       headers: {
-        Authorization: `Bearer ${adminLoginResponse.data.data.jwtToken}`,
+        Authorization: `Bearer ${jwtToken}`,
       },
     }
   );

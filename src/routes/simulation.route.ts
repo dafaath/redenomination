@@ -6,6 +6,7 @@ import {
   deleteSimulationHandler,
   getAllSimulationHandler,
   getOneSimulationHandler,
+  getReadyCountHandler,
   updateSimulationHandler,
 } from "../controller/simulation.controller";
 import validateAuthentication from "../middleware/validateAuthentication";
@@ -21,6 +22,8 @@ simulationRouter.use(validateAuthentication(ROLE.ADMIN));
 simulationRouter.get("/api/simulations", getAllSimulationHandler);
 
 simulationRouter.get("/api/simulations/:id", getOneSimulationHandler);
+
+simulationRouter.get("/api/simulations/:id/readyCount", getReadyCountHandler);
 
 simulationRouter.put(
   "/api/simulations/:id",
