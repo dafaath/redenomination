@@ -1,6 +1,5 @@
 import { Server, Socket } from "socket.io";
 import { checkIfError } from "../common/utils/error";
-import log from "../common/utils/logger";
 import {
   socketHandleErrorResponse,
   socketHandleSuccessResponse,

@@ -15,6 +15,9 @@ export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
     const simulations = await Simulation.find({
       relations: ["buyers", "sellers", "sessions"],
+      order: {
+        timeCreated: "DESC",
+      },
     });
     if (!simulations) {
       throw createHttpError(404, "Can't get simulation");

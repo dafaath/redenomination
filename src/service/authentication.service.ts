@@ -27,6 +27,10 @@ enum ChosenHostType {
 export type ChosenHost = {
   type: ChosenHostType;
   detail: Buyer | Seller;
+  simulationType: string;
+  goodsType: string;
+  goodsName: string;
+  inflationType: string;
 };
 
 export async function loginTokenSocket(
@@ -74,6 +78,7 @@ export async function loginTokenSocket(
 
           let chosenHost: undefined | ChosenHost = undefined;
           if (randomNumber === 0) {
+            // Prioritize buyer
             if (buyer) {
               buyer.isLoggedIn = true;
               buyer.socketId = socketId;
@@ -81,6 +86,10 @@ export async function loginTokenSocket(
               chosenHost = {
                 type: ChosenHostType.BUYER,
                 detail: await transactionalEntityManager.save(buyer),
+                goodsName: simulation.goodsName,
+                goodsType: simulation.goodsType,
+                inflationType: simulation.inflationType,
+                simulationType: simulation.simulationType,
               };
             } else if (seller) {
               seller.isLoggedIn = true;
@@ -89,9 +98,14 @@ export async function loginTokenSocket(
               chosenHost = {
                 type: ChosenHostType.SELLER,
                 detail: await transactionalEntityManager.save(seller),
+                goodsName: simulation.goodsName,
+                goodsType: simulation.goodsType,
+                inflationType: simulation.inflationType,
+                simulationType: simulation.simulationType,
               };
             }
           } else {
+            // Prioritize seller
             if (seller) {
               seller.isLoggedIn = true;
               seller.socketId = socketId;
@@ -99,6 +113,10 @@ export async function loginTokenSocket(
               chosenHost = {
                 type: ChosenHostType.SELLER,
                 detail: await transactionalEntityManager.save(seller),
+                goodsName: simulation.goodsName,
+                goodsType: simulation.goodsType,
+                inflationType: simulation.inflationType,
+                simulationType: simulation.simulationType,
               };
             } else if (buyer) {
               buyer.isLoggedIn = true;
@@ -107,6 +125,10 @@ export async function loginTokenSocket(
               chosenHost = {
                 type: ChosenHostType.BUYER,
                 detail: await transactionalEntityManager.save(buyer),
+                goodsName: simulation.goodsName,
+                goodsType: simulation.goodsType,
+                inflationType: simulation.inflationType,
+                simulationType: simulation.simulationType,
               };
             }
           }

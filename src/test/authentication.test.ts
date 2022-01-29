@@ -67,6 +67,10 @@ describe("Authentication", () => {
               expect(response.message).to.contains("join room");
               expect(response.data).to.have.property("type");
               expect(response.data).to.have.property("detail");
+              expect(response.data).to.have.property("simulationType");
+              expect(response.data).to.have.property("goodsType");
+              expect(response.data).to.have.property("goodsName");
+              expect(response.data).to.have.property("inflationType");
               expect(response.data.detail).to.have.property("id");
               expect(response.data.detail).to.have.property("loginToken");
               expect(response.data.detail.loginToken).to.be.equal(

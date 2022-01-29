@@ -10,6 +10,9 @@ export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
     const sessions = await Session.find({
       relations: ["simulation", "phases"],
+      order: {
+        timeCreated: "DESC",
+      },
     });
 
     if (!sessions) {
