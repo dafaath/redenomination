@@ -33,6 +33,7 @@ export type ChosenHost = {
   goodsType: string;
   goodsName: string;
   inflationType: string;
+  timer: number;
   phases: Array<Phase>;
 };
 
@@ -112,6 +113,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                timer: simulation.timer,
                 phases: session.phases,
               };
             } else if (seller) {
@@ -125,6 +127,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                timer: simulation.timer,
                 phases: session.phases,
               };
             }
@@ -141,6 +144,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                timer: simulation.timer,
                 phases: session.phases,
               };
             } else if (buyer) {
@@ -154,6 +158,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                timer: simulation.timer,
                 phases: session.phases,
               };
             }

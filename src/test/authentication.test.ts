@@ -115,6 +115,8 @@ describe("Authentication", () => {
                 expect(response.data).to.have.property("goodsType");
                 expect(response.data).to.have.property("goodsName");
                 expect(response.data).to.have.property("inflationType");
+                expect(response.data).to.have.property("timer");
+                expect(response.data.timer).to.be.a("number");
                 expect(response.data).to.have.property("phases");
                 expect(Array.isArray(response.data.phases)).to.be.true;
                 expect(response.data.phases.length).to.be.equal(3);
