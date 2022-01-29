@@ -7,6 +7,8 @@ import Simulation from "../db/entities/simulation.entity";
 import Seller from "../db/entities/seller.entity";
 import { getManager } from "typeorm";
 import { getRandomNumberBetween } from "../common/utils/other";
+import Phase from "../db/entities/phase.entity";
+import Session from "../db/entities/session.entity";
 
 export async function loginAdmin(password: string): Promise<string | Error> {
   try {
@@ -31,6 +33,7 @@ export type ChosenHost = {
   goodsType: string;
   goodsName: string;
   inflationType: string;
+  phases: Array<Phase>;
 };
 
 export async function loginTokenSocket(
@@ -38,12 +41,31 @@ export async function loginTokenSocket(
   socketId: string
 ): Promise<ChosenHost | Error> {
   try {
-    const simulation = await Simulation.findOne({ token: token });
+    const simulation = await Simulation.createQueryBuilder("simulation")
+      .where("simulation.token=:token", { token })
+      .getOne();
 
     if (!simulation) {
       throw createHttpError(
         404,
         `Login token ${token} is not found in database`
+      );
+    }
+
+    const sessions = await Session.createQueryBuilder("session")
+      .where("session.simulation_id=:simulationId", {
+        simulationId: simulation.id,
+      })
+      .andWhere("session.time_created=session.time_last_run")
+      .leftJoinAndSelect("session.phases", "phase")
+      .orderBy("session.time_created")
+      .getMany();
+    const session = sessions[0];
+
+    if (!session) {
+      throw createHttpError(
+        404,
+        `This simulation doesn't have a session that has not been ran`
       );
     }
 
@@ -90,6 +112,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                phases: session.phases,
               };
             } else if (seller) {
               seller.isLoggedIn = true;
@@ -102,6 +125,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                phases: session.phases,
               };
             }
           } else {
@@ -117,6 +141,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                phases: session.phases,
               };
             } else if (buyer) {
               buyer.isLoggedIn = true;
@@ -129,6 +154,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
+                phases: session.phases,
               };
             }
           }

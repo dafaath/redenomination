@@ -64,8 +64,6 @@ describe("Posted offer", () => {
 
   it("should create session", async () => {
     sessionResponse = await createSessionTest(simulationResponse.id);
-    expect(simulationResponse).to.have.property("sellers");
-    expect(simulationResponse).to.have.property("buyers");
     return;
   });
 
