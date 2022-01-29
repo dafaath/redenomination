@@ -13,6 +13,7 @@ import {
   SimulationResponse,
   TestConnection,
 } from "../common/utils/testUtil";
+import Bargain from "../db/entities/bargain.entity";
 import { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 
@@ -684,10 +685,21 @@ describe("Posted offer", () => {
     const transactions = await Transaction.find({
       relations: ["phase", "buyer", "seller"],
     });
+    const bargains = await Bargain.find({
+      relations: ["phase", "buyer", "seller"],
+    });
     expect(transactions.length).to.be.greaterThan(0);
     expect(transactions.length).to.be.equal(
       simulationResponse.sellers.length * phaseTypes.length
     );
+
+    bargains.forEach((b) => {
+      expect(Boolean(b.seller), "Have seller").to.be.true;
+      expect(Boolean(b.price), "Have price").to.be.true;
+      expect(Boolean(b.timeCreated), "Have time created").to.be.true;
+      expect(Object.keys(b.seller).length).to.be.greaterThan(0);
+      expect(Object.keys(b.phase).length).to.be.greaterThan(0);
+    });
 
     transactions.forEach((t) => {
       expect(Boolean(t.buyer), "Have buyer").to.be.true;

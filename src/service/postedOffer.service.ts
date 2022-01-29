@@ -2,6 +2,7 @@ import createHttpError from "http-errors";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
 import { isRedenominationNumber } from "../common/utils/other";
+import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
 import Phase, { PhaseType } from "../db/entities/phase.entity";
 import Seller from "../db/entities/seller.entity";
@@ -85,6 +86,14 @@ export async function inputSellerPrice(
     }
 
     const postedOffer = new PostedOffer(seller.id, priceUpdated, phaseId);
+    const bargain = Bargain.create({
+      phase: phase,
+      seller: seller,
+      postedBy: seller.id,
+      price: price,
+    });
+
+    await bargain.save();
 
     postedOffers.push(postedOffer);
     return postedOffers.filter((po) => po.phaseId === phaseId);
