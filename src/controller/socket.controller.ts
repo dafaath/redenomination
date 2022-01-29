@@ -44,7 +44,14 @@ export function startPhaseHandler(io: Server, socket: Socket) {
     try {
       const validationError = validateSocketInput(request, startPhaseSchema);
       checkIfError(validationError);
-      socketHandleSuccessResponse(socket, 200, "Successfully start this phase");
+      socketHandleSuccessResponse(
+        socket,
+        200,
+        "Successfully start this phase",
+        {
+          phaseId: request.phaseId,
+        }
+      );
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
@@ -64,7 +71,10 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       socketHandleSuccessResponse(
         socket,
         200,
-        "Successfully finish this phase"
+        "Successfully finish this phase",
+        {
+          phaseId: request.phaseId,
+        }
       );
     } catch (error) {
       socketHandleErrorResponse(socket, error);
