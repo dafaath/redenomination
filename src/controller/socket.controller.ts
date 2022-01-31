@@ -8,9 +8,10 @@ import {
   countReadyUser,
   deleteShortLivedData,
   toggleReady,
+  inputProfit
 } from "../service/socket.service";
 import yup from "yup";
-import { finishPhaseSchema, startPhaseSchema } from "../schema/socket.schema";
+import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
 import { validateSocketInput } from "../middleware/validateSocketInput";
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
@@ -75,6 +76,31 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
         {
           phaseId: request.phaseId,
         }
+      );
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+type collectProfitRequest = yup.InferType<typeof collectProfitSchema>;
+export function collectProfitHandler(io: Server, socket: Socket) {
+  return async (request: collectProfitRequest) => {
+    try {
+      const validationError = validateSocketInput(request, collectProfitSchema);
+      checkIfError(validationError);
+
+      const collectedProfits = await inputProfit(request.myProfit);
+      checkIfError(collectedProfits);
+
+      const joinedRoom = Array.from(socket.rooms);
+      io.to(joinedRoom).emit("collectedProfit", collectedProfits);
+
+      socketHandleSuccessResponse(
+        socket,
+        200,
+        "Successfully input client profit",
+        collectedProfits
       );
     } catch (error) {
       socketHandleErrorResponse(socket, error);

@@ -64,8 +64,8 @@ app.get("/api/files", async (_: Request, res: Response) => {
       res,
       200,
       "Successfully get all public files, get them with " +
-        googleCloudBaseUrl +
-        "files_name",
+      googleCloudBaseUrl +
+      "files_name",
       allFilesName
     );
   } catch (error) {

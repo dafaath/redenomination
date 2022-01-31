@@ -3,7 +3,7 @@ import { getManager } from "typeorm";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
-import { postedOffers } from "../db/shortLived";
+import { postedOffers, profitCollection } from "../db/shortLived";
 
 export async function toggleReady(
   socketId: string
@@ -135,6 +135,32 @@ export async function deleteShortLivedData(
         postedOffers.splice(index, 1);
       }
     } while (index !== -1);
+
+    while (profitCollection.length > 0) {
+      profitCollection.pop();
+    }
+
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+type CollectedProfit = {
+  simulationBudget: number;
+  profitCollection: Array<number>;
+};
+export async function inputProfit(
+  clientProfit: number
+): Promise<CollectedProfit | Error> {
+  try {
+    profitCollection.push(clientProfit);
+
+    const collectedProfit: CollectedProfit = {
+      simulationBudget: 200000,
+      profitCollection: profitCollection
+    };
+
+    return collectedProfit;
   } catch (error) {
     return errorReturnHandler(error);
   }

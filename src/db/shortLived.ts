@@ -22,3 +22,5 @@ export class PostedOffer {
     this.timeCreated = new Date(Date.now());
   }
 }
+
+export const profitCollection: Array<number> = [];
