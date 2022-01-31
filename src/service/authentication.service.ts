@@ -181,6 +181,62 @@ export async function loginTokenSocket(
   }
 }
 
+export type RunningSimulationInfo = {
+  simulationType: string;
+  goodsType: string;
+  goodsName: string;
+  inflationType: string;
+  timer: number;
+  phases: Array<Phase>;
+};
+export async function adminLoginTokenSocket(
+  token: string,
+): Promise<RunningSimulationInfo | Error> {
+  try {
+    const simulation = await Simulation.createQueryBuilder("simulation")
+      .where("simulation.token=:token", { token })
+      .getOne();
+
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        `Login token ${token} is not found in database`
+      );
+    }
+
+    const sessions = await Session.createQueryBuilder("session")
+      .where("session.simulation_id=:simulationId", {
+        simulationId: simulation.id,
+      })
+      .andWhere("session.time_created=session.time_last_run")
+      .andWhere("session.isRunning=true")
+      .leftJoinAndSelect("session.phases", "phase")
+      .orderBy("session.time_created")
+      .getMany();
+    const session = sessions[0];
+
+    if (!session) {
+      throw createHttpError(
+        404,
+        `This simulation has no available running session`
+      );
+    }
+
+    const RunningSimulationInfo = {
+      simulationType: simulation.simulationType,
+      goodsType: simulation.goodsType,
+      goodsName: simulation.goodsName,
+      inflationType: simulation.inflationType,
+      timer: session.timer,
+      phases: session.phases,
+    };
+
+    return RunningSimulationInfo;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
 export async function disconnectTokenSocket(
   socketId: string
 ): Promise<boolean | Error> {

@@ -13,6 +13,7 @@ import yup from "yup";
 import {
   loginAdmin,
   loginTokenSocket,
+  adminLoginTokenSocket,
 } from "../service/authentication.service";
 import { checkIfError } from "../common/utils/error";
 import { Server, Socket } from "socket.io";
@@ -59,6 +60,34 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
       log.info(message);
 
       socketHandleSuccessResponse(socket, 200, message, chosenHost);
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
+  return async (request: socketTokenLoginRequest) => {
+    try {
+      const isError = validateSocketInput(request, tokenLoginSchemaSocket);
+      checkIfError(isError);
+      log.info(`socket ${socket.id} requested to join room as admin`);
+
+      if (socket.rooms.has(request.token)) {
+        throw createHttpError(
+          409,
+          `User ${socket.id} already join room ${request.token}`
+        );
+      }
+
+      const runningSimulationInfo = await adminLoginTokenSocket(request.token);
+      checkIfError(runningSimulationInfo);
+
+      const message = `User ${socket.id} has join room ${request.token} as admin`;
+      socket.join(request.token);
+      log.info(message);
+
+      socketHandleSuccessResponse(socket, 200, message, runningSimulationInfo);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

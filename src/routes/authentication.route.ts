@@ -1,6 +1,7 @@
 import {
   adminLoginHandler,
   socketTokenLoginHandler,
+  socketAdminTokenLoginHandler,
 } from "./../controller/authentication.controller";
 import { Router } from "express";
 import validate from "./../middleware/validateRequest";
@@ -17,6 +18,7 @@ authenticationRouter.post(
 
 export function registerAuthenticationSocket(io: Server, socket: Socket) {
   socket.on("loginToken", socketTokenLoginHandler(io, socket));
+  socket.on("adminLoginToken", socketAdminTokenLoginHandler(io, socket));
 }
 
 export default authenticationRouter;
