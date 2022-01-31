@@ -58,6 +58,7 @@ export async function loginTokenSocket(
         simulationId: simulation.id,
       })
       .andWhere("session.time_created=session.time_last_run")
+      .andWhere("session.isRunning=true")
       .leftJoinAndSelect("session.phases", "phase")
       .orderBy("session.time_created")
       .getMany();
@@ -66,7 +67,7 @@ export async function loginTokenSocket(
     if (!session) {
       throw createHttpError(
         404,
-        `This simulation doesn't have a session that has not been ran`
+        `This simulation has no available running session`
       );
     }
 
@@ -113,7 +114,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
-                timer: simulation.timer,
+                timer: session.timer,
                 phases: session.phases,
               };
             } else if (seller) {
@@ -127,7 +128,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
-                timer: simulation.timer,
+                timer: session.timer,
                 phases: session.phases,
               };
             }
@@ -144,7 +145,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
-                timer: simulation.timer,
+                timer: session.timer,
                 phases: session.phases,
               };
             } else if (buyer) {
@@ -158,7 +159,7 @@ export async function loginTokenSocket(
                 goodsType: simulation.goodsType,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
-                timer: simulation.timer,
+                timer: session.timer,
                 phases: session.phases,
               };
             }
