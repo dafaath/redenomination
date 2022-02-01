@@ -200,9 +200,13 @@ export async function finishSession(
       return p;
     });
     session.isRunning = false;
-    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true)
-    if (allPhasesRunned) { session.timeLastRun = new Date(Date.now()); }
 
+    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true)
+    if (allPhasesRunned) {
+      session.timeLastRun = new Date(Date.now());
+      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + phase.avgTrxPrice, 0) / session.phases.length;
+      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + phase.avgTrxOccurrence, 0) / session.phases.length;
+    }
 
     const finishedSession = await session.save();
 
