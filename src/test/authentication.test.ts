@@ -89,6 +89,22 @@ describe("Authentication", () => {
       }
     }).timeout(5000);
 
+    it("admin can start session", async () => {
+      const sessionResponse = sessionResponses[z];
+      const jwtToken = await getAdminJwtToken();
+      const response = await axios.post(
+        `http://localhost:${config.server.port}/api/sessions/${sessionResponse.id}/runs`,
+        {},
+        {
+          headers: {
+            Authorization: "Bearer " + jwtToken,
+          },
+        }
+      );
+      expect(response.status).to.be.equal(200);
+      return;
+    });
+
     it("should able to join room", async () => {
       try {
         const promises: Array<Promise<void>> = [];
@@ -105,7 +121,6 @@ describe("Authentication", () => {
             testConnection.clientSockets[i].on(
               "serverMessage",
               async (response) => {
-                console.log(response);
                 expectHaveTemplateResponse(response);
                 expect(response.status).to.be.equal(200);
                 expect(response.message).to.contains("join room");
@@ -218,23 +233,6 @@ describe("Authentication", () => {
       } catch (error) {
         errorThrowUtils(error);
       }
-    });
-
-    it("admin can start session", async () => {
-      const sessionResponse = sessionResponses[z];
-      const jwtToken = await getAdminJwtToken();
-      const response = await axios.post(
-        `http://localhost:${config.server.port}/api/sessions/${sessionResponse.id}/runs`,
-        {},
-        {
-          headers: {
-            Authorization: "Bearer " + jwtToken,
-          },
-        }
-      );
-      console.log(response.data);
-      expect(response.status).to.be.equal(200);
-      return;
     });
 
     it("user can ready", async () => {

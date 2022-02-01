@@ -270,3 +270,18 @@ export function getRandomArrayOfPhaseType(length: number) {
 
   return returnPhaseType;
 }
+
+export async function adminRunSessionTest(sessionId: string) {
+  const jwtToken = await getAdminJwtToken();
+
+  const response = await axios.post(
+    `http://localhost:${config.server.port}/api/sessions/${sessionId}/runs`,
+    {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`,
+      },
+    }
+  );
+
+  return response;
+}

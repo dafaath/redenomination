@@ -1,3 +1,4 @@
+import axios from "axios";
 import { expect } from "chai";
 import { errorThrowUtils } from "../common/utils/error";
 import { getRandomNumberBetween } from "../common/utils/other";
@@ -6,12 +7,14 @@ import {
   createSimulationTest,
   deleteSimulationTest,
   expectHaveTemplateResponse,
+  getAdminJwtToken,
   handleAfterTest,
   HandleBeforeTest,
   SessionResponse,
   SimulationResponse,
   TestConnection,
 } from "../common/utils/testUtil";
+import config from "../configHandler";
 import Bargain from "../db/entities/bargain.entity";
 import { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
@@ -64,6 +67,21 @@ describe("Posted offer", () => {
 
   it("should create session", async () => {
     sessionResponse = await createSessionTest(simulationResponse.id);
+    return;
+  });
+
+  it("admin can start session", async () => {
+    const jwtToken = await getAdminJwtToken();
+    const response = await axios.post(
+      `http://localhost:${config.server.port}/api/sessions/${sessionResponse.id}/runs`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + jwtToken,
+        },
+      }
+    );
+    expect(response.status).to.be.equal(200);
     return;
   });
 
@@ -678,6 +696,21 @@ describe("Posted offer", () => {
         errorThrowUtils(error);
       }
     }).timeout(5000);
+  });
+
+  it("admin can finish session", async () => {
+    const jwtToken = await getAdminJwtToken();
+    const response = await axios.post(
+      `http://localhost:${config.server.port}/api/sessions/${sessionResponse.id}/finishes`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + jwtToken,
+        },
+      }
+    );
+    expect(response.status).to.be.equal(200);
+    return;
   });
 
   it("have transaction in database", async () => {

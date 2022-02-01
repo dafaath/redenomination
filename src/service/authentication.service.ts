@@ -44,6 +44,7 @@ export async function loginTokenSocket(
   try {
     const simulation = await Simulation.createQueryBuilder("simulation")
       .where("simulation.token=:token", { token })
+      .leftJoinAndSelect("simulation.sessions", "session")
       .getOne();
 
     if (!simulation) {
@@ -190,7 +191,7 @@ export type RunningSimulationInfo = {
   phases: Array<Phase>;
 };
 export async function adminLoginTokenSocket(
-  token: string,
+  token: string
 ): Promise<RunningSimulationInfo | Error> {
   try {
     const simulation = await Simulation.createQueryBuilder("simulation")
