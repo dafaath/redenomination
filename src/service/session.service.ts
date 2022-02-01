@@ -196,12 +196,13 @@ export async function finishSession(
 
     // Finish Session
     session.phases = session.phases.map((p) => {
-      p.timeLastRun = new Date(Date.now());
       p.isRunning = false;
       return p;
     });
-    session.timeLastRun = new Date(Date.now());
     session.isRunning = false;
+    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true)
+    if (allPhasesRunned) { session.timeLastRun = new Date(Date.now()); }
+
 
     const finishedSession = await session.save();
 

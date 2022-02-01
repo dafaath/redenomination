@@ -77,7 +77,7 @@ export default class Phase extends BaseEntity {
   isRunning: boolean;
 
   isDone() {
-    throw new Error("Not implemented");
+    return this.timeCreated !== this.timeLastRun
   }
 
   getAverageTrx() {

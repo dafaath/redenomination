@@ -5,7 +5,7 @@ import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
 import Phase from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
-import { postedOffers, profitCollection } from "../db/shortLived";
+import { postedOffers, Profit, profitCollection } from "../db/shortLived";
 
 export async function toggleReady(
   socketId: string
@@ -149,13 +149,21 @@ export async function deleteShortLivedData(
 
 type CollectedProfit = {
   simulationBudget: number;
-  profitCollection: Array<number>;
+  profitCollection: Array<Profit>;
 };
 export async function inputProfit(
-  clientProfit: number
+  socketId: string,
+  profitValue: number
 ): Promise<CollectedProfit | Error> {
   try {
-    profitCollection.push(clientProfit);
+    const profitCollectionIndex = profitCollection.findIndex(
+      (pc) => pc.socketId === socketId
+    )
+
+    if (profitCollectionIndex === -1) {
+      const clientProfit = new Profit(socketId, profitValue);
+      profitCollection.push(clientProfit);
+    }
 
     const collectedProfit: CollectedProfit = {
       simulationBudget: 200000,
@@ -195,6 +203,7 @@ export async function calculatePhase(
     const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
     phase.avgTrxOccurrence = trxList.length;
     phase.avgTrxPrice = sumTrxPrices / trxList.length;
+    phase.timeLastRun = new Date(Date.now());
 
     return await phase.save()
   } catch (error) {
