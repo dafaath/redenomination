@@ -7,7 +7,8 @@ import Seller from "../db/entities/seller.entity";
 import Phase from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
-  doubleAuctions,
+  doubleAuctionBuyerBid,
+  doubleAuctionSellerBid,
   postedOffers,
   Profit,
   profitCollection,
@@ -150,24 +151,51 @@ export async function deleteShortLivedData(
 
         done();
       } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
         errorThrowUtils(error);
       }
     });
 
-    lock.acquire("deleteDoubleAuction", (done) => {
+    lock.acquire("deleteDoubleAuctionBuyer", (done) => {
       try {
-        let doubleAuctionIndex: number;
+        let doubleAuctionBuyerIndex: number;
         do {
-          doubleAuctionIndex = doubleAuctions.findIndex(
+          doubleAuctionBuyerIndex = doubleAuctionBuyerBid.findIndex(
             (po) => po.phaseId === phaseId
           );
 
-          if (doubleAuctionIndex !== -1) {
-            doubleAuctions.splice(doubleAuctionIndex, 1);
+          if (doubleAuctionBuyerIndex !== -1) {
+            doubleAuctionBuyerBid.splice(doubleAuctionBuyerIndex, 1);
           }
-        } while (doubleAuctionIndex !== -1);
+        } while (doubleAuctionBuyerIndex !== -1);
         done();
       } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
+        errorThrowUtils(error);
+      }
+    });
+
+    lock.acquire("deleteDoubleAuctionSeller", (done) => {
+      try {
+        let doubleAuctionSellerIndex: number;
+        do {
+          doubleAuctionSellerIndex = doubleAuctionSellerBid.findIndex(
+            (po) => po.phaseId === phaseId
+          );
+
+          if (doubleAuctionSellerIndex !== -1) {
+            doubleAuctionSellerBid.splice(doubleAuctionSellerIndex, 1);
+          }
+        } while (doubleAuctionSellerIndex !== -1);
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
         errorThrowUtils(error);
       }
     });

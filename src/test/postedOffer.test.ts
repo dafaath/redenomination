@@ -59,7 +59,9 @@ describe("Posted offer", () => {
   });
 
   it("should create simulation", async () => {
-    simulationResponse = await createSimulationTest();
+    simulationResponse = await createSimulationTest({
+      buyerIsSuperRich: true,
+    });
     expect(simulationResponse).to.have.property("sellers");
     expect(simulationResponse).to.have.property("buyers");
     return;

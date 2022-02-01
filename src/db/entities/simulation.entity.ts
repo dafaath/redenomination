@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
 } from "typeorm";
+import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Buyer from "./buyer.entity";
 import Seller from "./seller.entity";
 import Session from "./session.entity";
@@ -77,6 +78,7 @@ export default class Simulation extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   avgTrxOccurrence: number;
 
@@ -84,6 +86,7 @@ export default class Simulation extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   avgTrxPrice: number;
 

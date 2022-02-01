@@ -8,6 +8,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Bargain from "./bargain.entity";
 import Session from "./session.entity";
 import Transaction from "./transaction.entity";
@@ -45,6 +46,7 @@ export default class Phase extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   avgTrxOccurrence: number;
 
@@ -52,6 +54,7 @@ export default class Phase extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   avgTrxPrice: number;
 
@@ -77,7 +80,7 @@ export default class Phase extends BaseEntity {
   isRunning: boolean;
 
   isDone() {
-    return this.timeCreated !== this.timeLastRun
+    return this.timeCreated !== this.timeLastRun;
   }
 
   getAverageTrx() {

@@ -7,6 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Bargain from "./bargain.entity";
 import Simulation from "./simulation.entity";
 import Transaction from "./transaction.entity";
@@ -38,6 +39,7 @@ export default class Buyer extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   unitValue: number;
 

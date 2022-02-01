@@ -137,8 +137,48 @@ export async function getAdminJwtToken() {
   expect(adminLoginResponse.data.data).to.have.property("jwtToken");
   return adminLoginResponse.data.data.jwtToken;
 }
+type CreateSimulationOption = {
+  numberOfSeller?: number;
+  numberOfBuyer?: number;
+  buyerIsSuperRich?: boolean;
+};
 
-export async function createSimulationTest(): Promise<SimulationResponse> {
+type CreateSimulationOptionComplete = Required<CreateSimulationOption>;
+
+export async function createSimulationTest(
+  option?: CreateSimulationOption
+): Promise<SimulationResponse> {
+  const defaultOption: CreateSimulationOptionComplete = {
+    numberOfBuyer: 3,
+    numberOfSeller: 3,
+    buyerIsSuperRich: false,
+  };
+
+  const newOption = Object.assign(
+    defaultOption,
+    option
+  ) as CreateSimulationOptionComplete;
+
+  const sellers = [];
+  const buyers = [];
+  for (let i = 0; i < newOption.numberOfSeller; i++) {
+    sellers.push({
+      unitCost: getRandomNumberBetween(4000, 8000),
+    });
+  }
+
+  for (let i = 0; i < newOption.numberOfBuyer; i++) {
+    if (newOption.buyerIsSuperRich) {
+      buyers.push({
+        unitValue: getRandomNumberBetween(20000, 30000),
+      });
+    } else {
+      buyers.push({
+        unitValue: getRandomNumberBetween(7000, 12000),
+      });
+    }
+  }
+
   const jwtToken = await getAdminJwtToken();
   const response = await axios.post(
     `http://localhost:${config.server.port}/api/simulations`,
@@ -149,28 +189,8 @@ export async function createSimulationTest(): Promise<SimulationResponse> {
       inflationType: "inflationType",
       participantNumber: 10,
       timer: 0,
-      seller: [
-        {
-          unitCost: 4000,
-        },
-        {
-          unitCost: 6000,
-        },
-        {
-          unitCost: 7000,
-        },
-      ],
-      buyer: [
-        {
-          unitValue: 8000,
-        },
-        {
-          unitValue: 9000,
-        },
-        {
-          unitValue: 10000,
-        },
-      ],
+      seller: sellers,
+      buyer: buyers,
     },
     {
       headers: {

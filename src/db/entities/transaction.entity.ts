@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Buyer from "./buyer.entity";
 import Phase from "./phase.entity";
 import Seller from "./seller.entity";
@@ -41,6 +42,7 @@ export default class Transaction extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   price: number;
 

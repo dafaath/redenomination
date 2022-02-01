@@ -1,7 +1,15 @@
 import { number, object, string } from "yup";
 
 export const postSellerSchema = object({
-  price: number().required(),
+  sellerBargain: number().required(),
+  phaseId: string().uuid().required(),
+})
+  .noUnknown(true)
+  .required()
+  .strict();
+
+export const postBuyerSchema = object({
+  buyerBargain: number().required(),
   phaseId: string().uuid().required(),
 })
   .noUnknown(true)

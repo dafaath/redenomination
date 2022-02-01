@@ -8,6 +8,7 @@ import {
   OneToMany,
   JoinColumn,
 } from "typeorm";
+import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Phase from "./phase.entity";
 import Simulation from "./simulation.entity";
 
@@ -37,6 +38,7 @@ export default class Session extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   avgTrxOccurrence: number;
 
@@ -44,6 +46,7 @@ export default class Session extends BaseEntity {
     type: "numeric",
     precision: 15,
     scale: 2,
+    transformer: new ColumnNumericTransformer(),
   })
   avgTrxPrice: number;
 
