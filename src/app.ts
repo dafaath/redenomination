@@ -32,6 +32,7 @@ import {
 import { checkIfError, errorThrowUtils } from "./common/utils/error";
 import { registerGeneralSocket } from "./routes/socket.route";
 import { registerPostedOffer } from "./routes/postedOffer.route";
+import { registerDoubleAuction } from "./routes/doubleAuction.route";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
@@ -105,6 +106,7 @@ export const onConnection = (socket: Socket) => {
   registerAuthenticationSocket(io, socket);
   registerGeneralSocket(io, socket);
   registerPostedOffer(io, socket);
+  registerDoubleAuction(io, socket);
 
   socket.on("disconnect", async () => {
     try {

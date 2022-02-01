@@ -6,7 +6,6 @@ import {
   createSimulationTest,
   deleteSimulationTest,
   expectHaveTemplateResponse,
-  getRandomArrayOfPhaseType,
   handleAfterTest,
   HandleBeforeTest,
   SessionResponse,
@@ -690,6 +689,11 @@ describe("Posted offer", () => {
     });
     expect(transactions.length).to.be.greaterThan(0);
     expect(transactions.length).to.be.equal(
+      simulationResponse.sellers.length * phaseTypes.length
+    );
+
+    expect(bargains.length).to.be.greaterThan(0);
+    expect(bargains.length).to.be.equal(
       simulationResponse.sellers.length * phaseTypes.length
     );
 

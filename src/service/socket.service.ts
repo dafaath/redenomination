@@ -1,11 +1,17 @@
 import createHttpError from "http-errors";
 import { getManager } from "typeorm";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
+import { lock } from "../common/utils/lock";
 import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
 import Phase from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
-import { postedOffers, Profit, profitCollection } from "../db/shortLived";
+import {
+  doubleAuctions,
+  postedOffers,
+  Profit,
+  profitCollection,
+} from "../db/shortLived";
 
 export async function toggleReady(
   socketId: string
@@ -129,19 +135,46 @@ export async function deleteShortLivedData(
   phaseId: string
 ): Promise<undefined | Error> {
   try {
-    let index: number;
+    lock.acquire("deletePostedOffer", (done) => {
+      try {
+        let postedOfferIndex: number;
 
-    do {
-      index = postedOffers.findIndex((po) => po.phaseId === phaseId);
-      if (index !== -1) {
-        postedOffers.splice(index, 1);
+        do {
+          postedOfferIndex = postedOffers.findIndex(
+            (po) => po.phaseId === phaseId
+          );
+          if (postedOfferIndex !== -1) {
+            postedOffers.splice(postedOfferIndex, 1);
+          }
+        } while (postedOfferIndex !== -1);
+
+        done();
+      } catch (error) {
+        errorThrowUtils(error);
       }
-    } while (index !== -1);
+    });
+
+    lock.acquire("deleteDoubleAuction", (done) => {
+      try {
+        let doubleAuctionIndex: number;
+        do {
+          doubleAuctionIndex = doubleAuctions.findIndex(
+            (po) => po.phaseId === phaseId
+          );
+
+          if (doubleAuctionIndex !== -1) {
+            doubleAuctions.splice(doubleAuctionIndex, 1);
+          }
+        } while (doubleAuctionIndex !== -1);
+        done();
+      } catch (error) {
+        errorThrowUtils(error);
+      }
+    });
 
     while (profitCollection.length > 0) {
       profitCollection.pop();
     }
-
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -158,7 +191,7 @@ export async function inputProfit(
   try {
     const profitCollectionIndex = profitCollection.findIndex(
       (pc) => pc.socketId === socketId
-    )
+    );
 
     if (profitCollectionIndex === -1) {
       const clientProfit = new Profit(socketId, profitValue);
@@ -167,7 +200,7 @@ export async function inputProfit(
 
     const collectedProfit: CollectedProfit = {
       simulationBudget: 200000,
-      profitCollection: profitCollection
+      profitCollection: profitCollection,
     };
 
     return collectedProfit;
@@ -176,9 +209,7 @@ export async function inputProfit(
   }
 }
 
-export async function calculatePhase(
-  phaseId: string
-): Promise<Phase | Error> {
+export async function calculatePhase(phaseId: string): Promise<Phase | Error> {
   try {
     const phase = await Phase.findOne(phaseId);
 
@@ -189,7 +220,7 @@ export async function calculatePhase(
       );
     }
 
-    let trxList = await Transaction.createQueryBuilder("transaction")
+    const trxList = await Transaction.createQueryBuilder("transaction")
       .where("transaction.phase.id=:phaseId", { phaseId })
       .getMany();
 
@@ -200,12 +231,12 @@ export async function calculatePhase(
       );
     }
 
-    const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
+    const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0);
     phase.avgTrxOccurrence = trxList.length;
     phase.avgTrxPrice = sumTrxPrices / trxList.length;
     phase.timeLastRun = new Date(Date.now());
 
-    return await phase.save()
+    return await phase.save();
   } catch (error) {
     return errorReturnHandler(error);
   }
