@@ -3,6 +3,8 @@ import { getManager } from "typeorm";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import Buyer from "../db/entities/buyer.entity";
 import Seller from "../db/entities/seller.entity";
+import Phase from "../db/entities/phase.entity";
+import Transaction from "../db/entities/transaction.entity";
 import { postedOffers, profitCollection } from "../db/shortLived";
 
 export async function toggleReady(
@@ -161,6 +163,40 @@ export async function inputProfit(
     };
 
     return collectedProfit;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function calculatePhase(
+  phaseId: string
+): Promise<Phase | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId);
+
+    if (!phase) {
+      throw createHttpError(
+        404,
+        "Session with id " + phaseId + " is not found"
+      );
+    }
+
+    let trxList = await Transaction.createQueryBuilder("transaction")
+      .where("transaction.phase.id=:phaseId", { phaseId })
+      .getMany();
+
+    if (!trxList) {
+      throw createHttpError(
+        404,
+        `There is no recorded transactions for this phase`
+      );
+    }
+
+    const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
+    phase.avgTrxOccurrence = trxList.length;
+    phase.avgTrxPrice = sumTrxPrices / trxList.length;
+
+    return await phase.save()
   } catch (error) {
     return errorReturnHandler(error);
   }

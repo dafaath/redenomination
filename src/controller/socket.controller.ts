@@ -8,7 +8,8 @@ import {
   countReadyUser,
   deleteShortLivedData,
   toggleReady,
-  inputProfit
+  inputProfit,
+  calculatePhase,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -65,6 +66,9 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
     try {
       const validationError = validateSocketInput(request, finishPhaseSchema);
       checkIfError(validationError);
+
+      const calcPhase = await calculatePhase(request.phaseId)
+      checkIfError(calcPhase);
 
       const error = await deleteShortLivedData(request.phaseId);
       checkIfError(error);
