@@ -23,4 +23,15 @@ export class PostedOffer {
   }
 }
 
-export const profitCollection: Array<number> = [];
+export const profitCollection: Array<Profit> = [];
+
+export class Profit {
+  socketId: string;
+  value: number;
+
+  constructor(socketId: string, value: number) {
+    this.socketId = socketId;
+    this.value = value;
+
+  }
+}
