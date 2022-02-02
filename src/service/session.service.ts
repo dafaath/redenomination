@@ -203,9 +203,9 @@ export async function finishSession(
 
     const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true)
     if (allPhasesRunned) {
+      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxPrice), 0) / Number(session.phases.length);
+      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
-      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + phase.avgTrxPrice, 0) / session.phases.length;
-      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + phase.avgTrxOccurrence, 0) / session.phases.length;
     }
 
     const finishedSession = await session.save();

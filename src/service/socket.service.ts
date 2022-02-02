@@ -259,9 +259,9 @@ export async function calculatePhase(phaseId: string): Promise<Phase | Error> {
       );
     }
 
-    const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0);
-    phase.avgTrxOccurrence = trxList.length;
-    phase.avgTrxPrice = sumTrxPrices / trxList.length;
+    const sumTrxPrices = trxList.reduce((prev, t) => prev + Number(t.price), 0)
+    phase.avgTrxOccurrence = Number(trxList.length);
+    phase.avgTrxPrice = Number(sumTrxPrices) / trxList.length;
     phase.timeLastRun = new Date(Date.now());
 
     return await phase.save();
