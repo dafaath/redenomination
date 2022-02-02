@@ -33,6 +33,7 @@ export async function inputSellerPrice(
     const transaction = await Transaction.createQueryBuilder("transaction")
       .leftJoinAndSelect("transaction.seller", "seller")
       .where("seller.socketId=:socketId", { socketId })
+      .andWhere("transaction.phase_id=:phaseId", { phaseId })
       .getOne();
     if (transaction) {
       throw createHttpError(403, `You already sold your item`);
@@ -52,7 +53,17 @@ export async function inputSellerPrice(
     await lock.acquire("sellersBid", async (done) => {
       try {
         const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
-        doubleAuctionSellerBid.push(sellerBid);
+
+        const doubleAuctionSellerBidIndex = doubleAuctionSellerBid.findIndex((item) => {
+          return item.sellerBid.sellerId === seller.id;
+        });
+
+        if (doubleAuctionSellerBidIndex !== -1) {
+          doubleAuctionSellerBid[doubleAuctionSellerBidIndex] = sellerBid;
+        } else {
+          doubleAuctionSellerBid.push(sellerBid);
+        }
+
         done();
       } catch (error) {
         if (error instanceof Error) {
@@ -161,6 +172,7 @@ export async function inputBuyerPrice(
     const transaction = await Transaction.createQueryBuilder("transaction")
       .leftJoinAndSelect("transaction.buyer", "buyer")
       .where("buyer.socketId=:socketId", { socketId })
+      .andWhere("transaction.phase_id=:phaseId", { phaseId })
       .getOne();
     if (transaction) {
       throw createHttpError(403, `You already bought your item`);
@@ -179,7 +191,16 @@ export async function inputBuyerPrice(
     return await lock.acquire("buyersBid", async (done) => {
       try {
         const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
-        doubleAuctionBuyerBid.push(buyerBid);
+
+        const doubleAuctionBuyerBidIndex = doubleAuctionBuyerBid.findIndex((item) => {
+          return item.buyerBid.buyerId === buyer.id;
+        });
+
+        if (doubleAuctionBuyerBidIndex !== -1) {
+          doubleAuctionBuyerBid[doubleAuctionBuyerBidIndex] = buyerBid;
+        } else {
+          doubleAuctionBuyerBid.push(buyerBid);
+        }
 
         done();
       } catch (error) {
@@ -208,10 +229,10 @@ export async function checkIfBuyerBidMatch(
 ): Promise<MatchData | Error> {
   try {
     let matchIndex = 0;
-
     let buyer: Buyer | undefined = undefined;
     let seller: Seller | undefined = undefined;
     let transaction: Transaction | undefined = undefined;
+
     await lock.acquire("sellersBid", async (done) => {
       try {
         matchIndex = doubleAuctionSellerBid
