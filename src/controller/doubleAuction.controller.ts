@@ -17,6 +17,7 @@ import {
   getMaxAndMinPrice,
   inputBuyerPrice,
   inputSellerPrice,
+  getTrxOccurrence,
 } from "../service/doubleAuction.service";
 
 type PostBuyerRequest = yup.InferType<typeof postBuyerSchema>;
@@ -45,8 +46,11 @@ export function postBuyerHandler(io: Server, socket: Socket) {
       const doubleAuctionMaxMinPrice = await getMaxAndMinPrice(request.phaseId);
       checkIfError(doubleAuctionMaxMinPrice);
 
+      const TrxOccurrence = await getTrxOccurrence(request.phaseId);
+      checkIfError(TrxOccurrence);
+
       const joinedRoom = Array.from(socket.rooms);
-      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
+      io.to(joinedRoom).emit("doubleAuctionList", { ...doubleAuctionMaxMinPrice, TrxOccurrence: TrxOccurrence });
 
       if (matchData.match) {
         if (matchData.buyer?.socketId) {
@@ -107,8 +111,11 @@ export function postSellerHandler(io: Server, socket: Socket) {
       const doubleAuctionMaxMinPrice = await getMaxAndMinPrice(request.phaseId);
       checkIfError(doubleAuctionMaxMinPrice);
 
+      const TrxOccurrence = await getTrxOccurrence(request.phaseId);
+      checkIfError(TrxOccurrence);
+
       const joinedRoom = Array.from(socket.rooms);
-      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
+      io.to(joinedRoom).emit("doubleAuctionList", { ...doubleAuctionMaxMinPrice, TrxOccurrence: TrxOccurrence });
 
       if (matchData.match) {
         if (matchData.buyer?.socketId) {

@@ -346,3 +346,15 @@ export async function getMaxAndMinPrice(
     return errorReturnHandler(error);
   }
 }
+
+export async function getTrxOccurrence(
+  phaseId: string
+): Promise<number | Error> {
+  try {
+    return await Transaction.createQueryBuilder("transaction")
+      .where("transaction.phase.id=:phaseId", { phaseId })
+      .getCount();
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
