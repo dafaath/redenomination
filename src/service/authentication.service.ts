@@ -31,6 +31,7 @@ export type ChosenHost = {
   detail: Buyer | Seller;
   simulationType: string;
   goodsType: string;
+  goodsPic: string;
   goodsName: string;
   inflationType: string;
   timer: number;
@@ -113,6 +114,7 @@ export async function loginTokenSocket(
                 detail: await transactionalEntityManager.save(buyer),
                 goodsName: simulation.goodsName,
                 goodsType: simulation.goodsType,
+                goodsPic: simulation.goodsPic,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
                 timer: session.timer,
@@ -127,6 +129,7 @@ export async function loginTokenSocket(
                 detail: await transactionalEntityManager.save(seller),
                 goodsName: simulation.goodsName,
                 goodsType: simulation.goodsType,
+                goodsPic: simulation.goodsPic,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
                 timer: session.timer,
@@ -144,6 +147,7 @@ export async function loginTokenSocket(
                 detail: await transactionalEntityManager.save(seller),
                 goodsName: simulation.goodsName,
                 goodsType: simulation.goodsType,
+                goodsPic: simulation.goodsPic,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
                 timer: session.timer,
@@ -158,6 +162,7 @@ export async function loginTokenSocket(
                 detail: await transactionalEntityManager.save(buyer),
                 goodsName: simulation.goodsName,
                 goodsType: simulation.goodsType,
+                goodsPic: simulation.goodsPic,
                 inflationType: simulation.inflationType,
                 simulationType: simulation.simulationType,
                 timer: session.timer,
@@ -182,27 +187,15 @@ export async function loginTokenSocket(
   }
 }
 
-export type RunningSimulationInfo = {
-  simulationType: string;
-  goodsType: string;
-  goodsName: string;
-  inflationType: string;
-  timer: number;
-  phases: Array<Phase>;
-};
 export async function adminLoginTokenSocket(
   token: string
-): Promise<RunningSimulationInfo | Error> {
+): Promise<Session | Error> {
   try {
     const simulation = await Simulation.createQueryBuilder("simulation")
       .where("simulation.token=:token", { token })
       .getOne();
-
     if (!simulation) {
-      throw createHttpError(
-        404,
-        `Login token ${token} is not found in database`
-      );
+      throw createHttpError(404, `Login token ${token} is not found in database`);
     }
 
     const sessions = await Session.createQueryBuilder("session")
@@ -215,24 +208,11 @@ export async function adminLoginTokenSocket(
       .orderBy("session.time_created")
       .getMany();
     const session = sessions[0];
-
     if (!session) {
-      throw createHttpError(
-        404,
-        `This simulation has no available running session`
-      );
+      throw createHttpError(404, `This simulation has no available running session`);
     }
 
-    const RunningSimulationInfo = {
-      simulationType: simulation.simulationType,
-      goodsType: simulation.goodsType,
-      goodsName: simulation.goodsName,
-      inflationType: simulation.inflationType,
-      timer: session.timer,
-      phases: session.phases,
-    };
-
-    return RunningSimulationInfo;
+    return session;
   } catch (error) {
     return errorReturnHandler(error);
   }

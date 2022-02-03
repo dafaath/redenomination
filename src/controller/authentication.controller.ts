@@ -74,20 +74,17 @@ export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
       log.info(`socket ${socket.id} requested to join room as admin`);
 
       if (socket.rooms.has(request.token)) {
-        throw createHttpError(
-          409,
-          `User ${socket.id} already join room ${request.token}`
-        );
+        throw createHttpError(409, `User ${socket.id} already join room ${request.token}`);
       }
 
-      const runningSimulationInfo = await adminLoginTokenSocket(request.token);
-      checkIfError(runningSimulationInfo);
+      const sessionInfo = await adminLoginTokenSocket(request.token);
+      checkIfError(sessionInfo);
 
       const message = `User ${socket.id} has join room ${request.token} as admin`;
       socket.join(request.token);
       log.info(message);
 
-      socketHandleSuccessResponse(socket, 200, message, runningSimulationInfo);
+      socketHandleSuccessResponse(socket, 200, message, sessionInfo);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
