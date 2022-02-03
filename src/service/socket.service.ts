@@ -41,7 +41,7 @@ export async function toggleReady(
 
           if (!buyer && !seller) {
             throw createHttpError(
-              400,
+              401,
               `This socket id ${socketId} is not logged in yet`
             );
           }
