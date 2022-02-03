@@ -90,24 +90,22 @@ export async function checkIfSellerBidMatch(
 
     await lock.acquire("buyersBid", async (done) => {
       try {
+        const phase = await Phase.findOne({ id: phaseId });
+        if (!phase) {
+          throw createHttpError(404, `There is no phase with id ${phaseId}`);
+        }
+
+        seller = await Seller.findOne({ socketId: socketId });
+        if (!seller) {
+          throw createHttpError(403, `You are not a seller or have not logged in`);
+        }
+
+        sellerBid = validatePrice(phase, seller, sellerBid);
         matchIndex = doubleAuctionBuyerBid
           .filter((bb) => bb.phaseId === phaseId)
           .findIndex((bb) => bb.buyerBid.price === sellerBid);
 
         if (matchIndex !== -1) {
-          seller = await Seller.findOne({ socketId: socketId });
-          if (!seller) {
-            throw createHttpError(
-              403,
-              `You are not a seller or have not logged in`
-            );
-          }
-
-          const phase = await Phase.findOne({ id: phaseId });
-          if (!phase) {
-            throw createHttpError(404, `There is no phase with id ${phaseId}`);
-          }
-
           const buyerId = doubleAuctionBuyerBid[matchIndex].buyerBid.buyerId;
           buyer = await Buyer.findOne({ id: buyerId });
           if (!buyer) {
@@ -235,24 +233,22 @@ export async function checkIfBuyerBidMatch(
 
     await lock.acquire("sellersBid", async (done) => {
       try {
+        const phase = await Phase.findOne({ id: phaseId });
+        if (!phase) {
+          throw createHttpError(404, `There is no phase with id ${phaseId}`);
+        }
+
+        buyer = await Buyer.findOne({ socketId: socketId });
+        if (!buyer) {
+          throw createHttpError(403, `You are not a buyer or have not logged in`);
+        }
+
+        buyerBid = validatePrice(phase, buyer, buyerBid);
         matchIndex = doubleAuctionSellerBid
           .filter((sb) => sb.phaseId === phaseId)
           .findIndex((sb) => sb.sellerBid.price === buyerBid);
 
         if (matchIndex !== -1) {
-          buyer = await Buyer.findOne({ socketId: socketId });
-          if (!buyer) {
-            throw createHttpError(
-              403,
-              `You are not a buyer or have not logged in`
-            );
-          }
-
-          const phase = await Phase.findOne({ id: phaseId });
-          if (!phase) {
-            throw createHttpError(404, `There is no phase with id ${phaseId}`);
-          }
-
           const sellerId =
             doubleAuctionSellerBid[matchIndex].sellerBid.sellerId;
           seller = await Seller.findOne({ id: sellerId });
