@@ -33,6 +33,7 @@ import { checkIfError, errorThrowUtils } from "./common/utils/error";
 import { registerGeneralSocket } from "./routes/socket.route";
 import { registerPostedOffer } from "./routes/postedOffer.route";
 import { registerDoubleAuction } from "./routes/doubleAuction.route";
+import { registerDecentralized } from "./routes/decentralized.route";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
@@ -65,8 +66,8 @@ app.get("/api/files", async (_: Request, res: Response) => {
       res,
       200,
       "Successfully get all public files, get them with " +
-      googleCloudBaseUrl +
-      "files_name",
+        googleCloudBaseUrl +
+        "files_name",
       allFilesName
     );
   } catch (error) {
@@ -107,6 +108,7 @@ export const onConnection = (socket: Socket) => {
   registerGeneralSocket(io, socket);
   registerPostedOffer(io, socket);
   registerDoubleAuction(io, socket);
+  registerDecentralized(io, socket);
 
   socket.on("disconnect", async () => {
     try {

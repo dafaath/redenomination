@@ -692,7 +692,6 @@ describe("Double Auction", () => {
                       } else {
                         // Seller can
                         if (response.data.matchData.match) {
-                          console.log("MATCH!!");
                           expect(response.status).to.be.equal(201);
                           expect(response.message).to.contains("match");
                           socketIdWithFinishedTransaction.push(

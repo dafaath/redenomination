@@ -7,6 +7,7 @@ import Seller from "../db/entities/seller.entity";
 import Phase from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
+  decentralizeds,
   doubleAuctionBuyerBid,
   doubleAuctionSellerBid,
   postedOffers,
@@ -191,6 +192,27 @@ export async function deleteShortLivedData(
             doubleAuctionSellerBid.splice(doubleAuctionSellerIndex, 1);
           }
         } while (doubleAuctionSellerIndex !== -1);
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
+        errorThrowUtils(error);
+      }
+    });
+
+    lock.acquire("deleteDecentralized", (done) => {
+      try {
+        let decentralizedIndex: number;
+        do {
+          decentralizedIndex = decentralizeds.findIndex(
+            (ds) => ds.phaseId === phaseId
+          );
+
+          if (decentralizedIndex !== -1) {
+            decentralizeds.splice(decentralizedIndex, 1);
+          }
+        } while (decentralizedIndex !== -1);
         done();
       } catch (error) {
         if (error instanceof Error) {
