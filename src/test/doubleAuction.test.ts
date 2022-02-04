@@ -1061,6 +1061,14 @@ describe("Double Auction", () => {
       });
     }
 
+    it("can delete socketIdWithFinishedTransaction", () => {
+      socketIdWithFinishedTransaction.splice(
+        0,
+        socketIdWithFinishedTransaction.length
+      );
+      expect(socketIdWithFinishedTransaction.length).to.be.equal(0);
+    });
+
     it("should be able to end simulation in phase " + phaseType, async () => {
       try {
         const promises: Array<Promise<void>> = [];
