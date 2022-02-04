@@ -18,6 +18,10 @@ import config from "../configHandler";
 import Bargain from "../db/entities/bargain.entity";
 import { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
+import {
+  doubleAuctionBuyerBid,
+  doubleAuctionSellerBid,
+} from "../db/shortLived";
 
 type PostedOfferResponse = {
   id: string;
@@ -654,11 +658,13 @@ describe("Double Auction", () => {
                   price = price / 1000;
                 }
 
+                const phaseId = sessionResponse.phases.find(
+                  (p) => p.phaseType === phaseType
+                )?.id;
+
                 testConnection.clientSockets[i].emit("da:postSeller", {
                   sellerBargain: price,
-                  phaseId: sessionResponse.phases.find(
-                    (p) => p.phaseType === phaseType
-                  )?.id,
+                  phaseId: phaseId,
                 });
                 testConnection.clientSockets[i].on(
                   "serverMessage",
@@ -701,6 +707,23 @@ describe("Double Auction", () => {
                             response.data.matchData.buyer.socketId
                           );
 
+                          const sellerBidMatchIndex = doubleAuctionSellerBid
+                            .filter((sb) => sb.phaseId === phaseId)
+                            .findIndex(
+                              (sb) =>
+                                sb.sellerBid.sellerId ===
+                                response.data.matchData.seller.id
+                            );
+                          const buyerBidMatchIndex = doubleAuctionBuyerBid
+                            .filter((sb) => sb.phaseId === phaseId)
+                            .findIndex(
+                              (sb) =>
+                                sb.buyerBid.buyerId ===
+                                response.data.matchData.seller.id
+                            );
+                          expect(sellerBidMatchIndex).to.equal(-1);
+                          expect(buyerBidMatchIndex).to.equal(-1);
+
                           const sellerSocket =
                             testConnection.clientSockets.find(
                               (cs) =>
@@ -713,7 +736,6 @@ describe("Double Auction", () => {
                           );
 
                           sellerSocket?.once("bidMatch", (bidMatchResponse) => {
-                            console.log(bidMatchResponse);
                             expect(bidMatchResponse).to.be.an("object");
                             expect(bidMatchResponse).to.have.property("match");
                             expect(bidMatchResponse).to.have.property("buyer");
@@ -724,7 +746,6 @@ describe("Double Auction", () => {
                           });
 
                           buyerSocket?.once("bidMatch", (bidMatchResponse) => {
-                            console.log(bidMatchResponse);
                             expect(bidMatchResponse).to.be.an("object");
                             expect(bidMatchResponse).to.have.property("match");
                             expect(bidMatchResponse).to.have.property("buyer");
@@ -879,12 +900,14 @@ describe("Double Auction", () => {
                 }
                 buyerBargainPrices.push(price);
 
+                const phaseId = sessionResponse.phases.find(
+                  (p) => p.phaseType === phaseType
+                )?.id;
                 testConnection.clientSockets[i].emit("da:postBuyer", {
                   buyerBargain: price,
-                  phaseId: sessionResponse.phases.find(
-                    (p) => p.phaseType === phaseType
-                  )?.id,
+                  phaseId: phaseId,
                 });
+
                 testConnection.clientSockets[i].on(
                   "serverMessage",
                   (response) => {
@@ -928,11 +951,27 @@ describe("Double Auction", () => {
                               cs.id === response.data.matchData.buyer.socketId
                           );
 
+                          const sellerBidMatchIndex = doubleAuctionSellerBid
+                            .filter((sb) => sb.phaseId === phaseId)
+                            .findIndex(
+                              (sb) =>
+                                sb.sellerBid.sellerId ===
+                                response.data.matchData.seller.id
+                            );
+                          const buyerBidMatchIndex = doubleAuctionBuyerBid
+                            .filter((sb) => sb.phaseId === phaseId)
+                            .findIndex(
+                              (sb) =>
+                                sb.buyerBid.buyerId ===
+                                response.data.matchData.seller.id
+                            );
+                          expect(sellerBidMatchIndex).to.equal(-1);
+                          expect(buyerBidMatchIndex).to.equal(-1);
+
                           const sellerPromise = new Promise<void>((resolve) => {
                             sellerSocket?.once(
                               "bidMatch",
                               (bidMatchResponse) => {
-                                console.log(bidMatchResponse);
                                 expect(bidMatchResponse).to.be.an("object");
                                 expect(bidMatchResponse).to.have.property(
                                   "match"
@@ -955,7 +994,6 @@ describe("Double Auction", () => {
                             buyerSocket?.once(
                               "bidMatch",
                               (bidMatchResponse) => {
-                                console.log(bidMatchResponse);
                                 expect(bidMatchResponse).to.be.an("object");
                                 expect(bidMatchResponse).to.have.property(
                                   "match"
@@ -1045,10 +1083,6 @@ describe("Double Auction", () => {
             await Promise.all(doubleAuctionPromises).then(() => {
               console.log("promise two complete");
             });
-
-            // await Promise.all(matchPromise).then(() => {
-            //   console.log("match promise complete");
-            // });
           } catch (error) {
             errorThrowUtils(error);
           }
@@ -1060,6 +1094,32 @@ describe("Double Auction", () => {
         expect(sellerBargainPrices.length).to.be.equal(0);
       });
     }
+
+    it("database have correct amount of open bid", () => {
+      const totalBuyerSocket = connectedSocketData.filter(
+        (csd) => csd.type === "buyer"
+      ).length;
+      const totalSellerSocket = connectedSocketData.filter(
+        (csd) => csd.type === "seller"
+      ).length;
+      const finishedBuyerSocket = connectedSocketData
+        .filter((csd) => csd.type === "buyer")
+        .filter((csd) =>
+          socketIdWithFinishedTransaction.includes(csd.detail.socketId)
+        ).length;
+      const finishedSellerSocket = connectedSocketData
+        .filter((csd) => csd.type === "seller")
+        .filter((csd) =>
+          socketIdWithFinishedTransaction.includes(csd.detail.socketId)
+        ).length;
+
+      expect(doubleAuctionBuyerBid.length).to.equal(
+        totalBuyerSocket - finishedBuyerSocket
+      );
+      expect(doubleAuctionSellerBid.length).to.equal(
+        totalSellerSocket - finishedSellerSocket
+      );
+    });
 
     it("can delete socketIdWithFinishedTransaction", () => {
       socketIdWithFinishedTransaction.splice(

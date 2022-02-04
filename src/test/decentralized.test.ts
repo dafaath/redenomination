@@ -568,7 +568,6 @@ describe("Posted offer", () => {
                   "serverMessage",
                   (response) => {
                     expectHaveTemplateResponse(response);
-                    console.log(response);
 
                     if (
                       buyersSocketId.includes(

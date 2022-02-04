@@ -54,9 +54,11 @@ export async function inputSellerPrice(
       try {
         const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
 
-        const doubleAuctionSellerBidIndex = doubleAuctionSellerBid.findIndex((item) => {
-          return item.sellerBid.sellerId === seller.id;
-        });
+        const doubleAuctionSellerBidIndex = doubleAuctionSellerBid.findIndex(
+          (item) => {
+            return item.sellerBid.sellerId === seller.id;
+          }
+        );
 
         if (doubleAuctionSellerBidIndex !== -1) {
           doubleAuctionSellerBid[doubleAuctionSellerBidIndex] = sellerBid;
@@ -83,7 +85,7 @@ export async function checkIfSellerBidMatch(
   phaseId: string
 ): Promise<MatchData | Error> {
   try {
-    let matchIndex = 0;
+    let buyerBidMatchIndex = 0;
     let buyer: Buyer | undefined = undefined;
     let seller: Seller | undefined = undefined;
     let transaction: Transaction | undefined = undefined;
@@ -97,20 +99,30 @@ export async function checkIfSellerBidMatch(
 
         seller = await Seller.findOne({ socketId: socketId });
         if (!seller) {
-          throw createHttpError(403, `You are not a seller or have not logged in`);
+          throw createHttpError(
+            403,
+            `You are not a seller or have not logged in`
+          );
         }
 
         sellerBid = validatePrice(phase, seller, sellerBid);
-        matchIndex = doubleAuctionBuyerBid
+        buyerBidMatchIndex = doubleAuctionBuyerBid
           .filter((bb) => bb.phaseId === phaseId)
           .findIndex((bb) => bb.buyerBid.price === sellerBid);
 
-        if (matchIndex !== -1) {
-          const buyerId = doubleAuctionBuyerBid[matchIndex].buyerBid.buyerId;
+        if (buyerBidMatchIndex !== -1) {
+          const buyerId =
+            doubleAuctionBuyerBid[buyerBidMatchIndex].buyerBid.buyerId;
           buyer = await Buyer.findOne({ id: buyerId });
           if (!buyer) {
             throw createHttpError(404, `There is no buyer with id ${buyerId}`);
           }
+
+          const sellerBidMatchIndex = doubleAuctionSellerBid
+            .filter((sb) => sb.phaseId === phaseId)
+            .findIndex((sb) => sb.sellerBid.sellerId === seller?.id);
+          doubleAuctionBuyerBid.splice(buyerBidMatchIndex, 1);
+          doubleAuctionSellerBid.splice(sellerBidMatchIndex, 1);
 
           const newTransaction = Transaction.create({
             phase: phase,
@@ -131,7 +143,7 @@ export async function checkIfSellerBidMatch(
       }
     });
 
-    if (matchIndex !== -1) {
+    if (buyerBidMatchIndex !== -1) {
       return {
         match: true,
         buyer: buyer,
@@ -190,9 +202,11 @@ export async function inputBuyerPrice(
       try {
         const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
 
-        const doubleAuctionBuyerBidIndex = doubleAuctionBuyerBid.findIndex((item) => {
-          return item.buyerBid.buyerId === buyer.id;
-        });
+        const doubleAuctionBuyerBidIndex = doubleAuctionBuyerBid.findIndex(
+          (item) => {
+            return item.buyerBid.buyerId === buyer.id;
+          }
+        );
 
         if (doubleAuctionBuyerBidIndex !== -1) {
           doubleAuctionBuyerBid[doubleAuctionBuyerBidIndex] = buyerBid;
@@ -226,7 +240,7 @@ export async function checkIfBuyerBidMatch(
   phaseId: string
 ): Promise<MatchData | Error> {
   try {
-    let matchIndex = 0;
+    let sellerBidMatchIndex = 0;
     let buyer: Buyer | undefined = undefined;
     let seller: Seller | undefined = undefined;
     let transaction: Transaction | undefined = undefined;
@@ -240,17 +254,20 @@ export async function checkIfBuyerBidMatch(
 
         buyer = await Buyer.findOne({ socketId: socketId });
         if (!buyer) {
-          throw createHttpError(403, `You are not a buyer or have not logged in`);
+          throw createHttpError(
+            403,
+            `You are not a buyer or have not logged in`
+          );
         }
 
         buyerBid = validatePrice(phase, buyer, buyerBid);
-        matchIndex = doubleAuctionSellerBid
+        sellerBidMatchIndex = doubleAuctionSellerBid
           .filter((sb) => sb.phaseId === phaseId)
           .findIndex((sb) => sb.sellerBid.price === buyerBid);
 
-        if (matchIndex !== -1) {
+        if (sellerBidMatchIndex !== -1) {
           const sellerId =
-            doubleAuctionSellerBid[matchIndex].sellerBid.sellerId;
+            doubleAuctionSellerBid[sellerBidMatchIndex].sellerBid.sellerId;
           seller = await Seller.findOne({ id: sellerId });
           if (!seller) {
             throw createHttpError(
@@ -258,6 +275,12 @@ export async function checkIfBuyerBidMatch(
               `There is no seller with id ${sellerId}`
             );
           }
+
+          const buyerBidMatchIndex = doubleAuctionBuyerBid
+            .filter((bb) => bb.phaseId === phaseId)
+            .findIndex((bb) => bb.buyerBid.buyerId === buyer?.id);
+          doubleAuctionSellerBid.splice(sellerBidMatchIndex, 1);
+          doubleAuctionBuyerBid.splice(buyerBidMatchIndex, 1);
 
           const newTransaction = Transaction.create({
             phase: phase,
@@ -278,7 +301,7 @@ export async function checkIfBuyerBidMatch(
       }
     });
 
-    if (matchIndex !== -1) {
+    if (sellerBidMatchIndex !== -1) {
       return {
         match: true,
         buyer: buyer,
