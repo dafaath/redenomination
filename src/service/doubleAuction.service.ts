@@ -6,6 +6,7 @@ import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
 import Phase from "../db/entities/phase.entity";
 import Seller from "../db/entities/seller.entity";
+import Session from "../db/entities/session.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
   BuyerBid,
@@ -366,13 +367,35 @@ export async function getMaxAndMinPrice(
   }
 }
 
-export async function getTrxOccurrence(
+export async function allSold(
   phaseId: string
-): Promise<number | Error> {
+): Promise<Boolean | Error> {
   try {
-    return await Transaction.createQueryBuilder("transaction")
+    const numOfTrx = await Transaction.createQueryBuilder("transaction")
       .where("transaction.phase.id=:phaseId", { phaseId })
       .getCount();
+
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session"],
+    });
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
+    const session = await Session.findOne(phase.session.id, {
+      relations: ["simulation"],
+    });
+    if (!session) {
+      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
+    }
+
+    const playersNumber = session.simulation.participantNumber / 2;
+    if (numOfTrx >= playersNumber) {
+      return true;
+    } else if (numOfTrx < playersNumber) {
+      return false;
+    } else {
+      throw new Error("Something gone wrong");
+    }
   } catch (error) {
     return errorReturnHandler(error);
   }
