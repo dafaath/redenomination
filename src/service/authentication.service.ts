@@ -30,6 +30,7 @@ export type ChosenHost = {
   type: ChosenHostType;
   detail: Buyer | Seller;
   simulationType: string;
+  isSessionRunning: boolean;
   goodsType: string;
   goodsPic: string;
   goodsName: string;
@@ -119,6 +120,7 @@ export async function loginTokenSocket(
                 simulationType: simulation.simulationType,
                 timer: session.timer,
                 phases: session.phases,
+                isSessionRunning: session.isRunning,
               };
             } else if (seller) {
               seller.isLoggedIn = true;
@@ -134,6 +136,7 @@ export async function loginTokenSocket(
                 simulationType: simulation.simulationType,
                 timer: session.timer,
                 phases: session.phases,
+                isSessionRunning: session.isRunning,
               };
             }
           } else {
@@ -152,6 +155,7 @@ export async function loginTokenSocket(
                 simulationType: simulation.simulationType,
                 timer: session.timer,
                 phases: session.phases,
+                isSessionRunning: session.isRunning,
               };
             } else if (buyer) {
               buyer.isLoggedIn = true;
@@ -167,6 +171,7 @@ export async function loginTokenSocket(
                 simulationType: simulation.simulationType,
                 timer: session.timer,
                 phases: session.phases,
+                isSessionRunning: session.isRunning,
               };
             }
           }
@@ -195,7 +200,10 @@ export async function adminLoginTokenSocket(
       .where("simulation.token=:token", { token })
       .getOne();
     if (!simulation) {
-      throw createHttpError(404, `Login token ${token} is not found in database`);
+      throw createHttpError(
+        404,
+        `Login token ${token} is not found in database`
+      );
     }
 
     const sessions = await Session.createQueryBuilder("session")
@@ -209,7 +217,10 @@ export async function adminLoginTokenSocket(
       .getMany();
     const session = sessions[0];
     if (!session) {
-      throw createHttpError(404, `This simulation has no available running session`);
+      throw createHttpError(
+        404,
+        `This simulation has no available running session`
+      );
     }
 
     return session;

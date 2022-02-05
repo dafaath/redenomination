@@ -133,6 +133,8 @@ describe("Authentication", () => {
                 expect(response.data).to.have.property("timer");
                 expect(response.data.timer).to.be.a("number");
                 expect(response.data).to.have.property("phases");
+                expect(response.data).to.have.property("isSessionRunning");
+                expect(response.data.isSessionRunning).to.be.an("boolean");
                 expect(Array.isArray(response.data.phases)).to.be.true;
                 expect(response.data.phases.length).to.be.equal(3);
                 response.data.phases.forEach((p: any) => {
