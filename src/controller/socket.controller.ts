@@ -9,7 +9,8 @@ import {
   deleteShortLivedData,
   toggleReady,
   inputProfit,
-  calculatePhase,
+  startPhase,
+  finishPhase,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -46,6 +47,10 @@ export function startPhaseHandler(io: Server, socket: Socket) {
     try {
       const validationError = validateSocketInput(request, startPhaseSchema);
       checkIfError(validationError);
+
+      const startError = startPhase(request.phaseId)
+      checkIfError(startError);
+
       socketHandleSuccessResponse(
         socket,
         200,
@@ -67,8 +72,8 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, finishPhaseSchema);
       checkIfError(validationError);
 
-      const calcPhase = await calculatePhase(request.phaseId)
-      checkIfError(calcPhase);
+      const finishError = finishPhase(request.phaseId)
+      checkIfError(finishError);
 
       const error = await deleteShortLivedData(request.phaseId);
       checkIfError(error);

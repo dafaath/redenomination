@@ -230,6 +230,63 @@ export async function deleteShortLivedData(
   }
 }
 
+export async function startPhase(
+  phaseId: string
+): Promise<Phase | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId);
+
+    if (!phase) {
+      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
+    }
+
+    // Run Phase
+    if (phase.isRunning === false) {
+      phase.isRunning = true;
+      await phase.save();
+    }
+
+    return phase;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function finishPhase(
+  phaseId: string
+): Promise<Phase | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId);
+
+    if (!phase) {
+      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
+    }
+
+    // End Phase
+    if (phase.isRunning === true) {
+      phase.isRunning = false;
+
+      const trxList = await Transaction.createQueryBuilder("transaction")
+        .where("transaction.phase.id=:phaseId", { phaseId })
+        .getMany();
+
+      if (!trxList) {
+        throw createHttpError(404, `There is no recorded transactions for this phase`);
+      }
+
+      const sumTrxPrices = trxList.reduce((prev, t) => prev + Number(t.price), 0)
+      phase.avgTrxOccurrence = Number(trxList.length);
+      phase.avgTrxPrice = Number(sumTrxPrices) / trxList.length;
+      phase.timeLastRun = new Date(Date.now());
+      await phase.save();
+    }
+
+    return phase;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
 type CollectedProfit = {
   simulationBudget: number;
   profitCollection: Array<Profit>;
@@ -254,39 +311,6 @@ export async function inputProfit(
     };
 
     return collectedProfit;
-  } catch (error) {
-    return errorReturnHandler(error);
-  }
-}
-
-export async function calculatePhase(phaseId: string): Promise<Phase | Error> {
-  try {
-    const phase = await Phase.findOne(phaseId);
-
-    if (!phase) {
-      throw createHttpError(
-        404,
-        "Session with id " + phaseId + " is not found"
-      );
-    }
-
-    const trxList = await Transaction.createQueryBuilder("transaction")
-      .where("transaction.phase.id=:phaseId", { phaseId })
-      .getMany();
-
-    if (!trxList) {
-      throw createHttpError(
-        404,
-        `There is no recorded transactions for this phase`
-      );
-    }
-
-    const sumTrxPrices = trxList.reduce((prev, t) => prev + Number(t.price), 0)
-    phase.avgTrxOccurrence = Number(trxList.length);
-    phase.avgTrxPrice = Number(sumTrxPrices) / trxList.length;
-    phase.timeLastRun = new Date(Date.now());
-
-    return await phase.save();
   } catch (error) {
     return errorReturnHandler(error);
   }

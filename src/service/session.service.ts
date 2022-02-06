@@ -165,15 +165,12 @@ export async function runSession(sessionId: string): Promise<Session | Error> {
     }
 
     // Run Session
-    session.phases = session.phases.map((p) => {
-      p.isRunning = true;
-      return p;
-    });
-    session.isRunning = true;
+    if (session.isRunning === false) {
+      session.isRunning = true;
+      await session.save();
+    }
 
-    const runnedSession = await session.save();
-
-    return runnedSession;
+    return session;
   } catch (error) {
     return errorReturnHandler(error);
   }

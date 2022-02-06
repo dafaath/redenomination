@@ -31,6 +31,8 @@ export async function inputSellerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    } else if (phase.isRunning === false) {
+      throw createHttpError(404, `This phase is not running`);
     }
 
     const priceAdjusted = validatePrice(phase, seller, price);
@@ -111,8 +113,13 @@ export async function buyDecentralized(
         const seller = await Seller.findOne(
           decentralizeds[decentralizedIndex].sellerId
         );
-        const phase = await Phase.findOne(phaseId);
         const price = decentralizeds[decentralizedIndex].price;
+        const phase = await Phase.findOne(phaseId);
+        if (!phase) {
+          throw createHttpError(404, `There is no phase with id ${phaseId}`);
+        } else if (phase.isRunning === false) {
+          throw createHttpError(404, `This phase is not running`);
+        }
 
         const transaction = Transaction.create({
           buyer: buyer,

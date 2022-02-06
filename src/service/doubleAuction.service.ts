@@ -29,6 +29,8 @@ export async function inputSellerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    } else if (phase.isRunning === false) {
+      throw createHttpError(404, `This phase is not running`);
     }
 
     const transaction = await Transaction.createQueryBuilder("transaction")
@@ -96,6 +98,8 @@ export async function checkIfSellerBidMatch(
         const phase = await Phase.findOne({ id: phaseId });
         if (!phase) {
           throw createHttpError(404, `There is no phase with id ${phaseId}`);
+        } else if (phase.isRunning === false) {
+          throw createHttpError(404, `This phase is not running`);
         }
 
         seller = await Seller.findOne({ socketId: socketId });
@@ -178,6 +182,8 @@ export async function inputBuyerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    } else if (phase.isRunning === false) {
+      throw createHttpError(404, `This phase is not running`);
     }
 
     const transaction = await Transaction.createQueryBuilder("transaction")
@@ -251,6 +257,8 @@ export async function checkIfBuyerBidMatch(
         const phase = await Phase.findOne({ id: phaseId });
         if (!phase) {
           throw createHttpError(404, `There is no phase with id ${phaseId}`);
+        } else if (phase.isRunning === false) {
+          throw createHttpError(404, `This phase is not running`);
         }
 
         buyer = await Buyer.findOne({ socketId: socketId });
@@ -380,7 +388,10 @@ export async function allSold(
     });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    } else if (phase.isRunning === false) {
+      throw createHttpError(404, `This phase is not running`);
     }
+
     const session = await Session.findOne(phase.session.id, {
       relations: ["simulation"],
     });
