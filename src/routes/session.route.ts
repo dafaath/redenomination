@@ -6,6 +6,7 @@ import {
   finishSessionHandler,
   getAllSessionHandler,
   getOneSessionHandler,
+  getSessionSummaryHandler,
   runSessionHandler,
   updateSessionHandler,
 } from "../controller/session.controller";
@@ -22,6 +23,8 @@ sessionRouter.use(validateAuthentication(ROLE.ADMIN));
 sessionRouter.get("/api/sessions", getAllSessionHandler);
 
 sessionRouter.get("/api/sessions/:id", getOneSessionHandler);
+
+sessionRouter.get("/api/sessions/:id/summary", getSessionSummaryHandler);
 
 sessionRouter.put(
   "/api/sessions/:id",

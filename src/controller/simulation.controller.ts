@@ -11,6 +11,7 @@ import {
   deleteSimulation,
   getAllSimulation,
   getOneSimulation,
+  getSimulationSummary,
   saveGoodsPicture,
   updateSimulation,
 } from "../service/simulation.service";
@@ -140,6 +141,23 @@ export async function getReadyCountHandler(req: Request, res: Response) {
       200,
       "Successfully get simulation ready count",
       readyUserCount
+    );
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function getSimulationSummaryHandler(req: Request, res: Response) {
+  try {
+    const simulationId = req.params.id;
+    const simulationSummary = await getSimulationSummary(simulationId);
+    checkIfError(simulationSummary);
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully get simulation summary",
+      simulationSummary
     );
   } catch (error) {
     handleErrorResponse(res, error);

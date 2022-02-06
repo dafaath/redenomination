@@ -150,16 +150,61 @@ describe("Double Auction", () => {
     }
   });
 
-  it("seller should NOT be able to input price bellow unit cost", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let i = 0; i < phaseTypes.length; i++) {
-        const phaseType = phaseTypes[i];
+  const phaseTypes = [
+    PhaseType.PRE_REDENOM_PRICE,
+    PhaseType.TRANSITION_PRICE,
+    PhaseType.POST_REDENOM_PRICE,
+  ];
+  phaseTypes.forEach((phaseType) => {
+    it("should be able start phase", async () => {
+      try {
+        const promises: Array<Promise<void>> = [];
+        const totalBuyerSeller =
+          simulationResponse.buyers.length + simulationResponse.sellers.length;
+        const countReceiveMessage: Array<number> = [];
+
+        for (
+          let i = totalBuyerSeller;
+          i < testConnection.clientSockets.length;
+          i++
+        ) {
+          testConnection.clientSockets[i].on("readyMessage", (response) => {
+            expect(response).to.be.undefined;
+          });
+        }
+
+        for (let i = 0; i < clientConnectionTotal; i++) {
+          countReceiveMessage.push(0);
+          const promise = new Promise<void>((resolve) => {
+            testConnection.clientSockets[i].emit("startPhase", {
+              phaseId: sessionResponse.phases.find(
+                (p) => p.phaseType === phaseType
+              )?.id,
+            });
+            testConnection.clientSockets[i].on("serverMessage", (response) => {
+              expectHaveTemplateResponse(response);
+
+              expect(response.status).to.be.equal(200);
+              expect(response.message).to.contains("Successfully start");
+              expect(response.data).to.have.property("phaseId");
+
+              resolve();
+            });
+          });
+
+          promises.push(promise);
+        }
+
+        await Promise.all(promises).then(() => {
+          console.log("promise one complete");
+        });
+      } catch (error) {
+        errorThrowUtils(error);
+      }
+    }).timeout(2000);
+
+    it("seller should NOT be able to input price bellow unit cost", async () => {
+      try {
         const promises: Array<Promise<void>> = [];
         const totalBuyerSeller =
           simulationResponse.buyers.length + simulationResponse.sellers.length;
@@ -241,22 +286,13 @@ describe("Double Auction", () => {
         await Promise.all(promises).then(() =>
           console.log("promise one finished")
         );
+      } catch (error) {
+        errorThrowUtils(error);
       }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(2000);
+    }).timeout(2000);
 
-  it("buyer should NOT be able to input price above unit cost", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let i = 0; i < phaseTypes.length; i++) {
-        const phaseType = phaseTypes[i];
+    it("buyer should NOT be able to input price above unit cost", async () => {
+      try {
         const promises: Array<Promise<void>> = [];
         const totalBuyerSeller =
           simulationResponse.buyers.length + simulationResponse.sellers.length;
@@ -340,20 +376,16 @@ describe("Double Auction", () => {
         await Promise.all(promises).then(() =>
           console.log("promise one finished")
         );
+      } catch (error) {
+        errorThrowUtils(error);
       }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(2000);
+    }).timeout(2000);
 
-  it("seller should NOT be able to input price not in phaseType", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let z = 0; z < phaseTypes.length; z++) {
-        const phaseType = phaseTypes[z];
+    it("seller should NOT be able to input price not in phaseType", async () => {
+      try {
+        if (phaseType === PhaseType.TRANSITION_PRICE) {
+          return;
+        }
         const promises: Array<Promise<void>> = [];
         const totalBuyerSeller =
           simulationResponse.buyers.length + simulationResponse.sellers.length;
@@ -428,20 +460,16 @@ describe("Double Auction", () => {
         await Promise.all(promises).then(() =>
           console.log("promise one finished")
         );
+      } catch (error) {
+        errorThrowUtils(error);
       }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(2000);
+    }).timeout(2000);
 
-  it("buyer should NOT be able to input price not in phaseType", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let z = 0; z < phaseTypes.length; z++) {
-        const phaseType = phaseTypes[z];
+    it("buyer should NOT be able to input price not in phaseType", async () => {
+      try {
+        if (phaseType === PhaseType.TRANSITION_PRICE) {
+          return;
+        }
         const promises: Array<Promise<void>> = [];
         const totalBuyerSeller =
           simulationResponse.buyers.length + simulationResponse.sellers.length;
@@ -512,64 +540,7 @@ describe("Double Auction", () => {
 
           promises.push(promise);
         }
-
-        await Promise.all(promises).then(() =>
-          console.log("promise one finished")
-        );
-      }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(2000);
-
-  const phaseTypes = [
-    PhaseType.PRE_REDENOM_PRICE,
-    PhaseType.TRANSITION_PRICE,
-    PhaseType.POST_REDENOM_PRICE,
-  ];
-  phaseTypes.forEach((phaseType) => {
-    it("should be able start phase", async () => {
-      try {
-        const promises: Array<Promise<void>> = [];
-        const totalBuyerSeller =
-          simulationResponse.buyers.length + simulationResponse.sellers.length;
-        const countReceiveMessage: Array<number> = [];
-
-        for (
-          let i = totalBuyerSeller;
-          i < testConnection.clientSockets.length;
-          i++
-        ) {
-          testConnection.clientSockets[i].on("readyMessage", (response) => {
-            expect(response).to.be.undefined;
-          });
-        }
-
-        for (let i = 0; i < clientConnectionTotal; i++) {
-          countReceiveMessage.push(0);
-          const promise = new Promise<void>((resolve) => {
-            testConnection.clientSockets[i].emit("startPhase", {
-              phaseId: sessionResponse.phases.find(
-                (p) => p.phaseType === phaseType
-              )?.id,
-            });
-            testConnection.clientSockets[i].on("serverMessage", (response) => {
-              expectHaveTemplateResponse(response);
-
-              expect(response.status).to.be.equal(200);
-              expect(response.message).to.contains("Successfully start");
-              expect(response.data).to.have.property("phaseId");
-
-              resolve();
-            });
-          });
-
-          promises.push(promise);
-        }
-
-        await Promise.all(promises).then(() => {
-          console.log("promise one complete");
-        });
+        return await Promise.all(promises);
       } catch (error) {
         errorThrowUtils(error);
       }

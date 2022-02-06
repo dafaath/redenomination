@@ -375,9 +375,7 @@ export async function getMaxAndMinPrice(
   }
 }
 
-export async function allSold(
-  phaseId: string
-): Promise<Boolean | Error> {
+export async function allSold(phaseId: string): Promise<boolean | Error> {
   try {
     const numOfTrx = await Transaction.createQueryBuilder("transaction")
       .where("transaction.phase.id=:phaseId", { phaseId })
@@ -396,7 +394,10 @@ export async function allSold(
       relations: ["simulation"],
     });
     if (!session) {
-      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
+      throw createHttpError(
+        404,
+        `There is no session with id ${phase.session.id}`
+      );
     }
 
     const playersNumber = session.simulation.participantNumber / 2;

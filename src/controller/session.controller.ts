@@ -11,6 +11,7 @@ import {
   finishSession,
   getAllSession,
   getOneSession,
+  getSessionSummary,
   runSession,
   updateSession,
 } from "../service/session.service";
@@ -108,6 +109,28 @@ export async function finishSessionHandler(req: Request, res: Response) {
     checkIfError(session);
 
     handleSuccessResponse(res, 200, "Successfully finish the session", session);
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function getSessionSummaryHandler(req: Request, res: Response) {
+  try {
+    const sessionId = req.params.id;
+    const session = await getOneSession(sessionId);
+    if (session instanceof Error) {
+      throw session;
+    }
+
+    const sessionSummary = await getSessionSummary(session);
+    checkIfError(sessionSummary);
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully get session summary",
+      sessionSummary
+    );
   } catch (error) {
     handleErrorResponse(res, error);
   }

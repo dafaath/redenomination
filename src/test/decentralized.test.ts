@@ -139,112 +139,154 @@ describe("Posted offer", () => {
     }
   });
 
-  async function shouldNotBeAbleToInputPrice(phaseType: PhaseType) {
-    const promises: Array<Promise<void>> = [];
-    const totalBuyerSeller =
-      simulationResponse.buyers.length + simulationResponse.sellers.length;
-    const countReceiveMessage: Array<number> = [];
+  const phaseTypes = [
+    PhaseType.PRE_REDENOM_PRICE,
+    PhaseType.TRANSITION_PRICE,
+    PhaseType.POST_REDENOM_PRICE,
+  ];
+  phaseTypes.forEach((phaseType) => {
+    it("should be able start phase", async () => {
+      try {
+        const promises: Array<Promise<void>> = [];
+        const totalBuyerSeller =
+          simulationResponse.buyers.length + simulationResponse.sellers.length;
+        const countReceiveMessage: Array<number> = [];
 
-    for (
-      let i = totalBuyerSeller;
-      i < testConnection.clientSockets.length;
-      i++
-    ) {
-      testConnection.clientSockets[i].on("readyMessage", (response) => {
-        expect(response).to.be.undefined;
-      });
-    }
-
-    const buyersSocketId = connectedSocketData
-      .filter((s) => s.type === "buyer")
-      .map((s) => s.detail.socketId);
-    const sellersSocketId = connectedSocketData
-      .filter((s) => s.type === "seller")
-      .map((s) => s.detail.socketId);
-
-    for (let i = 0; i < clientConnectionTotal; i++) {
-      countReceiveMessage.push(0);
-
-      const promise = new Promise<void>((resolve) => {
-        const thisSocketUserData = connectedSocketData.find(
-          (s) => s.detail.socketId === testConnection.clientSockets[i].id
-        );
-        const unitCost = thisSocketUserData
-          ? thisSocketUserData.detail.unitCost
-            ? thisSocketUserData.detail.unitCost
-            : 2000
-          : 2000;
-        let price = unitCost - 1000;
-
-        if (phaseType === PhaseType.TRANSITION_PRICE) {
-          const rand = getRandomNumberBetween(0, 1);
-          if (rand === 0) {
-            price = price / 1000;
-          }
-        } else if (phaseType === PhaseType.POST_REDENOM_PRICE) {
-          price = price / 1000;
+        for (
+          let i = totalBuyerSeller;
+          i < testConnection.clientSockets.length;
+          i++
+        ) {
+          testConnection.clientSockets[i].on("readyMessage", (response) => {
+            expect(response).to.be.undefined;
+          });
         }
 
-        const phase = sessionResponse.phases.find(
-          (p) => p.phaseType === phaseType
-        );
-        const phaseId = phase?.id;
-        testConnection.clientSockets[i].emit("ds:inputSellerPrice", {
-          price: price,
-          phaseId: phaseId,
+        for (let i = 0; i < clientConnectionTotal; i++) {
+          countReceiveMessage.push(0);
+          const promise = new Promise<void>((resolve) => {
+            testConnection.clientSockets[i].emit("startPhase", {
+              phaseId: sessionResponse.phases.find(
+                (p) => p.phaseType === phaseType
+              )?.id,
+            });
+            testConnection.clientSockets[i].on("serverMessage", (response) => {
+              expectHaveTemplateResponse(response);
+
+              expect(response.status).to.be.equal(200);
+              expect(response.message).to.contains("Successfully start");
+              expect(response.data).to.have.property("phaseId");
+
+              resolve();
+            });
+          });
+
+          promises.push(promise);
+        }
+
+        await Promise.all(promises).then(() => {
+          console.log("promise one complete");
         });
-
-        testConnection.clientSockets[i].on("serverMessage", (response) => {
-          expectHaveTemplateResponse(response);
-
-          if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
-            expect(response.status).to.be.equal(403);
-            expect(response.message).to.contains("not a seller");
-          }
-
-          if (sellersSocketId.includes(testConnection.clientSockets[i].id)) {
-            expect(response.status).to.be.equal(400);
-            expect(response.message).to.contains(
-              `must be higher than seller unit cost`
-            );
-          }
-
-          resolve();
-        });
-      });
-
-      promises.push(promise);
-    }
-
-    return await Promise.all(promises).then(() =>
-      console.log("promise one finished")
-    );
-  }
-
-  it("seller should NOT be able to input price bellow unit cost in pre redenom", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.TRANSITION_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let i = 0; i < 4; i++) {
-        await shouldNotBeAbleToInputPrice(phaseTypes[i]);
+      } catch (error) {
+        errorThrowUtils(error);
       }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(5000);
+    }).timeout(5000);
 
-  it("seller should NOT be able to input price not in phaseType", async () => {
-    try {
-      const phaseTypes = [
-        PhaseType.PRE_REDENOM_PRICE,
-        PhaseType.POST_REDENOM_PRICE,
-      ];
-      for (let z = 0; z < phaseTypes.length; z++) {
-        const phaseType = phaseTypes[z];
+    it("seller should NOT be able to input price bellow unit cost in pre redenom", async () => {
+      try {
+        const promises: Array<Promise<void>> = [];
+        const totalBuyerSeller =
+          simulationResponse.buyers.length + simulationResponse.sellers.length;
+        const countReceiveMessage: Array<number> = [];
+
+        for (
+          let i = totalBuyerSeller;
+          i < testConnection.clientSockets.length;
+          i++
+        ) {
+          testConnection.clientSockets[i].on("readyMessage", (response) => {
+            expect(response).to.be.undefined;
+          });
+        }
+
+        const buyersSocketId = connectedSocketData
+          .filter((s) => s.type === "buyer")
+          .map((s) => s.detail.socketId);
+        const sellersSocketId = connectedSocketData
+          .filter((s) => s.type === "seller")
+          .map((s) => s.detail.socketId);
+
+        for (let i = 0; i < clientConnectionTotal; i++) {
+          countReceiveMessage.push(0);
+
+          const promise = new Promise<void>((resolve) => {
+            const thisSocketUserData = connectedSocketData.find(
+              (s) => s.detail.socketId === testConnection.clientSockets[i].id
+            );
+            const unitCost = thisSocketUserData
+              ? thisSocketUserData.detail.unitCost
+                ? thisSocketUserData.detail.unitCost
+                : 2000
+              : 2000;
+            let price = unitCost - 1000;
+
+            if (phaseType === PhaseType.TRANSITION_PRICE) {
+              const rand = getRandomNumberBetween(0, 1);
+              if (rand === 0) {
+                price = price / 1000;
+              }
+            } else if (phaseType === PhaseType.POST_REDENOM_PRICE) {
+              price = price / 1000;
+            }
+
+            const phase = sessionResponse.phases.find(
+              (p) => p.phaseType === phaseType
+            );
+            const phaseId = phase?.id;
+            testConnection.clientSockets[i].emit("ds:inputSellerPrice", {
+              price: price,
+              phaseId: phaseId,
+            });
+
+            testConnection.clientSockets[i].on("serverMessage", (response) => {
+              expectHaveTemplateResponse(response);
+              console.log(response);
+
+              if (buyersSocketId.includes(testConnection.clientSockets[i].id)) {
+                expect(response.status).to.be.equal(403);
+                expect(response.message).to.contains("not a seller");
+              }
+
+              if (
+                sellersSocketId.includes(testConnection.clientSockets[i].id)
+              ) {
+                expect(response.status).to.be.equal(400);
+                expect(response.message).to.contains(
+                  `must be higher than seller unit cost`
+                );
+              }
+
+              resolve();
+            });
+          });
+
+          promises.push(promise);
+        }
+
+        return await Promise.all(promises).then(() =>
+          console.log("promise one finished")
+        );
+      } catch (error) {
+        errorThrowUtils(error);
+      }
+    }).timeout(5000);
+
+    it("seller should NOT be able to input price not in phaseType", async () => {
+      try {
+        if (phaseType === PhaseType.TRANSITION_PRICE) {
+          return;
+        }
+
         const promises: Array<Promise<void>> = [];
         const totalBuyerSeller =
           simulationResponse.buyers.length + simulationResponse.sellers.length;
@@ -319,60 +361,6 @@ describe("Posted offer", () => {
         await Promise.all(promises).then(() =>
           console.log("promise one finished")
         );
-      }
-    } catch (error) {
-      errorThrowUtils(error);
-    }
-  }).timeout(5000);
-
-  const phaseTypes = [
-    PhaseType.PRE_REDENOM_PRICE,
-    PhaseType.TRANSITION_PRICE,
-    PhaseType.POST_REDENOM_PRICE,
-  ];
-  phaseTypes.forEach((phaseType) => {
-    it("should be able start phase", async () => {
-      try {
-        const promises: Array<Promise<void>> = [];
-        const totalBuyerSeller =
-          simulationResponse.buyers.length + simulationResponse.sellers.length;
-        const countReceiveMessage: Array<number> = [];
-
-        for (
-          let i = totalBuyerSeller;
-          i < testConnection.clientSockets.length;
-          i++
-        ) {
-          testConnection.clientSockets[i].on("readyMessage", (response) => {
-            expect(response).to.be.undefined;
-          });
-        }
-
-        for (let i = 0; i < clientConnectionTotal; i++) {
-          countReceiveMessage.push(0);
-          const promise = new Promise<void>((resolve) => {
-            testConnection.clientSockets[i].emit("startPhase", {
-              phaseId: sessionResponse.phases.find(
-                (p) => p.phaseType === phaseType
-              )?.id,
-            });
-            testConnection.clientSockets[i].on("serverMessage", (response) => {
-              expectHaveTemplateResponse(response);
-
-              expect(response.status).to.be.equal(200);
-              expect(response.message).to.contains("Successfully start");
-              expect(response.data).to.have.property("phaseId");
-
-              resolve();
-            });
-          });
-
-          promises.push(promise);
-        }
-
-        await Promise.all(promises).then(() => {
-          console.log("promise one complete");
-        });
       } catch (error) {
         errorThrowUtils(error);
       }

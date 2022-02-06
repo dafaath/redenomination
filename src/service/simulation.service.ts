@@ -11,6 +11,7 @@ import fileUpload from "express-fileupload";
 import { googleCloud } from "../app";
 import config from "../configHandler";
 import { getManager } from "typeorm";
+import { getSessionSummary, SessionSummary } from "./session.service";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -284,6 +285,55 @@ export async function countReadyUser(
     } else {
       return new Error("something wrong");
     }
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export type SimulationSummary = {
+  id: string;
+  avgTrxOccurrence: number;
+  avgTrxPrice: number;
+  timeLastRun: Date;
+  sessionSummary: SessionSummary[];
+};
+
+export async function getSimulationSummary(
+  simulationId: string
+): Promise<SimulationSummary | Error> {
+  try {
+    const simulation = await Simulation.findOne(simulationId, {
+      relations: ["buyers", "sellers", "sessions", "sessions.phases"],
+    });
+
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        "Simulation with id " + simulationId + " is not found"
+      );
+    }
+
+    const sessionSummaries: SessionSummary[] = [];
+
+    for (let i = 0; i < simulation.sessions.length; i++) {
+      const session = simulation.sessions[i];
+      const sessionSummary = await getSessionSummary(session);
+      if (sessionSummary instanceof Error) {
+        throw sessionSummary;
+      }
+
+      sessionSummaries.push(sessionSummary);
+    }
+
+    const SimulationSummary: SimulationSummary = {
+      id: simulation.id,
+      avgTrxOccurrence: simulation.avgTrxOccurrence,
+      avgTrxPrice: simulation.avgTrxPrice,
+      timeLastRun: simulation.timeLastRun,
+      sessionSummary: sessionSummaries,
+    };
+
+    return SimulationSummary;
   } catch (error) {
     return errorReturnHandler(error);
   }

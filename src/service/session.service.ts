@@ -5,6 +5,8 @@ import { createSessionSchema } from "../schema/session.schema";
 import yup from "yup";
 import Simulation from "../db/entities/simulation.entity";
 import Phase, { PhaseType } from "../db/entities/phase.entity";
+import Transaction from "../db/entities/transaction.entity";
+import Bargain from "../db/entities/bargain.entity";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -198,16 +200,91 @@ export async function finishSession(
     });
     session.isRunning = false;
 
-    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true)
+    const allPhasesRunned = session.phases.reduce(
+      (prev, phase) => prev && phase.isDone(),
+      true
+    );
     if (allPhasesRunned) {
-      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxPrice), 0) / Number(session.phases.length);
-      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
+      session.avgTrxPrice =
+        session.phases.reduce(
+          (prev, phase) => prev + Number(phase.avgTrxPrice),
+          0
+        ) / Number(session.phases.length);
+      session.avgTrxOccurrence =
+        session.phases.reduce(
+          (prev, phase) => prev + Number(phase.avgTrxOccurrence),
+          0
+        ) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
     }
 
     const finishedSession = await session.save();
 
     return finishedSession;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export type PhaseSummary = {
+  id: string;
+  avgTrxOccurrence: number;
+  avgTrxPrice: number;
+  transactionList: Transaction[];
+  bargainList: Bargain[];
+};
+
+export async function getPhaseSummary(
+  phase: Phase
+): Promise<PhaseSummary | Error> {
+  try {
+    const phaseSummary: PhaseSummary = {
+      id: phase.id,
+      avgTrxOccurrence: phase.avgTrxOccurrence,
+      avgTrxPrice: phase.avgTrxPrice,
+      bargainList: phase.bargains,
+      transactionList: phase.transactions,
+    };
+
+    return phaseSummary;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export type SessionSummary = {
+  id: string;
+  avgTrxOccurrence: number;
+  avgTrxPrice: number;
+  timeLastRun: Date;
+  phaseSummary: PhaseSummary[];
+};
+
+export async function getSessionSummary(
+  session: Session
+): Promise<SessionSummary | Error> {
+  try {
+    const phaseSummaries: PhaseSummary[] = [];
+
+    for (let i = 0; i < session.phases.length; i++) {
+      const phase = session.phases[i];
+      const phaseSummary = await getPhaseSummary(phase);
+      if (phaseSummary instanceof Error) {
+        throw phaseSummary;
+      }
+
+      phaseSummaries.push(phaseSummary);
+    }
+
+    const sessionSummary: SessionSummary = {
+      id: session.id,
+      avgTrxOccurrence: session.avgTrxOccurrence,
+      avgTrxPrice: session.avgTrxPrice,
+      timeLastRun: session.timeLastRun,
+      phaseSummary: phaseSummaries,
+    };
+
+    return sessionSummary;
   } catch (error) {
     return errorReturnHandler(error);
   }
