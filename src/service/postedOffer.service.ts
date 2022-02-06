@@ -1,12 +1,12 @@
 import createHttpError from "http-errors";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
-import { isRedenominationNumber } from "../common/utils/other";
 import { validatePrice } from "../common/utils/redenomination";
 import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
-import Phase, { PhaseType } from "../db/entities/phase.entity";
+import Phase from "../db/entities/phase.entity";
 import Seller from "../db/entities/seller.entity";
+import Session from "../db/entities/session.entity";
 import Transaction from "../db/entities/transaction.entity";
 import { PostedOffer, postedOffers } from "../db/shortLived";
 
@@ -46,7 +46,18 @@ export async function inputSellerPrice(
 
     await bargain.save();
 
-    postedOffers.push(postedOffer);
+    const postedOfferIndex = postedOffers.findIndex(
+      (item) => {
+        return item.sellerId === seller.id;
+      }
+    );
+
+    if (postedOfferIndex !== -1) {
+      postedOffers[postedOfferIndex] = postedOffer;
+    } else {
+      postedOffers.push(postedOffer);
+    }
+
     return postedOffers.filter((po) => po.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
@@ -134,6 +145,37 @@ export async function buyPostedOffer(
     });
 
     return postedOffers.filter((po) => po.phaseId === phaseId);
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function checkIfIsDone(
+  phaseId: string,
+  postedOffersNumber: number,
+): Promise<Boolean | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session"],
+    });
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
+
+    const session = await Session.findOne(phase.session.id, {
+      relations: ["simulation"],
+    });
+    if (!session) {
+      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
+    }
+
+    const sellerNumber = session.simulation.sellers.length;
+
+    if (postedOffersNumber === sellerNumber) {
+      return true;
+    }
+
+    return false;
   } catch (error) {
     return errorReturnHandler(error);
   }

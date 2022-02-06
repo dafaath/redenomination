@@ -13,6 +13,7 @@ import { checkIfError } from "../common/utils/error";
 import {
   buyPostedOffer,
   inputSellerPrice,
+  checkIfIsDone,
 } from "../service/postedOffer.service";
 
 type socketTokenLoginRequest = yup.InferType<typeof inputSellerPriceSchema>;
@@ -31,6 +32,12 @@ export function inputSellerPriceHandler(io: Server, socket: Socket) {
 
       const joinedRoom = Array.from(socket.rooms);
       io.to(joinedRoom).emit("postedOfferList", postedOffers);
+
+      if (!(postedOffers instanceof Error)) {
+        const isDone = checkIfIsDone(request.phaseId, postedOffers.length);
+        checkIfError(isDone);
+        io.to(joinedRoom).emit("po:isDone", isDone);
+      }
 
       socketHandleSuccessResponse(
         socket,
