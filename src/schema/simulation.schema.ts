@@ -8,7 +8,7 @@ export const createSimulationSchema = object({
     goodsName: string().required(),
     inflationType: string().required(),
     participantNumber: number().required(),
-    timer: number().required(),
+    simulationBudget: number().required(),
     seller: array()
       .of(
         object({
@@ -33,6 +33,6 @@ export const updateSimulationSchema = object({
     goodsName: string().required(),
     inflationType: string().required(),
     participantNumber: number().required(),
-    timer: number().required(),
+    simulationBudget: number().required(),
   }),
 });

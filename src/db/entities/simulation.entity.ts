@@ -93,7 +93,7 @@ export default class Simulation extends BaseEntity {
   @Column({
     type: "float",
   })
-  timer: number;
+  simulationBudget: number;
 
   @Column({
     type: "timestamp",

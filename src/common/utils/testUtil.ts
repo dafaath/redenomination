@@ -102,7 +102,7 @@ export interface SimulationResponse {
   participantNumber: number;
   avgTrxOccurrence: number;
   avgTrxPrice: number;
-  timer: number;
+  simulationBudget: number;
   timeCreated: string;
   timeLastRun: string;
   buyers: BuyerInterface[];
@@ -188,7 +188,7 @@ export async function createSimulationTest(
       goodsName: "goodsName",
       inflationType: "inflationType",
       participantNumber: 10,
-      timer: 0,
+      simulationBudget: 0,
       seller: sellers,
       buyer: buyers,
     },
@@ -236,7 +236,7 @@ export interface Simulation {
   participantNumber: number;
   avgTrxOccurrence: string;
   avgTrxPrice: string;
-  timer: number;
+  simulationBudget: number;
   timeCreated: string;
   timeLastRun: string;
 }
