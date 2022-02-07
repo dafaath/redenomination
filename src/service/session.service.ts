@@ -242,12 +242,30 @@ export async function getPhaseSummary(
   phase: Phase
 ): Promise<PhaseSummary | Error> {
   try {
+    const bargains = await Bargain.createQueryBuilder("bargain")
+      .where("bargain.phase_id=:phaseId", { phaseId: phase.id })
+      .orderBy("bargain.time_created")
+      .getMany();
+
+    if (!bargains) {
+      throw createHttpError(404, "There is no bargain with phaseId " + phase.id);
+    }
+
+    const transactions = await Transaction.createQueryBuilder("transaction")
+      .where("transaction.phase_id=:phaseId", { phaseId: phase.id })
+      .orderBy("transaction.time_created")
+      .getMany();
+
+    if (!transactions) {
+      throw createHttpError(404, "There is no transaction with phaseId " + phase.id);
+    }
+
     const phaseSummary: PhaseSummary = {
       id: phase.id,
       avgTrxOccurrence: phase.avgTrxOccurrence,
       avgTrxPrice: phase.avgTrxPrice,
-      bargainList: phase.bargains,
-      transactionList: phase.transactions,
+      bargainList: bargains,
+      transactionList: transactions,
     };
 
     return phaseSummary;
