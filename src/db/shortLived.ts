@@ -27,10 +27,12 @@ export const profitCollection: Array<Profit> = [];
 
 export class Profit {
   socketId: string;
+  phaseId: string;
   value: number;
 
-  constructor(socketId: string, value: number) {
+  constructor(socketId: string, phaseId: string, value: number) {
     this.socketId = socketId;
+    this.phaseId = phaseId;
     this.value = value;
   }
 }

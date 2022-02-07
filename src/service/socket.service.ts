@@ -14,6 +14,7 @@ import {
   Profit,
   profitCollection,
 } from "../db/shortLived";
+import Session from "../db/entities/session.entity";
 
 export async function toggleReady(
   socketId: string
@@ -293,7 +294,8 @@ type CollectedProfit = {
 };
 export async function inputProfit(
   socketId: string,
-  profitValue: number
+  profitValue: number,
+  phaseId: string
 ): Promise<CollectedProfit | Error> {
   try {
     const profitCollectionIndex = profitCollection.findIndex(
@@ -301,13 +303,31 @@ export async function inputProfit(
     );
 
     if (profitCollectionIndex === -1) {
-      const clientProfit = new Profit(socketId, profitValue);
+      const clientProfit = new Profit(socketId, phaseId, profitValue);
       profitCollection.push(clientProfit);
     }
 
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session"],
+    });
+
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
+
+    const session = await Session.findOne(phase.session.id, {
+      relations: ["simulation"],
+    });
+
+    if (!session) {
+      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
+    }
+
+    const currentProfitCollection = profitCollection.filter((item) => item.phaseId === phaseId);
+
     const collectedProfit: CollectedProfit = {
-      simulationBudget: 200000,
-      profitCollection: profitCollection,
+      simulationBudget: session.simulation.simulationBudget,
+      profitCollection: currentProfitCollection,
     };
 
     return collectedProfit;

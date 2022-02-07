@@ -99,7 +99,7 @@ export function collectProfitHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, collectProfitSchema);
       checkIfError(validationError);
 
-      const collectedProfits = await inputProfit(socket.id, request.myProfit);
+      const collectedProfits = await inputProfit(socket.id, request.myProfit, request.phaseId);
       checkIfError(collectedProfits);
 
       const joinedRoom = Array.from(socket.rooms);
