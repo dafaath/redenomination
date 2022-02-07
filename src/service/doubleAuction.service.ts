@@ -400,7 +400,7 @@ export async function allSold(phaseId: string): Promise<boolean | Error> {
       );
     }
 
-    const playersNumber = session.simulation.participantNumber / 2;
+    const playersNumber = Math.floor(session.simulation.participantNumber / 2);
     if (numOfTrx >= playersNumber) {
       return true;
     } else if (numOfTrx < playersNumber) {
