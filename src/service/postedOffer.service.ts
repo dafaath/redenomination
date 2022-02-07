@@ -7,6 +7,7 @@ import Buyer from "../db/entities/buyer.entity";
 import Phase from "../db/entities/phase.entity";
 import Seller from "../db/entities/seller.entity";
 import Session from "../db/entities/session.entity";
+import Simulation from "../db/entities/simulation.entity";
 import Transaction from "../db/entities/transaction.entity";
 import { PostedOffer, postedOffers } from "../db/shortLived";
 
@@ -178,7 +179,14 @@ export async function checkIfIsDone(
       throw createHttpError(404, `There is no session with id ${phase.session.id}`);
     }
 
-    const sellerNumber = session.simulation.sellers.length;
+    const simulation = await Simulation.findOne(session.simulation.id, {
+      relations: ["sellers"],
+    });
+    if (!simulation) {
+      throw createHttpError(404, `There is no session with id ${session.simulation.id}`);
+    }
+
+    const sellerNumber = simulation.sellers.length;
 
     if (postedOffersNumber === sellerNumber) {
       return true;
