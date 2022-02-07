@@ -290,6 +290,34 @@ export async function countReadyUser(
   }
 }
 
+export async function calcSimulation(
+  simulationId: string,
+): Promise<Simulation | Error> {
+  try {
+    const simulation = await Simulation.findOne(simulationId, {
+      relations: ["sessions"],
+    })
+
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        "Simulation with id " + simulationId + " is not found"
+      );
+    }
+
+    const runnedSessions = simulation.sessions.filter((session) => session.isDone() === true);
+    simulation.avgTrxOccurrence = runnedSessions.reduce((sum, session) => sum + Number(session.avgTrxOccurrence), 0) / runnedSessions.length;
+    simulation.avgTrxPrice = runnedSessions.reduce((sum, session) => sum + Number(session.avgTrxPrice), 0) / runnedSessions.length;
+    simulation.timeLastRun = new Date(Date.now());
+
+    const calculatedSimulation = await simulation.save();
+
+    return calculatedSimulation;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
 export type SimulationSummary = {
   id: string;
   avgTrxOccurrence: number;
@@ -297,7 +325,6 @@ export type SimulationSummary = {
   timeLastRun: Date;
   sessionSummary: SessionSummary[];
 };
-
 export async function getSimulationSummary(
   simulationId: string
 ): Promise<SimulationSummary | Error> {

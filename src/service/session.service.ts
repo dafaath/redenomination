@@ -1,5 +1,5 @@
 import createHttpError from "http-errors";
-import { errorReturnHandler } from "../common/utils/error";
+import { checkIfError, errorReturnHandler } from "../common/utils/error";
 import Session from "../db/entities/session.entity";
 import { createSessionSchema } from "../schema/session.schema";
 import yup from "yup";
@@ -7,6 +7,7 @@ import Simulation from "../db/entities/simulation.entity";
 import Phase, { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import Bargain from "../db/entities/bargain.entity";
+import { calcSimulation } from "./simulation.service";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -219,6 +220,9 @@ export async function finishSession(
     }
 
     const finishedSession = await session.save();
+
+    const calculatedSimulation = await calcSimulation(session.simulation.id);
+    checkIfError(calculatedSimulation);
 
     return finishedSession;
   } catch (error) {

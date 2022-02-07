@@ -72,7 +72,7 @@ export default class Session extends BaseEntity {
   isRunning: boolean;
 
   isDone() {
-    throw new Error("Not implemented");
+    return this.timeCreated !== this.timeLastRun;
   }
 
   getAverageTrx() {
