@@ -6,6 +6,8 @@ import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
 import Phase from "../db/entities/phase.entity";
 import Seller from "../db/entities/seller.entity";
+import Session from "../db/entities/session.entity";
+import Simulation from "../db/entities/simulation.entity";
 import Transaction from "../db/entities/transaction.entity";
 import { Decentralized, decentralizeds } from "../db/shortLived";
 
@@ -140,6 +142,46 @@ export async function buyDecentralized(
     });
 
     return decentralizeds.filter((ds) => ds.phaseId === phaseId);
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function checkIfIsDone(
+  phaseId: string,
+  decentralizedsNumber: number,
+): Promise<Boolean | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session"],
+    });
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    } else if (phase.isRunning === false) {
+      throw createHttpError(404, `This phase is not running`);
+    }
+
+    const session = await Session.findOne(phase.session.id, {
+      relations: ["simulation"],
+    });
+    if (!session) {
+      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
+    }
+
+    const simulation = await Simulation.findOne(session.simulation.id, {
+      relations: ["sellers"],
+    });
+    if (!simulation) {
+      throw createHttpError(404, `There is no session with id ${session.simulation.id}`);
+    }
+
+    const sellerNumber = simulation.sellers.length;
+
+    if (decentralizedsNumber === sellerNumber) {
+      return true;
+    }
+
+    return false;
   } catch (error) {
     return errorReturnHandler(error);
   }

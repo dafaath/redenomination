@@ -12,6 +12,7 @@ import { validateSocketInput } from "../middleware/validateSocketInput";
 import { checkIfError } from "../common/utils/error";
 import {
   buyDecentralized,
+  checkIfIsDone,
   inputSellerPrice,
 } from "../service/decentralized.service";
 
@@ -31,6 +32,12 @@ export function inputSellerPriceHandler(io: Server, socket: Socket) {
 
       const joinedRoom = Array.from(socket.rooms);
       io.to(joinedRoom).emit("decentralizedList", decentralizeds);
+
+      if (!(decentralizeds instanceof Error)) {
+        const isDone = await checkIfIsDone(request.phaseId, decentralizeds.length);
+        checkIfError(isDone);
+        io.to(joinedRoom).emit("ds:isDone", isDone);
+      }
 
       socketHandleSuccessResponse(
         socket,
