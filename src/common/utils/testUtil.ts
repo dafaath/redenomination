@@ -117,6 +117,7 @@ export interface BuyerInterface {
   socketId: null;
   id: string;
   isLoggedIn: boolean;
+  username: string;
 }
 
 export interface SellerInterface {
@@ -125,6 +126,7 @@ export interface SellerInterface {
   id: string;
   isLoggedIn: boolean;
   unitCost: number;
+  username: string;
 }
 
 export async function getAdminJwtToken() {
@@ -304,4 +306,52 @@ export async function adminRunSessionTest(sessionId: string) {
   );
 
   return response;
+}
+
+export function getBuyerOrSellerUsername(
+  simulationResponse: SimulationResponse,
+  filterIsNotLoggedIn = false
+): BuyerInterface | SellerInterface | undefined {
+  let sellerIndex = -1;
+  let buyerIndex = -1;
+  if (filterIsNotLoggedIn) {
+    sellerIndex = simulationResponse.sellers.findIndex(
+      (s) => s.isLoggedIn === false
+    );
+    buyerIndex = simulationResponse.buyers.findIndex(
+      (b) => b.isLoggedIn === false
+    );
+  } else {
+    sellerIndex = getRandomNumberBetween(
+      0,
+      simulationResponse.sellers.length - 1
+    );
+    buyerIndex = getRandomNumberBetween(
+      0,
+      simulationResponse.buyers.length - 1
+    );
+  }
+
+  const randomNumber = getRandomNumberBetween(0, 1);
+  if (randomNumber === 0) {
+    if (buyerIndex !== -1) {
+      simulationResponse.buyers[buyerIndex].isLoggedIn = true;
+      return simulationResponse.buyers[buyerIndex];
+    } else if (sellerIndex !== -1) {
+      simulationResponse.sellers[sellerIndex].isLoggedIn = true;
+      return simulationResponse.sellers[sellerIndex];
+    } else {
+      return undefined;
+    }
+  } else {
+    if (sellerIndex !== -1) {
+      simulationResponse.sellers[sellerIndex].isLoggedIn = true;
+      return simulationResponse.sellers[sellerIndex];
+    } else if (buyerIndex !== -1) {
+      simulationResponse.buyers[buyerIndex].isLoggedIn = true;
+      return simulationResponse.buyers[buyerIndex];
+    } else {
+      return undefined;
+    }
+  }
 }

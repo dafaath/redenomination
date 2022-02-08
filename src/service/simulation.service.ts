@@ -73,6 +73,7 @@ export async function createSimulation(
       return Seller.create({
         loginToken: token,
         unitCost: s.unitCost,
+        username: randomString(8),
       });
     });
 
@@ -80,6 +81,7 @@ export async function createSimulation(
       return Buyer.create({
         loginToken: token,
         unitValue: b.unitValue,
+        username: randomString(8),
       });
     });
 
@@ -291,12 +293,12 @@ export async function countReadyUser(
 }
 
 export async function calcSimulation(
-  simulationId: string,
+  simulationId: string
 ): Promise<Simulation | Error> {
   try {
     const simulation = await Simulation.findOne(simulationId, {
       relations: ["sessions"],
-    })
+    });
 
     if (!simulation) {
       throw createHttpError(
@@ -305,9 +307,19 @@ export async function calcSimulation(
       );
     }
 
-    const runnedSessions = simulation.sessions.filter((session) => session.isDone() === true);
-    simulation.avgTrxOccurrence = runnedSessions.reduce((sum, session) => sum + Number(session.avgTrxOccurrence), 0) / runnedSessions.length;
-    simulation.avgTrxPrice = runnedSessions.reduce((sum, session) => sum + Number(session.avgTrxPrice), 0) / runnedSessions.length;
+    const runnedSessions = simulation.sessions.filter(
+      (session) => session.isDone() === true
+    );
+    simulation.avgTrxOccurrence =
+      runnedSessions.reduce(
+        (sum, session) => sum + Number(session.avgTrxOccurrence),
+        0
+      ) / runnedSessions.length;
+    simulation.avgTrxPrice =
+      runnedSessions.reduce(
+        (sum, session) => sum + Number(session.avgTrxPrice),
+        0
+      ) / runnedSessions.length;
     simulation.timeLastRun = new Date(Date.now());
 
     const calculatedSimulation = await simulation.save();

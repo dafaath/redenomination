@@ -8,6 +8,7 @@ import {
   deleteSimulationTest,
   expectHaveTemplateResponse,
   getAdminJwtToken,
+  getBuyerOrSellerUsername,
   handleAfterTest,
   HandleBeforeTest,
   SessionResponse,
@@ -95,9 +96,18 @@ describe("Posted offer", () => {
         simulationResponse.buyers.length + simulationResponse.sellers.length;
 
       for (let i = 0; i < totalBuyerSeller; i++) {
+        const sellerOrBuyer = getBuyerOrSellerUsername(
+          simulationResponse,
+          true
+        );
+
+        if (!sellerOrBuyer) {
+          throw new Error("All seller or buyer is logged in");
+        }
         const promise = new Promise<void>((resolve) => {
           testConnection.clientSockets[i].emit("loginToken", {
             token: simulationResponse.token,
+            username: sellerOrBuyer.username,
           });
           testConnection.clientSockets[i].on(
             "serverMessage",

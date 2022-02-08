@@ -41,6 +41,7 @@ export type ChosenHost = {
 
 export async function loginTokenSocket(
   token: string,
+  username: string,
   socketId: string
 ): Promise<ChosenHost | Error> {
   try {
@@ -83,7 +84,7 @@ export async function loginTokenSocket(
             },
             where: {
               loginToken: token,
-              isLoggedIn: false,
+              username: username,
             },
           });
 
@@ -93,87 +94,58 @@ export async function loginTokenSocket(
             },
             where: {
               loginToken: token,
-              isLoggedIn: false,
+              username: username,
             },
           });
 
           if (!buyer && !seller) {
-            throw createHttpError(403, `Simulation is full`);
+            throw createHttpError(
+              404,
+              `There is no buyer/seller with login token ${token} and username ${username}`
+            );
           }
 
-          const randomNumber = getRandomNumberBetween(0, 1);
-
           let chosenHost: undefined | ChosenHost = undefined;
-          if (randomNumber === 0) {
-            // Prioritize buyer
-            if (buyer) {
-              buyer.isLoggedIn = true;
-              buyer.socketId = socketId;
-
-              chosenHost = {
-                type: ChosenHostType.BUYER,
-                detail: await transactionalEntityManager.save(buyer),
-                goodsName: simulation.goodsName,
-                goodsType: simulation.goodsType,
-                goodsPic: simulation.goodsPic,
-                inflationType: simulation.inflationType,
-                simulationType: simulation.simulationType,
-                timer: session.timer,
-                phases: session.phases,
-                isSessionRunning: session.isRunning,
-              };
-            } else if (seller) {
-              seller.isLoggedIn = true;
-              seller.socketId = socketId;
-
-              chosenHost = {
-                type: ChosenHostType.SELLER,
-                detail: await transactionalEntityManager.save(seller),
-                goodsName: simulation.goodsName,
-                goodsType: simulation.goodsType,
-                goodsPic: simulation.goodsPic,
-                inflationType: simulation.inflationType,
-                simulationType: simulation.simulationType,
-                timer: session.timer,
-                phases: session.phases,
-                isSessionRunning: session.isRunning,
-              };
+          if (buyer) {
+            if (buyer.isLoggedIn) {
+              throw createHttpError(403, `This user is already logged in`);
             }
-          } else {
-            // Prioritize seller
-            if (seller) {
-              seller.isLoggedIn = true;
-              seller.socketId = socketId;
 
-              chosenHost = {
-                type: ChosenHostType.SELLER,
-                detail: await transactionalEntityManager.save(seller),
-                goodsName: simulation.goodsName,
-                goodsType: simulation.goodsType,
-                goodsPic: simulation.goodsPic,
-                inflationType: simulation.inflationType,
-                simulationType: simulation.simulationType,
-                timer: session.timer,
-                phases: session.phases,
-                isSessionRunning: session.isRunning,
-              };
-            } else if (buyer) {
-              buyer.isLoggedIn = true;
-              buyer.socketId = socketId;
+            buyer.isLoggedIn = true;
+            buyer.socketId = socketId;
 
-              chosenHost = {
-                type: ChosenHostType.BUYER,
-                detail: await transactionalEntityManager.save(buyer),
-                goodsName: simulation.goodsName,
-                goodsType: simulation.goodsType,
-                goodsPic: simulation.goodsPic,
-                inflationType: simulation.inflationType,
-                simulationType: simulation.simulationType,
-                timer: session.timer,
-                phases: session.phases,
-                isSessionRunning: session.isRunning,
-              };
+            chosenHost = {
+              type: ChosenHostType.BUYER,
+              detail: await transactionalEntityManager.save(buyer),
+              goodsName: simulation.goodsName,
+              goodsType: simulation.goodsType,
+              goodsPic: simulation.goodsPic,
+              inflationType: simulation.inflationType,
+              simulationType: simulation.simulationType,
+              timer: session.timer,
+              phases: session.phases,
+              isSessionRunning: session.isRunning,
+            };
+          } else if (seller) {
+            if (seller.isLoggedIn) {
+              throw createHttpError(403, `This user is already logged in`);
             }
+
+            seller.isLoggedIn = true;
+            seller.socketId = socketId;
+
+            chosenHost = {
+              type: ChosenHostType.SELLER,
+              detail: await transactionalEntityManager.save(seller),
+              goodsName: simulation.goodsName,
+              goodsType: simulation.goodsType,
+              goodsPic: simulation.goodsPic,
+              inflationType: simulation.inflationType,
+              simulationType: simulation.simulationType,
+              timer: session.timer,
+              phases: session.phases,
+              isSessionRunning: session.isRunning,
+            };
           }
 
           return chosenHost;

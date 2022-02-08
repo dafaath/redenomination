@@ -36,6 +36,22 @@ export default class Seller extends BaseEntity {
   loginToken: string;
 
   @Column({
+    type: "text",
+    unique: true,
+  })
+  username: string;
+
+  @Column({
+    type: "numeric",
+    precision: 15,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+    default: null,
+    nullable: true,
+  })
+  profit: number | null;
+
+  @Column({
     type: "numeric",
     precision: 15,
     scale: 2,

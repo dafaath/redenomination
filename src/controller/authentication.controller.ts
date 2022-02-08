@@ -48,11 +48,16 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
       if (socket.rooms.has(request.token)) {
         throw createHttpError(
           409,
+
           `User ${socket.id} already join room ${request.token}`
         );
       }
 
-      const chosenHost = await loginTokenSocket(request.token, socket.id);
+      const chosenHost = await loginTokenSocket(
+        request.token,
+        request.username,
+        socket.id
+      );
       checkIfError(chosenHost);
 
       const message = `User ${socket.id} has join room ${request.token}`;
@@ -74,7 +79,10 @@ export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
       log.info(`socket ${socket.id} requested to join room as admin`);
 
       if (socket.rooms.has(request.token)) {
-        throw createHttpError(409, `User ${socket.id} already join room ${request.token}`);
+        throw createHttpError(
+          409,
+          `User ${socket.id} already join room ${request.token}`
+        );
       }
 
       const sessionInfo = await adminLoginTokenSocket(request.token);

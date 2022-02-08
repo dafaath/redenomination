@@ -7,6 +7,7 @@ import {
 } from "../schema/seller.schema";
 import yup from "yup";
 import Simulation from "../db/entities/simulation.entity";
+import { randomString } from "../common/utils/other";
 
 export async function getAllSeller(): Promise<Array<Seller> | Error> {
   try {
@@ -56,6 +57,7 @@ export async function createSeller(
       simulation: simulation,
       loginToken: simulation.token,
       unitCost: createSellerBody.unitCost,
+      username: randomString(8),
     });
 
     const savedSeller = await seller.save();
