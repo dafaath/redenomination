@@ -48,7 +48,7 @@ export async function inputSellerPrice(
       phase: phase,
       seller: seller,
       postedBy: seller.id,
-      price: price,
+      price: priceAdjusted,
     });
 
     await bargain.save();
@@ -200,7 +200,7 @@ export async function inputBuyerPrice(
       phase: phase,
       buyer: buyer,
       postedBy: buyer.id,
-      price: price,
+      price: priceAdjusted,
     });
 
     await bargain.save();
