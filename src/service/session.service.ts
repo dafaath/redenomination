@@ -33,7 +33,7 @@ export async function getOneSession(
 ): Promise<Session | Error> {
   try {
     const session = await Session.findOne(sessionId, {
-      relations: ["simulation", "phases"],
+      relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases"],
     });
 
     if (!session) {
