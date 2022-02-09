@@ -14,6 +14,7 @@ export const tokenLoginSchema = object({
 
 export const tokenLoginSchemaSocket = object({
   token: string().required(),
+  username: string().required(),
 })
   .noUnknown(true)
   .required()

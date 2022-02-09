@@ -4,6 +4,7 @@ import Buyer from "../db/entities/buyer.entity";
 import { createBuyerSchema, updateBuyerSchema } from "../schema/buyer.schema";
 import yup from "yup";
 import Simulation from "../db/entities/simulation.entity";
+import { randomString } from "../common/utils/other";
 
 export async function getAllBuyer(): Promise<Array<Buyer> | Error> {
   try {
@@ -50,6 +51,7 @@ export async function createBuyer(
       simulation: simulation,
       loginToken: simulation.token,
       unitValue: createBuyerBody.unitValue,
+      username: randomString(8),
     });
 
     const savedBuyer = await buyer.save();
