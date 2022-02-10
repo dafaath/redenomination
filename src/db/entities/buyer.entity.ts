@@ -46,10 +46,9 @@ export default class Buyer extends BaseEntity {
     precision: 15,
     scale: 2,
     transformer: new ColumnNumericTransformer(),
-    default: null,
-    nullable: true,
+    default: 0,
   })
-  profit: number | null;
+  profit: number;
 
   @Column({
     type: "numeric",
