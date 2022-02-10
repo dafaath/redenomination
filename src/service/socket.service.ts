@@ -14,7 +14,7 @@ import {
   Profit,
   profitCollection,
 } from "../db/shortLived";
-import Session from "../db/entities/session.entity";
+import Simulation from "../db/entities/simulation.entity";
 
 export async function toggleReady(
   socketId: string
@@ -288,41 +288,45 @@ export async function finishPhase(
   }
 }
 
-type CollectedProfit = {
-  simulationBudget: number;
-  profitCollection: Array<Profit>;
-};
-export async function inputProfit(
-  socketId: string,
-  profitValue: number,
-  phaseId: string
-): Promise<CollectedProfit | Error> {
+export async function collectedProfit(
+  paticipantId: string,
+): Promise<number | Error> {
   try {
-    const profitCollectionIndex = profitCollection.findIndex(
-      (pc) => pc.socketId === socketId
-    );
+    let simulationId: string;
+    let clientProfit: number | null;
 
-    if (profitCollectionIndex === -1) {
-      const clientProfit = new Profit(socketId, phaseId, profitValue);
-      profitCollection.push(clientProfit);
-    }
-
-    const phase = await Phase.findOne(phaseId, {
-      relations: ["session", "session.simulation"],
+    const seller = await Seller.findOne(paticipantId, {
+      relations: ["simulation"],
+    });
+    const buyer = await Buyer.findOne(paticipantId, {
+      relations: ["simulation"],
     });
 
-    if (!phase) {
-      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    if (buyer) {
+      simulationId = buyer.simulation.id;
+      clientProfit = (buyer.profit !== null) ? buyer.profit : 0;
+    } else if (seller) {
+      simulationId = seller.simulation.id;
+      clientProfit = (seller.profit !== null) ? seller.profit : 0;
+    } else {
+      throw createHttpError(404, `There is no buyer/seller with id ${paticipantId}`);
     }
 
-    const currentProfitCollection = profitCollection.filter((item) => item.phaseId === phaseId);
+    const simulation = await Simulation.findOne(simulationId, {
+      relations: ["buyers", "sellers"]
+    });
+    if (!simulation) {
+      throw createHttpError(404, "Simulation with id " + simulationId + " is not found");
+    }
+    let totalProfit: number = 0;
+    totalProfit = simulation.buyers.reduce((prev, buyer) => (buyer.profit !== null ? prev + buyer.profit : prev), totalProfit)
+    totalProfit = simulation.sellers.reduce((prev, seller) => (seller.profit !== null ? prev + seller.profit : prev), totalProfit)
 
-    const collectedProfit: CollectedProfit = {
-      simulationBudget: phase.session.simulation.simulationBudget,
-      profitCollection: currentProfitCollection,
-    };
+    // calculate
+    const calculatedProfit = (clientProfit / totalProfit) * simulation.simulationBudget;
+    const adjustedProfit = Math.floor(calculatedProfit / 100) * 100;
 
-    return collectedProfit;
+    return adjustedProfit;
   } catch (error) {
     return errorReturnHandler(error);
   }

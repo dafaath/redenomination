@@ -15,8 +15,7 @@ export const finishPhaseSchema = object({
   .strict();
 
 export const collectProfitSchema = object({
-  myProfit: number().required(),
-  phaseId: string().uuid().required(),
+  participantId: string().uuid().required(),
 })
   .noUnknown(true)
   .required()

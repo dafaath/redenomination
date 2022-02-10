@@ -8,9 +8,9 @@ import {
   countReadyUser,
   deleteShortLivedData,
   toggleReady,
-  inputProfit,
   startPhase,
   finishPhase,
+  collectedProfit,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -99,17 +99,16 @@ export function collectProfitHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, collectProfitSchema);
       checkIfError(validationError);
 
-      const collectedProfits = await inputProfit(socket.id, request.myProfit, request.phaseId);
-      checkIfError(collectedProfits);
+      const clientCollectedProfit = await collectedProfit(request.participantId);
+      checkIfError(clientCollectedProfit);
 
-      const joinedRoom = Array.from(socket.rooms);
-      io.to(joinedRoom).emit("collectedProfit", collectedProfits);
+      socket.emit("collectedProfit", clientCollectedProfit);
 
       socketHandleSuccessResponse(
         socket,
         200,
-        "Successfully input client profit",
-        collectedProfits
+        "Successfully get client profit",
+        { clientCollectedProfit }
       );
     } catch (error) {
       socketHandleErrorResponse(socket, error);
