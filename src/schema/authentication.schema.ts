@@ -6,11 +6,12 @@ export const adminLoginSchema = object({
   }),
 });
 
-export const tokenLoginSchema = object({
-  body: object({
-    token: string().required(),
-  }),
-});
+export const adminLoginSchemaSocket = object({
+  token: string().required(),
+})
+  .noUnknown(true)
+  .required()
+  .strict();
 
 export const tokenLoginSchemaSocket = object({
   token: string().required(),

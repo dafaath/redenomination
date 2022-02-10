@@ -7,6 +7,7 @@ import {
 import { Request, Response } from "express";
 import {
   adminLoginSchema,
+  adminLoginSchemaSocket,
   tokenLoginSchemaSocket,
 } from "../schema/authentication.schema";
 import yup from "yup";
@@ -74,14 +75,14 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
 export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
   return async (request: socketTokenLoginRequest) => {
     try {
-      const isError = validateSocketInput(request, tokenLoginSchemaSocket);
+      const isError = validateSocketInput(request, adminLoginSchemaSocket);
       checkIfError(isError);
       log.info(`socket ${socket.id} requested to join room as admin`);
 
       if (socket.rooms.has(request.token)) {
         throw createHttpError(
           409,
-          `User ${socket.id} already join room ${request.token}`
+          `Admin from ${socket.id} already join room ${request.token}`
         );
       }
 
