@@ -184,7 +184,7 @@ export async function finishSession(
 ): Promise<Session | Error> {
   try {
     const session = await Session.findOne(sessionId, {
-      relations: ["simulation", "phases"],
+      relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases"],
     });
 
     if (!session) {
@@ -195,10 +195,6 @@ export async function finishSession(
     }
 
     // Finish Session
-    session.phases = session.phases.map((p) => {
-      p.isRunning = false;
-      return p;
-    });
     session.isRunning = false;
 
     const allPhasesRunned = session.phases.reduce(
@@ -223,6 +219,34 @@ export async function finishSession(
 
     const calculatedSimulation = await calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
+
+    // Randomize UnitValue
+    let unitValues = session.simulation.buyers.map((buyer) => (buyer.unitValue))
+    session.simulation.buyers.forEach(buyer => {
+      let randomNum = Math.floor(Math.random() * unitValues.length);
+
+      console.log("randomNum", randomNum)
+      console.log("length", unitValues.length)
+      console.log("unitValues", unitValues)
+
+      buyer.unitValue = unitValues[randomNum];
+      buyer.save()
+      unitValues = unitValues.splice(randomNum, 1)
+    })
+
+    // Randomize UnitCost
+    let unitCosts = session.simulation.sellers.map((seller) => (seller.unitCost))
+    session.simulation.sellers.forEach(seller => {
+      let randomNum = Math.floor(Math.random() * unitCosts.length);
+
+      console.log("randomNum", randomNum)
+      console.log("length", unitCosts.length)
+      console.log("unitCosts", unitCosts)
+
+      seller.unitCost = unitCosts[randomNum];
+      seller.save()
+      unitCosts = unitCosts.splice(randomNum, 1)
+    })
 
     return finishedSession;
   } catch (error) {
