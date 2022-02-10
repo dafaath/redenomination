@@ -1,4 +1,5 @@
 import createHttpError from "http-errors";
+import { inputBuyerProfit, inputSellerProfit } from "../common/utils/dbUtil";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
 import { validatePrice } from "../common/utils/redenomination";
@@ -135,6 +136,16 @@ export async function checkIfSellerBidMatch(
             seller: seller,
             buyer: buyer,
           });
+
+          const successBuyer = inputBuyerProfit(buyer, buyer.unitValue - sellerBid)
+          if (!Boolean(successBuyer)) {
+            console.log("buyer failed");
+          }
+
+          const successSeller = inputSellerProfit(seller, sellerBid - seller.unitCost)
+          if (!Boolean(successSeller)) {
+            console.log("seller failed");
+          }
 
           transaction = await newTransaction.save();
         }
@@ -298,6 +309,16 @@ export async function checkIfBuyerBidMatch(
             buyer: buyer,
           });
 
+          const successBuyer = inputBuyerProfit(buyer, buyer.unitValue - buyerBid)
+          if (!Boolean(successBuyer)) {
+            console.log("buyer failed");
+          }
+
+          const successSeller = inputSellerProfit(seller, buyerBid - seller.unitCost)
+          if (!Boolean(successSeller)) {
+            console.log("seller failed");
+          }
+
           transaction = await newTransaction.save();
         }
 
@@ -386,18 +407,13 @@ export async function allSold(phaseId: string): Promise<boolean | Error> {
     });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
-    } else if (phase.isRunning === false) {
-      throw createHttpError(404, `This phase is not running`);
     }
 
     const session = await Session.findOne(phase.session.id, {
       relations: ["simulation"],
     });
     if (!session) {
-      throw createHttpError(
-        404,
-        `There is no session with id ${phase.session.id}`
-      );
+      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
     }
 
     const playersNumber = Math.floor(session.simulation.participantNumber / 2);

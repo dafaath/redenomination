@@ -50,12 +50,6 @@ export function postBuyerHandler(io: Server, socket: Socket) {
       const joinedRoom = Array.from(socket.rooms);
       io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
 
-      const isDone = await allSold(request.phaseId);
-      checkIfError(isDone);
-      if (isDone) {
-        socket.emit("da:isDone", { isDone: true, phaseId: request.phaseId });
-      }
-
       if (matchData.match) {
         if (matchData.buyer?.socketId) {
           io.to(matchData.buyer.socketId).emit("bidMatch", matchData);
@@ -82,6 +76,12 @@ export function postBuyerHandler(io: Server, socket: Socket) {
             ...doubleAuctionMaxMinPrice,
           }
         );
+      }
+
+      const isDone = await allSold(request.phaseId);
+      checkIfError(isDone);
+      if (isDone) {
+        io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
       }
     } catch (error) {
       socketHandleErrorResponse(socket, error);
@@ -118,12 +118,6 @@ export function postSellerHandler(io: Server, socket: Socket) {
       const joinedRoom = Array.from(socket.rooms);
       io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
 
-      const isDone = await allSold(request.phaseId);
-      checkIfError(isDone);
-      if (isDone) {
-        socket.emit("da:isDone", { isDone: true, phaseId: request.phaseId });
-      }
-
       if (matchData.match) {
         if (matchData.buyer?.socketId) {
           console.log(`emit to ${matchData.buyer.socketId}`);
@@ -151,21 +145,11 @@ export function postSellerHandler(io: Server, socket: Socket) {
           { matchData, ...doubleAuctionMaxMinPrice }
         );
       }
-    } catch (error) {
-      socketHandleErrorResponse(socket, error);
-    }
-  };
-}
 
-type startPhaseRequest = yup.InferType<typeof startPhaseSchema>;
-export function isDoneHandler(io: Server, socket: Socket) {
-  return async (request: startPhaseRequest) => {
-    try {
       const isDone = await allSold(request.phaseId);
       checkIfError(isDone);
-
       if (isDone) {
-        socket.emit("da:isDone", { isDone: true, phaseId: request.phaseId });
+        io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
       }
     } catch (error) {
       socketHandleErrorResponse(socket, error);
