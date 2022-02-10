@@ -308,25 +308,17 @@ export async function inputProfit(
     }
 
     const phase = await Phase.findOne(phaseId, {
-      relations: ["session"],
+      relations: ["session", "session.simulation"],
     });
 
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
     }
 
-    const session = await Session.findOne(phase.session.id, {
-      relations: ["simulation"],
-    });
-
-    if (!session) {
-      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
-    }
-
     const currentProfitCollection = profitCollection.filter((item) => item.phaseId === phaseId);
 
     const collectedProfit: CollectedProfit = {
-      simulationBudget: session.simulation.simulationBudget,
+      simulationBudget: phase.session.simulation.simulationBudget,
       profitCollection: currentProfitCollection,
     };
 

@@ -1,4 +1,5 @@
 import createHttpError from "http-errors";
+import { inputBuyerProfit, inputSellerProfit } from "../common/utils/dbUtil";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
 import { validatePrice } from "../common/utils/redenomination";
@@ -129,6 +130,19 @@ export async function buyDecentralized(
           price: price,
           phase: phase,
         });
+
+        const successBuyer = inputBuyerProfit(buyer, buyer.unitValue - price)
+        if (!Boolean(successBuyer)) {
+          console.log("buyer failed");
+        }
+
+        if (seller) {
+          const successSeller = inputSellerProfit(seller, price - seller.unitCost)
+          if (!Boolean(successSeller)) {
+            console.log("seller failed");
+          }
+
+        }
 
         await transaction.save();
 
