@@ -217,35 +217,26 @@ export async function finishSession(
 
     const finishedSession = await session.save();
 
+    // Calculate Summary
     const calculatedSimulation = await calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
     // Randomize UnitValue
     let unitValues = session.simulation.buyers.map((buyer) => (buyer.unitValue))
     session.simulation.buyers.forEach(buyer => {
-      let randomNum = Math.floor(Math.random() * unitValues.length);
-
-      console.log("randomNum", randomNum)
-      console.log("length", unitValues.length)
-      console.log("unitValues", unitValues)
-
+      const randomNum = Math.floor(Math.random() * unitValues.length);
       buyer.unitValue = unitValues[randomNum];
       buyer.save()
-      unitValues = unitValues.splice(randomNum, 1)
+      unitValues.splice(randomNum, 1)
     })
 
     // Randomize UnitCost
     let unitCosts = session.simulation.sellers.map((seller) => (seller.unitCost))
     session.simulation.sellers.forEach(seller => {
-      let randomNum = Math.floor(Math.random() * unitCosts.length);
-
-      console.log("randomNum", randomNum)
-      console.log("length", unitCosts.length)
-      console.log("unitCosts", unitCosts)
-
+      const randomNum = Math.floor(Math.random() * unitCosts.length);
       seller.unitCost = unitCosts[randomNum];
       seller.save()
-      unitCosts = unitCosts.splice(randomNum, 1)
+      unitCosts.splice(randomNum, 1)
     })
 
     return finishedSession;
