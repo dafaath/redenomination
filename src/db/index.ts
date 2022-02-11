@@ -33,10 +33,10 @@ async function connect() {
       synchronize: true,
       dropSchema: dropSchema,
       charset: "utf8",
-      ssl:
-        process.env.NODE_ENV === "production"
-          ? { rejectUnauthorized: false }
-          : false,
+      // ssl:
+      //   process.env.NODE_ENV === "production"
+      //     ? { rejectUnauthorized: false }
+      //     : false,
     });
     log.info(`Connected to db ${dbType}@${dbHost}:${dbPort}/${dbName}`);
     return connection;
