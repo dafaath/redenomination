@@ -37,7 +37,6 @@ export default class Buyer extends BaseEntity {
 
   @Column({
     type: "text",
-    unique: true,
   })
   username: string;
 

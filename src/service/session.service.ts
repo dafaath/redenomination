@@ -215,30 +215,62 @@ export async function finishSession(
       session.timeLastRun = new Date(Date.now());
     }
 
-    const finishedSession = await session.save();
+    const finishedSession = session.save();
 
     // Calculate Summary
-    const calculatedSimulation = await calcSimulation(session.simulation.id);
+    const calculatedSimulation = calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
-    // Randomize UnitValue
+
+    // Randomize unit cost, unit value, participant username & profit
     let unitValues = session.simulation.buyers.map((buyer) => (buyer.unitValue))
+    let unitCosts = session.simulation.sellers.map((seller) => (seller.unitCost))
+    const buyersUsername = session.simulation.buyers.map(buyer => ({
+      username: buyer.username,
+      profit: buyer.profit,
+    }))
+    const sellersUsername = session.simulation.sellers.map(seller => ({
+      username: seller.username,
+      profit: seller.profit,
+    }))
+    let participants = [...buyersUsername, ...sellersUsername,]
+    console.log("initialParticipants", participants)
+
     session.simulation.buyers.forEach(buyer => {
-      const randomNum = Math.floor(Math.random() * unitValues.length);
+      let randomNum = Math.floor(Math.random() * unitValues.length);
       buyer.unitValue = unitValues[randomNum];
+
+      randomNum = Math.floor(Math.random() * participants.length);
+      console.log("participants buyer", participants)
+
+      buyer.username = participants[randomNum].username;
+      buyer.profit = participants[randomNum].profit;
+
+      console.log(participants[randomNum])
       buyer.save()
       unitValues.splice(randomNum, 1)
+      participants.splice(randomNum, 1)
+
     })
 
-    // Randomize UnitCost
-    let unitCosts = session.simulation.sellers.map((seller) => (seller.unitCost))
     session.simulation.sellers.forEach(seller => {
-      const randomNum = Math.floor(Math.random() * unitCosts.length);
+      let randomNum = Math.floor(Math.random() * unitCosts.length);
       seller.unitCost = unitCosts[randomNum];
+
+      randomNum = Math.floor(Math.random() * participants.length);
+      console.log("participants seller", participants)
+
+      seller.username = participants[randomNum].username;
+      seller.profit = participants[randomNum].profit;
+
+      console.log(participants[randomNum])
       seller.save()
       unitCosts.splice(randomNum, 1)
+      participants.splice(randomNum, 1)
+
     })
 
+    console.log("kenapa")
     return finishedSession;
   } catch (error) {
     return errorReturnHandler(error);
