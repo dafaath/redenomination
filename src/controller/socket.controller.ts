@@ -11,6 +11,7 @@ import {
   startPhase,
   finishPhase,
   collectedProfit,
+  isClientReady,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -33,6 +34,28 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
           200,
           `Successfully set user to ${user.isReady}`,
           { user, readyCount }
+        );
+      }
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+export function isClientReadyHandler(io: Server, socket: Socket) {
+  return async () => {
+    try {
+      const user = await isClientReady(socket.id);
+      checkIfError(user);
+
+      if (!(user instanceof Error)) {
+        socket.emit("isClientReady", { isReady: user.isReady });
+
+        socketHandleSuccessResponse(
+          socket,
+          200,
+          "Successfully get client status",
+          { ...user }
         );
       }
     } catch (error) {
