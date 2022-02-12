@@ -10,6 +10,7 @@ import {
   createSimulation,
   deleteSimulation,
   getAllSimulation,
+  getAnovaSummaryCSV,
   getOneSimulation,
   getSimulationSummary,
   saveGoodsPicture,
@@ -158,6 +159,22 @@ export async function getSimulationSummaryHandler(req: Request, res: Response) {
       200,
       "Successfully get simulation summary",
       simulationSummary
+    );
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function getAnovaSummaryHandler(req: Request, res: Response) {
+  try {
+    const anovaSummary = await getAnovaSummaryCSV();
+    checkIfError(anovaSummary);
+
+    handleSuccessResponse(
+      res,
+      200,
+      "Successfully get anova Summary",
+      anovaSummary
     );
   } catch (error) {
     handleErrorResponse(res, error);

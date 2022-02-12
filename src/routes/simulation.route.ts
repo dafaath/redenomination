@@ -5,6 +5,7 @@ import {
   createSimulationHandler,
   deleteSimulationHandler,
   getAllSimulationHandler,
+  getAnovaSummaryHandler,
   getOneSimulationHandler,
   getReadyCountHandler,
   getSimulationSummaryHandler,
@@ -19,6 +20,8 @@ import {
 const simulationRouter = Router();
 
 simulationRouter.use(validateAuthentication(ROLE.ADMIN));
+
+simulationRouter.get("/api/anova", getAnovaSummaryHandler);
 
 simulationRouter.get("/api/simulations", getAllSimulationHandler);
 

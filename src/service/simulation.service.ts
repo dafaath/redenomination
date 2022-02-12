@@ -12,6 +12,7 @@ import { googleCloud } from "../app";
 import config from "../configHandler";
 import { getManager } from "typeorm";
 import { getSessionSummary, SessionSummary } from "./session.service";
+import Session from "../db/entities/session.entity";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -377,3 +378,80 @@ export async function getSimulationSummary(
     return errorReturnHandler(error);
   }
 }
+
+export async function getAnovaSummaryCSV() {
+  try {
+    const sessions = await Session.find({
+      relations: ["simulation"],
+    });
+
+    if (!sessions) {
+      throw createHttpError(500, "Can't get simulation");
+    }
+
+    const header = ["Jenis Inflasi", "A", "Sistem Transaksi", "B", "Jenis Barang", "C", "Ulangan", "P", "Q",];
+    const data = sessions.map(session => {
+      let simulationCode: number;
+      let inflationCode: number;
+      let goodsCode: number;
+
+      switch (session.simulation.simulationType) {
+        case SimulationType.DOUBLE_AUCTION:
+          simulationCode = 1
+          break;
+        case SimulationType.DECENTRALIZED:
+          simulationCode = 2
+          break;
+        case SimulationType.POSTED_OFFER:
+          simulationCode = 3
+          break;
+
+        default:
+          throw createHttpError(404, "Simulation Type for session " + session.id + " not Found");
+      }
+
+      switch (session.simulation.inflationType) {
+        case "Inflasi Tinggi":
+          inflationCode = 1
+          break;
+        case "Inflasi Rendah":
+          inflationCode = 2
+          break;
+
+        default:
+          throw createHttpError(404, "Inflation Type for session " + session.id + " not Found");
+      }
+
+      switch (session.simulation.goodsType) {
+        case "Elastis":
+          goodsCode = 1
+          break;
+        case "Inelastis":
+          goodsCode = 2
+          break;
+
+        default:
+          throw createHttpError(404, "Goods Type for session " + session.id + " not Found");
+      }
+
+      return [
+        session.simulation.inflationType,
+        inflationCode,
+        session.simulation.simulationType,
+        simulationCode,
+        session.simulation.goodsType,
+        goodsCode,
+        session.sessionType,
+        session.avgTrxPrice,
+        session.avgTrxOccurrence
+      ]
+    })
+
+    return [header, ...data]
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+// [
+// ]
