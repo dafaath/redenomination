@@ -37,7 +37,7 @@ export default class Phase extends BaseEntity {
   transactions: Transaction[];
 
   @Column({
-    type: "text",
+    type: "enum",
     enum: PhaseType,
   })
   phaseType: PhaseType;
