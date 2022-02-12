@@ -38,7 +38,8 @@ export default class Simulation extends BaseEntity {
   sellers: Seller[];
 
   @Column({
-    type: "text",
+    type: "varchar",
+    length: 32,
     unique: true,
   })
   token: string;

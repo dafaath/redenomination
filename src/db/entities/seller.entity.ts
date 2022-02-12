@@ -70,7 +70,8 @@ export default class Seller extends BaseEntity {
   isReady: boolean;
 
   @Column({
-    type: "text",
+    type: "varchar",
+    length: 32,
     unique: true,
     nullable: true,
   })
