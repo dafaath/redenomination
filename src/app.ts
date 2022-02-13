@@ -16,8 +16,8 @@ import simulationRouter from "./routes/simulation.route";
 import sessionRouter from "./routes/session.route";
 import http from "http";
 import { Server, Socket } from "socket.io";
+import fs from "fs";
 import path from "path";
-import { Storage } from "@google-cloud/storage";
 
 import {
   disconnectTokenSocket,
@@ -39,6 +39,7 @@ const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
 
 const app: Express = express();
+export const appRoot = path.join(__dirname, "..");
 
 // Documentation
 app.get("/api-docs", (_: Request, res: Response) => {
@@ -56,18 +57,12 @@ app.use(cors({ credentials: true, origin: true }));
 app.use("/static", express.static("public"));
 app.get("/api/files", async (_: Request, res: Response) => {
   try {
-    const [allPublicFiles] = await googleCloud
-      .bucket(config.googleCloudStorage.bucketName)
-      .getFiles();
-
-    const allFilesName = allPublicFiles.map((file) => file.name);
+    const allFilesName = fs.readdirSync(path.join(appRoot, "public"));
 
     handleSuccessResponse(
       res,
       200,
-      "Successfully get all public files, get them with " +
-        googleCloudBaseUrl +
-        "files_name",
+      "Successfully get all public files, get them with {base_url}/static/{file_name}",
       allFilesName
     );
   } catch (error) {
@@ -91,12 +86,6 @@ export const io = new Server(server, {
     origin: "*",
   },
 }).listen(server);
-
-export const googleCloud = new Storage({
-  keyFilename: path.join(__dirname, "../google-key.json"),
-  projectId: config.googleCloudStorage.projectName,
-});
-export const googleCloudBaseUrl = `https://storage.googleapis.com/${config.googleCloudStorage.bucketName}/`;
 
 export const onConnection = (socket: Socket) => {
   log.info(`New user has connected with id ${socket.id}`);

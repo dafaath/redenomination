@@ -63,7 +63,7 @@ export default class Simulation extends BaseEntity {
     type: "text",
     nullable: true,
   })
-  goodsPic: string;
+  goodsPic: string | null;
 
   @Column({
     type: "text",

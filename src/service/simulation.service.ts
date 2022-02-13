@@ -8,11 +8,12 @@ import dayjs from "dayjs";
 import Seller from "../db/entities/seller.entity";
 import Buyer from "../db/entities/buyer.entity";
 import fileUpload from "express-fileupload";
-import { googleCloud } from "../app";
-import config from "../configHandler";
 import { getManager } from "typeorm";
 import { getSessionSummary, SessionSummary } from "./session.service";
 import Session from "../db/entities/session.entity";
+import path from "path";
+import fs from "fs";
+import { appRoot } from "../app";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -147,14 +148,9 @@ export async function deleteSimulation(
     }
 
     if (simulation.goodsPic) {
-      const currentFile = googleCloud
-        .bucket(config.googleCloudStorage.bucketName)
-        .file(simulation.goodsPic);
-
-      const [isFileExists] = await currentFile.exists();
-
-      if (isFileExists) {
-        await currentFile.delete();
+      const currentFile = path.join(appRoot, "public", simulation.goodsPic);
+      if (fs.existsSync(currentFile)) {
+        fs.unlinkSync(currentFile);
       }
     }
 
@@ -182,43 +178,28 @@ export async function saveGoodsPicture(
       );
     }
 
-    const validImageTypes = ["image/jpeg", "image/png"];
-    if (!validImageTypes.includes(goodsPicture.mimetype)) {
-      throw createHttpError(
-        403,
-        `Image with type ${goodsPicture.mimetype} can't be uploaded, please use one of this: ${validImageTypes}`
-      );
+    const fileExtSplit = goodsPicture.name.split(".");
+    if (
+      fileExtSplit.length === 1 ||
+      (fileExtSplit[0] === "" && fileExtSplit.length === 2)
+    ) {
+      throw createHttpError(400, "File must have an extension");
     }
-    const fileExt = goodsPicture.name.split(".").pop();
-    if (!fileExt) {
-      throw createHttpError(403, "Please make sure the file have an extension");
-    }
-
+    const fileExt = fileExtSplit.pop();
     const savedFileName = simulation.id + "." + fileExt;
-    if (simulation.goodsPic !== null) {
-      // remove current file if exists
-      const currentFile = googleCloud
-        .bucket(config.googleCloudStorage.bucketName)
-        .file(simulation.goodsPic);
 
-      const [isFileExists] = await currentFile.exists();
-
-      if (isFileExists) {
-        await currentFile.delete();
+    // remove current file if exists
+    if (simulation.goodsPic) {
+      const currentFile = path.join(appRoot, "public", simulation.goodsPic);
+      if (fs.existsSync(currentFile)) {
+        fs.unlinkSync(currentFile);
       }
     }
 
-    // save our file
-    const savedFile = googleCloud
-      .bucket(config.googleCloudStorage.bucketName)
-      .file(savedFileName);
-    await savedFile.save(goodsPicture.data, {
-      gzip: true,
-      resumable: false,
-    });
+    goodsPicture.mv(path.join(appRoot, "public", savedFileName));
 
-    // update database with saved filename
     simulation.goodsPic = savedFileName;
+
     const updatedSimulation = await simulation.save();
 
     return updatedSimulation;
@@ -392,49 +373,68 @@ export async function getAnovaSummaryCSV() {
       throw createHttpError(500, "Can't get simulation");
     }
 
-    const header = ["Jenis Inflasi", "A", "Sistem Transaksi", "B", "Jenis Barang", "C", "Ulangan", "P", "Q",];
-    const data = sessions.map(session => {
+    const header = [
+      "Jenis Inflasi",
+      "A",
+      "Sistem Transaksi",
+      "B",
+      "Jenis Barang",
+      "C",
+      "Ulangan",
+      "P",
+      "Q",
+    ];
+    const data = sessions.map((session) => {
       let simulationCode: number;
       let inflationCode: number;
       let goodsCode: number;
 
       switch (session.simulation.simulationType) {
         case SimulationType.DOUBLE_AUCTION:
-          simulationCode = 1
+          simulationCode = 1;
           break;
         case SimulationType.DECENTRALIZED:
-          simulationCode = 2
+          simulationCode = 2;
           break;
         case SimulationType.POSTED_OFFER:
-          simulationCode = 3
+          simulationCode = 3;
           break;
 
         default:
-          throw createHttpError(404, "Simulation Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Simulation Type for session " + session.id + " not Found"
+          );
       }
 
       switch (session.simulation.inflationType) {
         case "Inflasi Tinggi":
-          inflationCode = 1
+          inflationCode = 1;
           break;
         case "Inflasi Rendah":
-          inflationCode = 2
+          inflationCode = 2;
           break;
 
         default:
-          throw createHttpError(404, "Inflation Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Inflation Type for session " + session.id + " not Found"
+          );
       }
 
       switch (session.simulation.goodsType) {
         case "Elastis":
-          goodsCode = 1
+          goodsCode = 1;
           break;
         case "Inelastis":
-          goodsCode = 2
+          goodsCode = 2;
           break;
 
         default:
-          throw createHttpError(404, "Goods Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Goods Type for session " + session.id + " not Found"
+          );
       }
 
       return [
@@ -446,15 +446,12 @@ export async function getAnovaSummaryCSV() {
         goodsCode,
         session.sessionType,
         session.avgTrxPrice,
-        session.avgTrxOccurrence
-      ]
-    })
+        session.avgTrxOccurrence,
+      ];
+    });
 
-    return [header, ...data]
+    return [header, ...data];
   } catch (error) {
     return errorReturnHandler(error);
   }
 }
-
-// [
-// ]

@@ -32,7 +32,7 @@ export type ChosenHost = {
   simulationType: string;
   isSessionRunning: boolean;
   goodsType: string;
-  goodsPic: string;
+  goodsPic: string | null;
   goodsName: string;
   inflationType: string;
   timer: number;

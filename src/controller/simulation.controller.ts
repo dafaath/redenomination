@@ -121,7 +121,7 @@ export async function createGoodsPictureHandler(req: Request, res: Response) {
       handleSuccessResponse(
         res,
         201,
-        `Successfully saved simulations picture, use https://storage.googleapis.com/carbide-bongo-338115.appspot.com/${simulation.goodsPic} to see the picture`,
+        `Successfully saved simulations picture, use {base_url}/static/{file_names} to see the picture`,
         simulation
       );
     }
