@@ -2,7 +2,8 @@
   "name": "redenomination",
   "private": true,
   "scripts": {
-    "start": "NODE_ENV=production node dist/app.js",
+    "start": "pm2 start ecosystem.config.js",
+    "stop": "pm2 stop all",
     "dev": "nodemon --config nodemon.json src/app.ts",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha --exit --bail -r ts-node/register 'src/test/**/*.test.ts'",
     "test-file": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha --exit --bail -r ts-node/register",
@@ -30,6 +31,7 @@
     "pg": "^8.7.1",
     "pino": "^7.6.2",
     "pino-pretty": "^7.3.0",
+    "pm2": "^5.1.2",
     "socket.io": "^4.4.1",
     "typeorm": "^0.2.41",
     "typeorm-naming-strategies": "^2.0.0",
