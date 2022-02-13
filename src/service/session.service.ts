@@ -63,6 +63,7 @@ export async function createSession(
     }
 
     const phases: Array<Phase> = [];
+    const timeCreated = new Date(Date.now());
 
     for (let i = 0; i < 3; i++) {
       let phaseType: PhaseType;
@@ -85,8 +86,8 @@ export async function createSession(
         avgTrxOccurrence: 0,
         avgTrxPrice: 0,
         timer: data.timer,
-        timeCreated: new Date(Date.now()),
-        timeLastRun: new Date(Date.now()),
+        timeCreated: timeCreated,
+        timeLastRun: timeCreated,
       });
       phases.push(phase);
     }
@@ -96,8 +97,8 @@ export async function createSession(
       phases: phases,
       avgTrxOccurrence: 0,
       avgTrxPrice: 0,
-      timeCreated: new Date(Date.now()),
-      timeLastRun: new Date(Date.now()),
+      timeCreated: timeCreated,
+      timeLastRun: timeCreated,
       simulation: simulation,
     });
 

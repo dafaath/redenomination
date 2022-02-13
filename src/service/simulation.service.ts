@@ -86,13 +86,15 @@ export async function createSimulation(
       });
     });
 
+    const timeCreated = new Date(Date.now());
+
     const simulation = Simulation.create({
       ...data,
       token,
       avgTrxOccurrence: 0,
       avgTrxPrice: 0,
-      timeCreated: new Date(Date.now()),
-      timeLastRun: new Date(Date.now()),
+      timeCreated: timeCreated,
+      timeLastRun: timeCreated,
       sellers: sellers,
       buyers: buyers,
     });
