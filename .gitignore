@@ -135,3 +135,4 @@ dist
 
 # secret key
 google-key.json
+deploy.sh

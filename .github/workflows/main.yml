@@ -1,28 +1,37 @@
 name: deploy google app engine
-on: [push]
+on: 
+  push:
+    branches: [master]
+
 jobs:
   deploy_source:
-    name: build and deploy google app engine
-    strategy:
-      matrix:
-        node-version: [14.x]
+    name: auto ssh to server and run it
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v0'
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@master
         with:
-          credentials_json: '${{secrets.GCP_SA_KEY}}'
+          node-version: 16
       - name: create .env file
         run: |
           echo "$PROD_ENV_FILE" > .env
           echo "$GOOGLE_CLOUD_KEY_DATA" > google-key.json
-          echo "$PROD_ENV_FILE"
-          ls -la
-          cat .env
         env:
           PROD_ENV_FILE: '${{secrets.PRODUCTION_ENV}}'
           GOOGLE_CLOUD_KEY_DATA: '${{secrets.GOOGLE_CLOUD_KEY}}'
-      - id: 'deploy'
-        uses: 'google-github-actions/deploy-appengine@v0'
+      - name: 🔨 Build Project
+        run: |
+          npm install
+          npm run build
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.2.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ./dist/
+          log-level: verbose
+          dangerous-clean-slate: true
+          dry-run: true
 
