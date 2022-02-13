@@ -197,7 +197,6 @@ export async function finishSession(
 
     // Finish Session
     session.isRunning = false;
-    const timeFinished = new Date(Date.now());
 
     const allPhasesRunned = session.phases.reduce(
       (prev, phase) => prev && phase.isDone(),
@@ -214,7 +213,7 @@ export async function finishSession(
           (prev, phase) => prev + Number(phase.avgTrxOccurrence),
           0
         ) / Number(session.phases.length);
-      session.timeLastRun = timeFinished;
+      session.timeLastRun = new Date(Date.now());
     }
 
     const finishedSession = session.save();
@@ -223,10 +222,7 @@ export async function finishSession(
     const calculatedSimulation = calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
-
-    // Randomize unit cost, unit value, participant username & profit
-    let unitValues = session.simulation.buyers.map((buyer) => (buyer.unitValue))
-    let unitCosts = session.simulation.sellers.map((seller) => (seller.unitCost))
+    // Randomize participant role
     const buyersUsername = session.simulation.buyers.map(buyer => ({
       username: buyer.username,
       profit: buyer.profit,
@@ -236,43 +232,23 @@ export async function finishSession(
       profit: seller.profit,
     }))
     let participants = [...buyersUsername, ...sellersUsername,]
-    console.log("initialParticipants", participants)
 
     session.simulation.buyers.forEach(buyer => {
-      let randomNum = Math.floor(Math.random() * unitValues.length);
-      buyer.unitValue = unitValues[randomNum];
-
-      randomNum = Math.floor(Math.random() * participants.length);
-      console.log("participants buyer", participants)
-
+      let randomNum = Math.floor(Math.random() * participants.length);
       buyer.username = participants[randomNum].username;
       buyer.profit = participants[randomNum].profit;
-
-      console.log(participants[randomNum])
       buyer.save()
-      unitValues.splice(randomNum, 1)
       participants.splice(randomNum, 1)
-
     })
 
     session.simulation.sellers.forEach(seller => {
-      let randomNum = Math.floor(Math.random() * unitCosts.length);
-      seller.unitCost = unitCosts[randomNum];
-
-      randomNum = Math.floor(Math.random() * participants.length);
-      console.log("participants seller", participants)
-
+      let randomNum = Math.floor(Math.random() * participants.length);
       seller.username = participants[randomNum].username;
       seller.profit = participants[randomNum].profit;
-
-      console.log(participants[randomNum])
       seller.save()
-      unitCosts.splice(randomNum, 1)
       participants.splice(randomNum, 1)
-
     })
 
-    console.log("kenapa")
     return finishedSession;
   } catch (error) {
     return errorReturnHandler(error);

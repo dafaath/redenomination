@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Bargain from "./bargain.entity";
@@ -63,13 +64,15 @@ export default class Phase extends BaseEntity {
   })
   timer: number;
 
-  @Column({
+  @CreateDateColumn({
     type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
   })
   timeCreated: Date;
 
-  @Column({
+  @UpdateDateColumn({
     type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
   })
   timeLastRun: Date;
 

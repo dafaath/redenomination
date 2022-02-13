@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Phase from "./phase.entity";
@@ -55,13 +56,15 @@ export default class Session extends BaseEntity {
   })
   timer: number;
 
-  @Column({
+  @CreateDateColumn({
     type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP"
   })
   timeCreated: Date;
 
-  @Column({
+  @UpdateDateColumn({
     type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
   })
   timeLastRun: Date;
 
