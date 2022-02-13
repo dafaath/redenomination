@@ -21,18 +21,21 @@ jobs:
           GOOGLE_CLOUD_KEY_DATA: '${{secrets.GOOGLE_CLOUD_KEY}}'
       - name: Build Project
         run: |
-          npm install
-          npm run build
+          yarn install --frozen-lockfile
+          yarn run build
       - name: Sync files
         uses: SamKirkland/FTP-Deploy-Action@4.2.0
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-          server-dir: ./dist/
+          local-dir: ./
+          server-dir: ./
           log-level: verbose
-          dangerous-clean-slate: true
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
       - name: SSH to server and run script
         uses: appleboy/ssh-action@master
         with:
@@ -43,7 +46,7 @@ jobs:
           script: |
             source /home/experime/nodevenv/public_html/api/16/bin/activate && cd /home/experime/public_html/api
             cd /home/experime/public_html/api
-            yarn install --production
+            yarn install --production --frozen-lockfile 
             npm run stop
             npm run start
             exit

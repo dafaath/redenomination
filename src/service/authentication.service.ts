@@ -61,7 +61,6 @@ export async function loginTokenSocket(
       .where("session.simulation_id=:simulationId", {
         simulationId: simulation.id,
       })
-      .andWhere("session.time_created=session.time_last_run")
       .andWhere("session.isRunning=true")
       .leftJoinAndSelect("session.phases", "phase")
       .orderBy("session.time_created")
@@ -182,7 +181,6 @@ export async function adminLoginTokenSocket(
       .where("session.simulation_id=:simulationId", {
         simulationId: simulation.id,
       })
-      .andWhere("session.time_created=session.time_last_run")
       .andWhere("session.isRunning=true")
       .leftJoinAndSelect("session.phases", "phase")
       .orderBy("session.time_created")

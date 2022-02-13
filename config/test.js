@@ -10,12 +10,7 @@ module.exports = {
     host: "localhost",
   },
   database: {
-    type: "postgres",
-    port: 5432,
-    username: "postgres",
-    password: "",
-    host: "localhost",
-    name: "redenomination-test",
+    name: "redenomination_test",
   },
   admin: {
     password: "test_password"
