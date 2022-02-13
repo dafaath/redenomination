@@ -107,7 +107,7 @@ export default class Simulation extends BaseEntity {
   timeLastRun: Date;
 
   isDone() {
-    throw new Error("Not implemented");
+    return this.timeCreated !== this.timeLastRun;
   }
 
   getAverageTrx() {

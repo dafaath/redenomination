@@ -197,6 +197,7 @@ export async function finishSession(
 
     // Finish Session
     session.isRunning = false;
+    const timeFinished = new Date(Date.now());
 
     const allPhasesRunned = session.phases.reduce(
       (prev, phase) => prev && phase.isDone(),
@@ -213,7 +214,7 @@ export async function finishSession(
           (prev, phase) => prev + Number(phase.avgTrxOccurrence),
           0
         ) / Number(session.phases.length);
-      session.timeLastRun = new Date(Date.now());
+      session.timeLastRun = timeFinished;
     }
 
     const finishedSession = session.save();

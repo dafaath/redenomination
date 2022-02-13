@@ -63,7 +63,7 @@ export default class Phase extends BaseEntity {
   })
   timer: number;
 
-  @CreateDateColumn({
+  @Column({
     type: "timestamp",
   })
   timeCreated: Date;

@@ -55,7 +55,7 @@ export default class Session extends BaseEntity {
   })
   timer: number;
 
-  @CreateDateColumn({
+  @Column({
     type: "timestamp",
   })
   timeCreated: Date;

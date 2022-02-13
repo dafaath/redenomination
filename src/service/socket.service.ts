@@ -309,6 +309,7 @@ export async function finishPhase(
     }
 
     // End Phase
+    const timeCreated = new Date(Date.now());
     if (phase.isRunning === true) {
       phase.isRunning = false;
 
@@ -323,7 +324,7 @@ export async function finishPhase(
       const sumTrxPrices = trxList.reduce((prev, t) => prev + Number(t.price), 0)
       phase.avgTrxOccurrence = Number(trxList.length);
       phase.avgTrxPrice = Number(sumTrxPrices) / trxList.length;
-      phase.timeLastRun = new Date(Date.now());
+      phase.timeLastRun = timeCreated;
       await phase.save();
     }
 

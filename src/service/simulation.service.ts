@@ -309,6 +309,7 @@ export async function calcSimulation(
         "Simulation with id " + simulationId + " is not found"
       );
     }
+    const timeFinished = new Date(Date.now());
 
     const runnedSessions = simulation.sessions.filter(
       (session) => session.isDone() === true
@@ -323,7 +324,7 @@ export async function calcSimulation(
         (sum, session) => sum + Number(session.avgTrxPrice),
         0
       ) / runnedSessions.length;
-    simulation.timeLastRun = new Date(Date.now());
+    simulation.timeLastRun = timeFinished;
 
     const calculatedSimulation = await simulation.save();
 
