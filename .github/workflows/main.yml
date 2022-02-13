@@ -33,5 +33,4 @@ jobs:
           server-dir: ./dist/
           log-level: verbose
           dangerous-clean-slate: true
-          dry-run: true
 
