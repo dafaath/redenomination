@@ -6,7 +6,7 @@
     "dev": "nodemon --config nodemon.json src/app.ts",
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha --exit --bail -r ts-node/register 'src/test/**/*.test.ts'",
     "test-file": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha --exit --bail -r ts-node/register",
-    "build": "rimraf dist/ && tsc && yes | cp -rf package.json .env config/ dist/",
+    "build": "rimraf dist/ && tsc && yes | cp -rf package.json .env google-key.json config/ dist/",
     "lint": "eslint --ignore-path .gitignore . --ext .ts",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "gcp-build": "npm run build"
