@@ -371,7 +371,7 @@ export async function collectedProfit(
     const calculatedProfit = (clientProfit / totalProfit) * simulation.simulationBudget;
     const adjustedProfit = Math.floor(calculatedProfit / 100) * 100;
 
-    return adjustedProfit;
+    return adjustedProfit + 5000;
   } catch (error) {
     return errorReturnHandler(error);
   }

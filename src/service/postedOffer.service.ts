@@ -152,7 +152,6 @@ export async function buyPostedOffer(
           if (!Boolean(successSeller)) {
             console.log("seller failed");
           }
-
         }
 
         await transaction.save();

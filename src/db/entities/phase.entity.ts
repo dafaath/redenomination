@@ -1,13 +1,11 @@
 import {
   BaseEntity,
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from "typeorm";
 import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Bargain from "./bargain.entity";
@@ -64,13 +62,13 @@ export default class Phase extends BaseEntity {
   })
   timer: number;
 
-  @CreateDateColumn({
+  @Column({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP",
   })
   timeCreated: Date;
 
-  @UpdateDateColumn({
+  @Column({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP",
   })

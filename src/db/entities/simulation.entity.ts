@@ -4,8 +4,6 @@ import {
   BaseEntity,
   PrimaryGeneratedColumn,
   OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from "typeorm";
 import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Buyer from "./buyer.entity";
@@ -98,13 +96,13 @@ export default class Simulation extends BaseEntity {
   })
   simulationBudget: number;
 
-  @CreateDateColumn({
+  @Column({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP"
   })
   timeCreated: Date;
 
-  @UpdateDateColumn({
+  @Column({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP"
   })

@@ -1,13 +1,11 @@
 import {
   Entity,
   Column,
-  CreateDateColumn,
   BaseEntity,
   PrimaryGeneratedColumn,
   ManyToOne,
   OneToMany,
   JoinColumn,
-  UpdateDateColumn,
 } from "typeorm";
 import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Phase from "./phase.entity";
@@ -56,13 +54,13 @@ export default class Session extends BaseEntity {
   })
   timer: number;
 
-  @CreateDateColumn({
+  @Column({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP"
   })
   timeCreated: Date;
 
-  @UpdateDateColumn({
+  @Column({
     type: "timestamp",
     default: () => "CURRENT_TIMESTAMP",
   })
