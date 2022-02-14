@@ -21,6 +21,7 @@ import { Server, Socket } from "socket.io";
 import log from "../common/utils/logger";
 import createHttpError from "http-errors";
 import { validateSocketInput } from "../middleware/validateSocketInput";
+import { activePlayers } from "../service/socket.service";
 
 type adminLoginRequest = yup.InferType<typeof adminLoginSchema>;
 export async function adminLoginHandler(req: Request, res: Response) {
@@ -49,7 +50,6 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
       if (socket.rooms.has(request.token)) {
         throw createHttpError(
           409,
-
           `User ${socket.id} already join room ${request.token}`
         );
       }
@@ -60,6 +60,9 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
         socket.id
       );
       checkIfError(chosenHost);
+
+      const active = await activePlayers(request.token);
+      io.emit("admin:activePlayers", active)
 
       const message = `User ${socket.id} has join room ${request.token}`;
       socket.join(request.token);
