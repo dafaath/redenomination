@@ -72,8 +72,9 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
   };
 }
 
+type adminTokenLoginRequest = yup.InferType<typeof adminLoginSchemaSocket>;
 export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
-  return async (request: socketTokenLoginRequest) => {
+  return async (request: adminTokenLoginRequest) => {
     try {
       const isError = validateSocketInput(request, adminLoginSchemaSocket);
       checkIfError(isError);
@@ -92,6 +93,8 @@ export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
       const message = `User ${socket.id} has join room ${request.token} as admin`;
       socket.join(request.token);
       log.info(message);
+
+      socket.emit("adminLoginToken", sessionInfo)
 
       socketHandleSuccessResponse(socket, 200, message, sessionInfo);
     } catch (error) {
