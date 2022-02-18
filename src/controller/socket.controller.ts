@@ -12,7 +12,6 @@ import {
   finishPhase,
   collectedProfit,
   isClientReady,
-  activePlayers,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -27,9 +26,6 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
       if (!(user instanceof Error)) {
         const readyCount = await countReadyUser(user.loginToken);
         checkIfError(readyCount);
-
-        const active = await activePlayers(user.loginToken);
-        io.emit("admin:activePlayers", active)
 
         io.to(user.loginToken).emit("readyCount", readyCount);
 

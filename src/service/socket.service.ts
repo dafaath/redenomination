@@ -376,32 +376,3 @@ export async function collectedProfit(
     return errorReturnHandler(error);
   }
 }
-
-type activePlayersType = {
-  sellers: Seller[];
-  buyers: Buyer[];
-};
-export async function activePlayers(
-  token: string
-): Promise<activePlayersType | Error> {
-  try {
-    let simulation = await Simulation.createQueryBuilder("simulation")
-      .where("simulation.token=:token", { token })
-      .leftJoinAndSelect("simulation.sellers", "seller")
-      .leftJoinAndSelect("simulation.buyers", "buyer")
-      .getOne();
-
-    if (!simulation) {
-      throw createHttpError(404, `Login token ${token} is not found in database`);
-    }
-
-    const activePlayers: activePlayersType = {
-      sellers: simulation.sellers,
-      buyers: simulation.buyers,
-    };
-
-    return activePlayers;
-  } catch (error) {
-    return errorReturnHandler(error);
-  }
-}
