@@ -313,8 +313,17 @@ export async function getSessionSummary(
   try {
     const phaseSummaries: PhaseSummary[] = [];
 
-    for (let i = 0; i < session.phases.length; i++) {
-      const phase = session.phases[i];
+    // sortPhases
+    const phase0 = session.phases.find((item) => { return item.phaseType === "preRedenomPrice" })
+    if (!phase0) { throw createHttpError(404, "no preRedenomPrice phase"); }
+    const phase1 = session.phases.find((item) => { return item.phaseType === "transitionPrice" })
+    if (!phase1) { throw createHttpError(404, "no transitionPrice phase"); }
+    const phase2 = session.phases.find((item) => { return item.phaseType === "postRedenomPrice" })
+    if (!phase2) { throw createHttpError(404, "no postRedenomPrice phase"); }
+    const sortedPhases: Phase[] = [phase0, phase1, phase2];
+
+    for (let i = 0; i < sortedPhases.length; i++) {
+      const phase = sortedPhases[i];
       const phaseSummary = await getPhaseSummary(phase);
       if (phaseSummary instanceof Error) {
         throw phaseSummary;
