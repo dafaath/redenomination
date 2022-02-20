@@ -11,6 +11,8 @@ import {
   doubleAuctionBuyerBid,
   doubleAuctionSellerBid,
   postedOffers,
+  setDoubleAuctionBid,
+  setDoubleAuctionOffer,
 } from "../db/shortLived";
 import Simulation from "../db/entities/simulation.entity";
 
@@ -220,6 +222,7 @@ export async function deleteShortLivedData(
             doubleAuctionBuyerBid.splice(doubleAuctionBuyerIndex, 1);
           }
         } while (doubleAuctionBuyerIndex !== -1);
+        setDoubleAuctionBid(0);
         done();
       } catch (error) {
         if (error instanceof Error) {
@@ -241,6 +244,7 @@ export async function deleteShortLivedData(
             doubleAuctionSellerBid.splice(doubleAuctionSellerIndex, 1);
           }
         } while (doubleAuctionSellerIndex !== -1);
+        setDoubleAuctionOffer(0);
         done();
       } catch (error) {
         if (error instanceof Error) {

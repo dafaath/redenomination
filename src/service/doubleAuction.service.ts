@@ -11,9 +11,13 @@ import Session from "../db/entities/session.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
   BuyerBid,
+  doubleAuctionBid,
   doubleAuctionBuyerBid,
+  doubleAuctionOffer,
   doubleAuctionSellerBid,
   SellerBid,
+  setDoubleAuctionBid,
+  setDoubleAuctionOffer,
 } from "../db/shortLived";
 
 export async function inputSellerPrice(
@@ -351,17 +355,16 @@ export async function checkIfBuyerBidMatch(
   }
 }
 
-export type DoubleAuctionMaxMinPrice = {
-  minPrice: number;
-  maxPrice: number;
+export type DoubleAuctionBidOffer = {
+  bid: number;
+  offer: number;
 };
 
-export async function getMaxAndMinPrice(
+export async function getBidOffer(
   phaseId: string
-): Promise<DoubleAuctionMaxMinPrice | Error> {
+): Promise<DoubleAuctionBidOffer | Error> {
   try {
-    let doubleAuctionMaxMinPrice: DoubleAuctionMaxMinPrice | undefined =
-      undefined;
+    let doubleAuctionBidOffer: DoubleAuctionBidOffer | undefined = undefined;
     await lock.acquire("getMaxMinPrice", async (done) => {
       try {
         const sellerBidPrice = doubleAuctionSellerBid
@@ -371,13 +374,19 @@ export async function getMaxAndMinPrice(
           .filter((bb) => bb.phaseId === phaseId)
           .map((bb) => bb.buyerBid.price);
 
-        const maxPrice = Math.max(...sellerBidPrice);
-        const minPrice = Math.min(...buyerBidPrice);
-        doubleAuctionMaxMinPrice = {
-          minPrice: !isNaN(minPrice) && minPrice !== Infinity ? minPrice : 0,
-          maxPrice: !isNaN(maxPrice) && maxPrice !== Infinity ? maxPrice : 0,
+        const buyerMax = Math.max(...buyerBidPrice);
+        if (doubleAuctionBid === 0 || doubleAuctionBid < buyerMax)
+          setDoubleAuctionBid(buyerMax);
+
+        const sellerMin = Math.min(...sellerBidPrice);
+        if (doubleAuctionOffer === 0 || doubleAuctionOffer > sellerMin)
+          setDoubleAuctionOffer(sellerMin);
+
+        doubleAuctionBidOffer = {
+          bid: doubleAuctionBid,
+          offer: doubleAuctionOffer,
         };
-        done(undefined, doubleAuctionMaxMinPrice);
+        done(undefined, doubleAuctionBidOffer);
       } catch (error) {
         if (error instanceof Error) {
           done(error);
@@ -386,8 +395,8 @@ export async function getMaxAndMinPrice(
       }
     });
 
-    if (doubleAuctionMaxMinPrice) {
-      return doubleAuctionMaxMinPrice;
+    if (doubleAuctionBidOffer) {
+      return doubleAuctionBidOffer;
     } else {
       throw new Error("Something gone wrong");
     }

@@ -68,6 +68,16 @@ export class BuyerBid extends DoubleAuction {
   }
 }
 
+export let doubleAuctionBid: number = 0;
+export let doubleAuctionOffer: number = 0;
+
+export function setDoubleAuctionBid(num: number) {
+  doubleAuctionBid = !isNaN(num) && num !== Infinity ? num : 0;
+}
+export function setDoubleAuctionOffer(num: number) {
+  doubleAuctionOffer = !isNaN(num) && num !== Infinity ? num : 0;
+}
+
 export const decentralizeds: Array<Decentralized> = [];
 
 export class Decentralized {

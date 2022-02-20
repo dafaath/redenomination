@@ -14,12 +14,11 @@ import {
 import {
   checkIfBuyerBidMatch,
   checkIfSellerBidMatch,
-  getMaxAndMinPrice,
+  getBidOffer,
   inputBuyerPrice,
   inputSellerPrice,
   allSold,
 } from "../service/doubleAuction.service";
-import { startPhaseSchema } from "../schema/socket.schema";
 
 type PostBuyerRequest = yup.InferType<typeof postBuyerSchema>;
 export function postBuyerHandler(io: Server, socket: Socket) {
@@ -44,7 +43,7 @@ export function postBuyerHandler(io: Server, socket: Socket) {
         throw matchData;
       }
 
-      const doubleAuctionMaxMinPrice = await getMaxAndMinPrice(request.phaseId);
+      const doubleAuctionMaxMinPrice = await getBidOffer(request.phaseId);
       checkIfError(doubleAuctionMaxMinPrice);
 
       const joinedRoom = Array.from(socket.rooms);
@@ -112,7 +111,7 @@ export function postSellerHandler(io: Server, socket: Socket) {
         throw matchData;
       }
 
-      const doubleAuctionMaxMinPrice = await getMaxAndMinPrice(request.phaseId);
+      const doubleAuctionMaxMinPrice = await getBidOffer(request.phaseId);
       checkIfError(doubleAuctionMaxMinPrice);
 
       const joinedRoom = Array.from(socket.rooms);
