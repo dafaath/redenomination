@@ -75,56 +75,6 @@ export async function toggleReady(
   }
 }
 
-export async function isClientReady(
-  socketId: string
-): Promise<Buyer | Seller | Error> {
-  try {
-    const chosenHost = await getManager().transaction(
-      async (transactionalEntityManager) => {
-        try {
-          const buyer = await transactionalEntityManager.findOne(Buyer, {
-            lock: {
-              mode: "pessimistic_write",
-            },
-            where: {
-              socketId: socketId,
-            },
-          });
-
-          const seller = await transactionalEntityManager.findOne(Seller, {
-            lock: {
-              mode: "pessimistic_write",
-            },
-            where: {
-              socketId: socketId,
-            },
-          });
-
-          if (!buyer && !seller) {
-            throw createHttpError(
-              401,
-              `This socket id ${socketId} is not logged in yet`
-            );
-          }
-
-          if (buyer) { return buyer }
-          else if (seller) { return seller }
-          else { throw createHttpError(500, `Unknown Error Occurred`); }
-        } catch (error) {
-          errorThrowUtils(error);
-        }
-      }
-    );
-    if (chosenHost) {
-      return chosenHost;
-    } else {
-      return new Error("something wrong");
-    }
-  } catch (error) {
-    return errorReturnHandler(error);
-  }
-}
-
 type ReadyCount = {
   numberOfReadyPlayer: number;
   totalPlayer: number;

@@ -11,12 +11,12 @@ import {
   startPhase,
   finishPhase,
   collectedProfit,
-  isClientReady,
   activePlayers,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
 import { validateSocketInput } from "../middleware/validateSocketInput";
+import { PhaseType } from "../db/entities/phase.entity";
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
   return async () => {
@@ -38,28 +38,6 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
           200,
           `Successfully set user to ${user.isReady}`,
           { user, readyCount }
-        );
-      }
-    } catch (error) {
-      socketHandleErrorResponse(socket, error);
-    }
-  };
-}
-
-export function isClientReadyHandler(io: Server, socket: Socket) {
-  return async () => {
-    try {
-      const user = await isClientReady(socket.id);
-      checkIfError(user);
-
-      if (!(user instanceof Error)) {
-        socket.emit("isClientReady", { isReady: user.isReady });
-
-        socketHandleSuccessResponse(
-          socket,
-          200,
-          "Successfully get client status",
-          { ...user }
         );
       }
     } catch (error) {
@@ -99,8 +77,13 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, finishPhaseSchema);
       checkIfError(validationError);
 
-      const finishError = finishPhase(request.phaseId)
-      checkIfError(finishError);
+      const phase = await finishPhase(request.phaseId)
+      checkIfError(phase);
+
+      // check if last phase
+      if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)
+      ) {
+      }
 
       const error = await deleteShortLivedData(request.phaseId);
       checkIfError(error);
