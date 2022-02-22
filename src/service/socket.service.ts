@@ -256,7 +256,9 @@ export async function finishPhase(
   phaseId: string
 ): Promise<Phase | Error> {
   try {
-    const phase = await Phase.findOne(phaseId);
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session"],
+    });
 
     if (!phase) {
       throw createHttpError(404, "Phase with id " + phaseId + " is not found");

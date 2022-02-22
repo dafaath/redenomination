@@ -17,6 +17,7 @@ import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
 import { validateSocketInput } from "../middleware/validateSocketInput";
 import { PhaseType } from "../db/entities/phase.entity";
+import { finishSession } from "../service/session.service";
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
   return async () => {
@@ -81,8 +82,9 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       checkIfError(phase);
 
       // check if last phase
-      if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)
-      ) {
+      if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)) {
+        finishSession(phase.session.id);
+        io.emit("admin:isSessionDone")
       }
 
       const error = await deleteShortLivedData(request.phaseId);

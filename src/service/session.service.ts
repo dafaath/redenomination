@@ -162,10 +162,7 @@ export async function runSession(sessionId: string): Promise<Session | Error> {
     });
 
     if (!session) {
-      throw createHttpError(
-        404,
-        "Session with id " + sessionId + " is not found"
-      );
+      throw createHttpError(404, "Session with id " + sessionId + " is not found");
     }
 
     // Run Session
