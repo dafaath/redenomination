@@ -8,6 +8,7 @@ import Phase, { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import Bargain from "../db/entities/bargain.entity";
 import { calcSimulation } from "./simulation.service";
+import { sortPhases } from "../common/utils/other";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -310,15 +311,7 @@ export async function getSessionSummary(
   try {
     const phaseSummaries: PhaseSummary[] = [];
 
-    // sortPhases
-    const phase0 = session.phases.find((item) => { return item.phaseType === "preRedenomPrice" })
-    if (!phase0) { throw createHttpError(404, "no preRedenomPrice phase"); }
-    const phase1 = session.phases.find((item) => { return item.phaseType === "transitionPrice" })
-    if (!phase1) { throw createHttpError(404, "no transitionPrice phase"); }
-    const phase2 = session.phases.find((item) => { return item.phaseType === "postRedenomPrice" })
-    if (!phase2) { throw createHttpError(404, "no postRedenomPrice phase"); }
-    const sortedPhases: Phase[] = [phase0, phase1, phase2];
-
+    const sortedPhases = sortPhases(session.phases)
     for (let i = 0; i < sortedPhases.length; i++) {
       const phase = sortedPhases[i];
       const phaseSummary = await getPhaseSummary(phase);
