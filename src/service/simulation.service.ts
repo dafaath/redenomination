@@ -38,7 +38,7 @@ export async function getOneSimulation(
 ): Promise<Simulation | Error> {
   try {
     const simulation = await Simulation.findOne(simulationId, {
-      relations: ["buyers", "sellers", "sessions"],
+      relations: ["buyers", "sellers", "sessions", "sessions.profits"],
     });
     if (!simulation) {
       throw createHttpError(

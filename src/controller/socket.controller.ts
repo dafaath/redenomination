@@ -111,7 +111,7 @@ export function collectProfitHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, collectProfitSchema);
       checkIfError(validationError);
 
-      const clientCollectedProfit = await collectedProfit(request.participantId);
+      const clientCollectedProfit = await collectedProfit(request.phaseId, request.username);
       checkIfError(clientCollectedProfit);
 
       socket.emit("collectedProfit", clientCollectedProfit);

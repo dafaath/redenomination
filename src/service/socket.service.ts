@@ -15,6 +15,8 @@ import {
   setDoubleAuctionOffer,
 } from "../db/shortLived";
 import Simulation from "../db/entities/simulation.entity";
+import Profit from "../db/entities/profit.entity";
+import Session from "../db/entities/session.entity";
 
 export async function toggleReady(
   socketId: string
@@ -290,41 +292,26 @@ export async function finishPhase(
 }
 
 export async function collectedProfit(
-  paticipantId: string,
+  phaseId: string,
+  username: string,
 ): Promise<number | Error> {
   try {
-    let simulationId: string;
-    let clientProfit: number | null;
+    const phase = await Phase.findOne(phaseId, { relations: ["session"] })
+    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
 
-    const seller = await Seller.findOne(paticipantId, {
-      relations: ["simulation"],
-    });
-    const buyer = await Buyer.findOne(paticipantId, {
-      relations: ["simulation"],
-    });
+    let clientProfit: number = 0;
 
-    if (buyer) {
-      simulationId = buyer.simulation.id;
-      clientProfit = (buyer.profit !== null) ? buyer.profit : 0;
-    } else if (seller) {
-      simulationId = seller.simulation.id;
-      clientProfit = (seller.profit !== null) ? seller.profit : 0;
-    } else {
-      throw createHttpError(404, `There is no buyer/seller with id ${paticipantId}`);
-    }
-
-    const simulation = await Simulation.findOne(simulationId, {
-      relations: ["buyers", "sellers"]
+    const clientProfits = await Profit.find({
+      where: { username: username },
+      relations: ["session"]
     });
-    if (!simulation) {
-      throw createHttpError(404, "Simulation with id " + simulationId + " is not found");
-    }
-    let totalProfit: number = 0;
-    totalProfit = simulation.buyers.reduce((prev, buyer) => (buyer.profit !== null ? prev + buyer.profit : prev), totalProfit)
-    totalProfit = simulation.sellers.reduce((prev, seller) => (seller.profit !== null ? prev + seller.profit : prev), totalProfit)
+    if (clientProfits) { clientProfit = clientProfits.reduce((prev, item) => prev + Number(item.profit), 0); }
+
+    const allProfits = await Profit.find({ where: { session: phase.session } });
+    const totalProfit = allProfits.reduce((prev, profit) => prev + Number(profit.profit), 0);
 
     // calculate
-    const calculatedProfit = (clientProfit / totalProfit) * simulation.simulationBudget;
+    const calculatedProfit = (clientProfit / totalProfit) * phase.session.sessionBudget;
     const adjustedProfit = Math.floor(calculatedProfit / 100) * 100;
 
     return adjustedProfit + 5000;

@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { ColumnNumericTransformer } from "../../common/utils/dbUtil";
 import Phase from "./phase.entity";
+import Profit from "./profit.entity";
 import Simulation from "./simulation.entity";
 
 @Entity("session")
@@ -27,6 +28,11 @@ export default class Session extends BaseEntity {
     cascade: true,
   })
   phases: Phase[];
+
+  @OneToMany(() => Profit, (profits) => profits.session, {
+    cascade: true,
+  })
+  profits: Profit[];
 
   @Column({
     type: "text",
@@ -48,6 +54,11 @@ export default class Session extends BaseEntity {
     transformer: new ColumnNumericTransformer(),
   })
   avgTrxPrice: number;
+
+  @Column({
+    type: "float",
+  })
+  sessionBudget: number;
 
   @Column({
     type: "float",

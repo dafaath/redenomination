@@ -34,7 +34,7 @@ export async function getOneSession(
 ): Promise<Session | Error> {
   try {
     const session = await Session.findOne(sessionId, {
-      relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases"],
+      relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases", "profits"],
     });
 
     if (!session) {
@@ -101,6 +101,7 @@ export async function createSession(
       timeCreated: timeCreated,
       timeLastRun: timeCreated,
       simulation: simulation,
+      sessionBudget: simulation.simulationBudget,
     });
 
     const savedSession = await session.save();
@@ -223,18 +224,15 @@ export async function finishSession(
     // Randomize participant role
     const buyersUsername = session.simulation.buyers.map(buyer => ({
       username: buyer.username,
-      profit: buyer.profit,
     }))
     const sellersUsername = session.simulation.sellers.map(seller => ({
       username: seller.username,
-      profit: seller.profit,
     }))
     let participants = [...buyersUsername, ...sellersUsername,]
 
     session.simulation.buyers.forEach(buyer => {
       let randomNum = Math.floor(Math.random() * participants.length);
       buyer.username = participants[randomNum].username;
-      buyer.profit = participants[randomNum].profit;
       buyer.save()
       participants.splice(randomNum, 1)
     })
@@ -242,7 +240,6 @@ export async function finishSession(
     session.simulation.sellers.forEach(seller => {
       let randomNum = Math.floor(Math.random() * participants.length);
       seller.username = participants[randomNum].username;
-      seller.profit = participants[randomNum].profit;
       seller.save()
       participants.splice(randomNum, 1)
     })
