@@ -53,13 +53,12 @@ export async function getOneSimulation(
   }
 }
 
-type createSimulationBody = yup.InferType<
-  typeof createSimulationSchema
->["body"];
+type createSimulationBody = yup.InferType<typeof createSimulationSchema>["body"];
 export async function createSimulation(
   data: createSimulationBody
 ): Promise<Simulation | Error> {
   try {
+    console.log("data", data);
     let simulationTypeId = "";
     if (data.simulationType === SimulationType.POSTED_OFFER) {
       simulationTypeId = "PO";
@@ -101,6 +100,7 @@ export async function createSimulation(
     });
 
     const savedSimulation = await simulation.save();
+    console.log("savedSimulation", savedSimulation);
 
     return savedSimulation;
   } catch (error) {
@@ -380,6 +380,8 @@ export async function getAnovaSummaryCSV() {
       "B",
       "Jenis Barang",
       "C",
+      "Jenis Pertumbuhan Ekonomi",
+      "D",
       "Ulangan",
       "P",
       "Q",
@@ -388,6 +390,7 @@ export async function getAnovaSummaryCSV() {
       let simulationCode: number;
       let inflationCode: number;
       let goodsCode: number;
+      let growthCode: number;
 
       switch (session.simulation.simulationType) {
         case SimulationType.DOUBLE_AUCTION:
@@ -437,6 +440,21 @@ export async function getAnovaSummaryCSV() {
           );
       }
 
+      switch (session.simulation.growthType) {
+        case "Tinggi":
+          growthCode = 1;
+          break;
+        case "Rendah":
+          growthCode = 2;
+          break;
+
+        default:
+          throw createHttpError(
+            404,
+            "Growth Type for session " + session.id + " not Found"
+          );
+      }
+
       return [
         session.simulation.inflationType,
         inflationCode,
@@ -444,6 +462,8 @@ export async function getAnovaSummaryCSV() {
         simulationCode,
         session.simulation.goodsType,
         goodsCode,
+        session.simulation.growthType,
+        growthCode,
         session.sessionType,
         session.avgTrxPrice,
         session.avgTrxOccurrence,

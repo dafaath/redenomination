@@ -7,6 +7,7 @@ export const createSimulationSchema = object({
     goodsType: string().required(),
     goodsName: string().required(),
     inflationType: string().required(),
+    growthType: string().required(),
     participantNumber: number().required(),
     simulationBudget: number().required(),
     seller: array()
@@ -32,6 +33,7 @@ export const updateSimulationSchema = object({
     goodsType: string().required(),
     goodsName: string().required(),
     inflationType: string().required(),
+    growthType: string().required(),
     participantNumber: number().required(),
     simulationBudget: number().required(),
   }),

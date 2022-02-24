@@ -71,6 +71,11 @@ export default class Simulation extends BaseEntity {
   inflationType: string;
 
   @Column({
+    type: "text",
+  })
+  growthType: string;
+
+  @Column({
     type: "int",
   })
   participantNumber: number;
