@@ -201,7 +201,7 @@ export async function adminLoginTokenSocket(
 
 export async function disconnectTokenSocket(
   socketId: string
-): Promise<boolean | Error> {
+): Promise<string | Error> {
   try {
     const buyer = await Buyer.createQueryBuilder("buyer")
       .where("buyer.socketId=:socketId", { socketId })
@@ -228,17 +228,17 @@ export async function disconnectTokenSocket(
       buyer.isReady = false;
 
       success = await buyer.save();
-    }
-
-    if (seller) {
+      return success.loginToken;
+    } else if (seller) {
       seller.isLoggedIn = false;
       seller.socketId = null;
       seller.isReady = false;
 
       success = await seller.save();
+      return success.loginToken;
     }
 
-    return Boolean(success);
+    throw createHttpError(500, `Error`);
   } catch (error) {
     return errorReturnHandler(error);
   }

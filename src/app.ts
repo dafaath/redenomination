@@ -34,6 +34,7 @@ import { registerGeneralSocket } from "./routes/socket.route";
 import { registerPostedOffer } from "./routes/postedOffer.route";
 import { registerDoubleAuction } from "./routes/doubleAuction.route";
 import { registerDecentralized } from "./routes/decentralized.route";
+import { activePlayers } from "./service/socket.service";
 
 const port = (process.env.PORT as unknown as number) || config.server.port;
 const host = config.server.host;
@@ -101,8 +102,12 @@ export const onConnection = (socket: Socket) => {
 
   socket.on("disconnect", async () => {
     try {
-      await disconnectTokenSocket(socket.id);
-      checkIfError(disconnectTokenSocket);
+      const token = await disconnectTokenSocket(socket.id);
+
+      if (!(token instanceof Error)) {
+        const active = await activePlayers(token);
+        io.emit("admin:activePlayers", active)
+      }
 
       socket.disconnect();
       log.info(`User ${socket.id} has been disconnected`);
