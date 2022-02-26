@@ -8,7 +8,7 @@ import Phase, { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import Bargain from "../db/entities/bargain.entity";
 import { calcSimulation } from "./simulation.service";
-import { sortPhases } from "../common/utils/other";
+import { randomString, sortPhases } from "../common/utils/other";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -197,51 +197,34 @@ export async function finishSession(
     // Finish Session
     session.isRunning = false;
 
-    const allPhasesRunned = session.phases.reduce(
-      (prev, phase) => prev && phase.isDone(),
-      true
-    );
+    // Calculate Session Summary
+    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true);
     if (allPhasesRunned) {
-      session.avgTrxPrice =
-        session.phases.reduce(
-          (prev, phase) => prev + Number(phase.avgTrxPrice),
-          0
-        ) / Number(session.phases.length);
-      session.avgTrxOccurrence =
-        session.phases.reduce(
-          (prev, phase) => prev + Number(phase.avgTrxOccurrence),
-          0
-        ) / Number(session.phases.length);
+      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxPrice), 0) / Number(session.phases.length);
+      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
     }
-
     const finishedSession = session.save();
 
-    // Calculate Summary
+    // Calculate Simulation Summary
     const calculatedSimulation = calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
     // Randomize participant role
-    const buyersUsername = session.simulation.buyers.map(buyer => ({
-      username: buyer.username,
-    }))
-    const sellersUsername = session.simulation.sellers.map(seller => ({
-      username: seller.username,
-    }))
-    let participants = [...buyersUsername, ...sellersUsername,]
-
+    const buyersUsername = session.simulation.buyers.map(buyer => (buyer.username))
+    const sellersUsername = session.simulation.sellers.map(seller => (seller.username))
+    let participants = [...buyersUsername, ...sellersUsername]
     session.simulation.buyers.forEach(buyer => {
       let randomNum = Math.floor(Math.random() * participants.length);
-      buyer.username = participants[randomNum].username;
-      buyer.save()
-      participants.splice(randomNum, 1)
+      buyer.username = participants[randomNum];
+      participants.splice(randomNum, 1);
+      buyer.save();
     })
-
     session.simulation.sellers.forEach(seller => {
       let randomNum = Math.floor(Math.random() * participants.length);
-      seller.username = participants[randomNum].username;
-      seller.save()
-      participants.splice(randomNum, 1)
+      seller.username = participants[randomNum];
+      participants.splice(randomNum, 1);
+      seller.save();
     })
 
     return finishedSession;
