@@ -134,7 +134,7 @@ export async function buyDecentralized(
 
         const successBuyer = Profit.create({
           session: phase.session,
-          username: buyer.username!,
+          username: buyer.username,
           unitValue: buyer.unitValue,
           price: price,
           profit: buyer.unitValue - price,
@@ -144,7 +144,7 @@ export async function buyDecentralized(
         if (seller) {
           const successSeller = Profit.create({
             session: phase.session,
-            username: seller.username!,
+            username: seller.username,
             unitCost: seller.unitCost,
             price: price,
             profit: price - seller.unitCost,

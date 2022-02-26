@@ -333,7 +333,10 @@ export async function activePlayers(
       .leftJoinAndSelect("simulation.sellers", "seller")
       .leftJoinAndSelect("simulation.buyers", "buyer")
       .getOne();
-    if (!simulation) { throw createHttpError(404, `Login token ${token} is not found in database`); }
+
+    if (!simulation) {
+      throw createHttpError(404, `Login token ${token} is not found in database`);
+    }
 
     const activePlayers: activePlayersType = {
       sellers: simulation.sellers,

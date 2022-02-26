@@ -188,46 +188,58 @@ export async function finishSession(
     });
 
     if (!session) {
-      throw createHttpError(404, "Session with id " + sessionId + " is not found");
+      throw createHttpError(
+        404,
+        "Session with id " + sessionId + " is not found"
+      );
     }
 
     // Finish Session
     session.isRunning = false;
 
-    // Calculate Session Summary
-    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true);
+    const allPhasesRunned = session.phases.reduce(
+      (prev, phase) => prev && phase.isDone(),
+      true
+    );
     if (allPhasesRunned) {
-      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxPrice), 0) / Number(session.phases.length);
-      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
+      session.avgTrxPrice =
+        session.phases.reduce(
+          (prev, phase) => prev + Number(phase.avgTrxPrice),
+          0
+        ) / Number(session.phases.length);
+      session.avgTrxOccurrence =
+        session.phases.reduce(
+          (prev, phase) => prev + Number(phase.avgTrxOccurrence),
+          0
+        ) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
     }
+
     const finishedSession = session.save();
 
-    // Calculate Simulation Summary
+    // Calculate Summary
     const calculatedSimulation = calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
     // Randomize participant role
-    const buyersUsername = session.simulation.buyers.map(buyer => {
-      const username = buyer.username;
-      buyer.username = null;
-      return username;
-    })
-    const sellersUsername = session.simulation.sellers.map(seller => {
-      const username = seller.username;
-      seller.username = null;
-      return username;
-    })
-    let participants = [...buyersUsername, ...sellersUsername]
+    const buyersUsername = session.simulation.buyers.map(buyer => ({
+      username: buyer.username,
+    }))
+    const sellersUsername = session.simulation.sellers.map(seller => ({
+      username: seller.username,
+    }))
+    let participants = [...buyersUsername, ...sellersUsername,]
+
     session.simulation.buyers.forEach(buyer => {
       let randomNum = Math.floor(Math.random() * participants.length);
-      buyer.username = participants[randomNum];
+      buyer.username = participants[randomNum].username;
       buyer.save()
       participants.splice(randomNum, 1)
     })
+
     session.simulation.sellers.forEach(seller => {
       let randomNum = Math.floor(Math.random() * participants.length);
-      seller.username = participants[randomNum];
+      seller.username = participants[randomNum].username;
       seller.save()
       participants.splice(randomNum, 1)
     })

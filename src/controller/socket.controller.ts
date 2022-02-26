@@ -83,7 +83,7 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
 
       // check if last phase
       if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)) {
-        await finishSession(phase.session.id);
+        finishSession(phase.session.id);
         io.emit("admin:isSessionDone")
       }
 
