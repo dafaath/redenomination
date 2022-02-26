@@ -11,12 +11,13 @@ import {
   doubleAuctionBuyerBid,
   doubleAuctionSellerBid,
   postedOffers,
+  runningSessions,
+  SessionData,
   setDoubleAuctionBid,
   setDoubleAuctionOffer,
 } from "../db/shortLived";
 import Simulation from "../db/entities/simulation.entity";
 import Profit from "../db/entities/profit.entity";
-import Session from "../db/entities/session.entity";
 
 export async function toggleReady(
   socketId: string
@@ -232,23 +233,62 @@ export async function deleteShortLivedData(
   }
 }
 
+export class Start {
+  phase: Phase;
+  sessionData: SessionData;
+}
 export async function startPhase(
   phaseId: string
-): Promise<Phase | Error> {
+): Promise<Start | Error> {
   try {
-    const phase = await Phase.findOne(phaseId);
+    const phase = await Phase.findOne(phaseId, { relations: ["session", "session.simulation"] });
+    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
 
-    if (!phase) {
-      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
-    }
+    const token = phase.session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
 
     // Run Phase
     if (phase.isRunning === false) {
       phase.isRunning = true;
       await phase.save();
+
+      lock.acquire("startPhaseSessionDataUpdate", (done) => {
+        try {
+          const sessionData = new SessionData(token, phaseId, false);
+          runningSessions[sessionDataIndex] = sessionData;
+          done();
+        } catch (error) {
+          if (error instanceof Error) { done(error); }
+          errorThrowUtils(error);
+        }
+      });
     }
 
-    return phase;
+    return {
+      phase: phase,
+      sessionData: runningSessions[sessionDataIndex],
+    };
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function updatePhaseStage(
+  phaseId: string
+): Promise<SessionData | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, { relations: ["session", "session.simulation"] });
+    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
+
+    const token = phase.session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
+
+    const updatedSessionData = new SessionData(token, phaseId, true);
+    runningSessions[sessionDataIndex] = updatedSessionData;
+
+    return updatedSessionData;
   } catch (error) {
     return errorReturnHandler(error);
   }

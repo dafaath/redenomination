@@ -9,6 +9,7 @@ import Transaction from "../db/entities/transaction.entity";
 import Bargain from "../db/entities/bargain.entity";
 import { calcSimulation } from "./simulation.service";
 import { sortPhases } from "../common/utils/other";
+import { runningSessions, SessionData } from "../db/shortLived";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -171,6 +172,17 @@ export async function runSession(sessionId: string): Promise<Session | Error> {
     if (session.isRunning === false) {
       session.isRunning = true;
       await session.save();
+
+      const token = session.simulation.token;
+      const sessionData = new SessionData(token, "READY", false);
+
+      const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+      if (sessionDataIndex !== -1) {
+        runningSessions[sessionDataIndex] = sessionData
+      } else {
+        runningSessions.push(sessionData)
+      }
+
     }
 
     return session;
@@ -193,6 +205,11 @@ export async function finishSession(
 
     // Finish Session
     session.isRunning = false;
+
+    // Delete sessionData
+    const token = session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex !== -1) { runningSessions.splice(sessionDataIndex, 1); }
 
     // Calculate Session Summary
     const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true);
