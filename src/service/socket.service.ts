@@ -314,7 +314,7 @@ export async function collectedProfit(
     const calculatedProfit = (clientProfit / totalProfit) * phase.session.sessionBudget;
     const adjustedProfit = Math.floor(calculatedProfit / 100) * 100;
 
-    return adjustedProfit + 5000;
+    return adjustedProfit;
   } catch (error) {
     return errorReturnHandler(error);
   }
