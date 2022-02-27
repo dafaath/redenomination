@@ -8,7 +8,7 @@ import Phase, { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import Bargain from "../db/entities/bargain.entity";
 import { calcSimulation } from "./simulation.service";
-import { randomString, sortPhases } from "../common/utils/other";
+import { sortPhases } from "../common/utils/other";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
