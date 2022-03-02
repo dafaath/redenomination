@@ -318,9 +318,9 @@ export async function finishPhase(
         throw createHttpError(404, `There is no recorded transactions for this phase`);
       }
 
-      const sumTrxPrices = trxList.reduce((prev, t) => prev + Number(t.price), 0)
-      phase.avgTrxOccurrence = Number(trxList.length);
-      phase.avgTrxPrice = Number(sumTrxPrices) / trxList.length;
+      const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
+      phase.avgTrxOccurrence = trxList.length;
+      phase.avgTrxPrice = isNaN(sumTrxPrices / trxList.length) ? 0 : sumTrxPrices / trxList.length;
       phase.timeLastRun = new Date(Date.now());
       await phase.save();
     }
@@ -388,3 +388,5 @@ export async function activePlayers(
     return errorReturnHandler(error);
   }
 }
+
+export async function phaseInit() { }
