@@ -208,3 +208,18 @@ export async function checkIfIsDone(
     return errorReturnHandler(error);
   }
 }
+
+
+export async function requestList(
+  phaseId: string
+): Promise<Array<PostedOffer> | Error> {
+  try {
+    const phase = await Phase.findOne({ id: phaseId });
+
+    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
+
+    return postedOffers.filter((po) => po.phaseId === phaseId);
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
