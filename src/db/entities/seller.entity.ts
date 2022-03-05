@@ -37,10 +37,8 @@ export default class Seller extends BaseEntity {
 
   @Column({
     type: "text",
-    unique: true,
-    nullable: true,
   })
-  username: string | null;
+  username: string;
 
   @Column({
     type: "numeric",
