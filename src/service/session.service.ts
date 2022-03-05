@@ -186,10 +186,7 @@ export async function finishSession(
     const session = await Session.findOne(sessionId, {
       relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases"],
     });
-
-    if (!session) {
-      throw createHttpError(404, "Session with id " + sessionId + " is not found");
-    }
+    if (!session) { throw createHttpError(404, "Session with id " + sessionId + " is not found"); }
 
     // Finish Session
     session.isRunning = false;
@@ -201,15 +198,15 @@ export async function finishSession(
       session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
     }
-    const finishedSession = session.save();
+    const finishedSession = await session.save();
 
     // Calculate Simulation Summary
-    const calculatedSimulation = calcSimulation(session.simulation.id);
+    const calculatedSimulation = await calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
     // Randomize participant role
-    const buyersUsername = session.simulation.buyers.map(buyer => buyer.username)
-    const sellersUsername = session.simulation.sellers.map(seller => seller.username)
+    const buyersUsername = session.simulation.buyers.map(buyer => (buyer.username))
+    const sellersUsername = session.simulation.sellers.map(seller => (seller.username))
     let participants = [...buyersUsername, ...sellersUsername]
     session.simulation.buyers.forEach(async buyer => {
       let randomNum = Math.floor(Math.random() * participants.length);
