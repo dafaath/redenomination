@@ -13,6 +13,7 @@ import {
   collectedProfit,
   activePlayers,
   ReadyObject,
+  ReadyCount,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -29,15 +30,17 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
       if (!(user instanceof Error)) {
         const readyCount = await countReadyUser(user.loginToken);
         checkIfError(readyCount);
+
         if (readyCount instanceof ReadyObject) {
           const joinedRoom = Array.from(socket.rooms);
           io.to(joinedRoom).emit("sessionDataUpdate", readyCount.sessionData);
+          io.to(user.loginToken).emit("readyCount", readyCount.readyCount);
+        } else if (readyCount instanceof ReadyCount) {
+          io.to(user.loginToken).emit("readyCount", readyCount);
         }
 
         const active = await activePlayers(user.loginToken);
         io.emit("admin:activePlayers", active)
-
-        io.to(user.loginToken).emit("readyCount", readyCount);
 
         socketHandleSuccessResponse(
           socket,

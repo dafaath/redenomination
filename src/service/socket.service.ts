@@ -82,7 +82,7 @@ export class ReadyObject {
   readyCount: ReadyCount;
   sessionData: SessionData;
 }
-type ReadyCount = {
+export class ReadyCount {
   numberOfReadyPlayer: number;
   totalPlayer: number;
 };
