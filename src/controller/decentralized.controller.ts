@@ -15,6 +15,7 @@ import {
   checkIfIsDone,
   inputSellerPrice,
 } from "../service/decentralized.service";
+import { updatePhaseStage } from "../service/socket.service";
 
 type socketTokenLoginRequest = yup.InferType<typeof inputSellerPriceSchema>;
 export function inputSellerPriceHandler(io: Server, socket: Socket) {
@@ -37,6 +38,10 @@ export function inputSellerPriceHandler(io: Server, socket: Socket) {
         const isDone = await checkIfIsDone(request.phaseId, decentralizeds.length);
         checkIfError(isDone);
         io.to(joinedRoom).emit("ds:isDone", isDone);
+
+        const sessionData = await updatePhaseStage(request.phaseId);
+        checkIfError(sessionData);
+        io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
       }
 
       socketHandleSuccessResponse(
