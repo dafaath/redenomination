@@ -128,8 +128,12 @@ export async function countReadyUser(
           const sessionDataIndex = runningSessions.findIndex(item => item.token === loginToken);
           if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
 
-          if (readyCount.numberOfReadyPlayer === readyCount.totalPlayer) {
-            const updatedSessionData = new SessionData(loginToken, "READY", true);
+          if (
+            readyCount.numberOfReadyPlayer === readyCount.totalPlayer &&
+            runningSessions[sessionDataIndex].phaseId === "READY" &&
+            runningSessions[sessionDataIndex].stageCode === false
+          ) {
+            const updatedSessionData = new SessionData(loginToken, "READY", false);
             runningSessions[sessionDataIndex] = updatedSessionData;
             const returnable: ReadyObject = {
               readyCount,
