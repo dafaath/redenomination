@@ -28,24 +28,25 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
       checkIfError(user);
 
       if (!(user instanceof Error)) {
-        const readyCount = await countReadyUser(user.loginToken);
-        checkIfError(readyCount);
+        const object = await countReadyUser(user.loginToken);
+        checkIfError(object);
 
-        if (readyCount instanceof ReadyObject) {
-          io.to(user.loginToken).emit("sessionDataUpdate", readyCount.sessionData);
-          io.to(user.loginToken).emit("readyCount", readyCount.readyCount);
-        } else if (readyCount instanceof ReadyCount) {
-          io.to(user.loginToken).emit("readyCount", readyCount);
+        if (object instanceof ReadyObject) {
+          io.to(user.loginToken).emit("sessionDataUpdate", object.sessionData);
+          io.to(user.loginToken).emit("readyCount", object.readyCount);
+        }
+        else if (object instanceof ReadyCount) {
+          io.to(user.loginToken).emit("readyCount", object);
         }
 
         const active = await activePlayers(user.loginToken);
-        io.emit("admin:activePlayers", active)
+        io.to(user.loginToken).emit("admin:activePlayers", active);
 
         socketHandleSuccessResponse(
           socket,
           200,
           `Successfully set user to ${user.isReady}`,
-          { user, readyCount }
+          { user, object }
         );
       }
     } catch (error) {
