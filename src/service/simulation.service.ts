@@ -73,7 +73,7 @@ export async function createSimulation(
       return Seller.create({
         loginToken: token,
         unitCost: s.unitCost,
-        username: randomString(3),
+        username: randomString(4),
       });
     });
 
@@ -81,7 +81,7 @@ export async function createSimulation(
       return Buyer.create({
         loginToken: token,
         unitValue: b.unitValue,
-        username: randomString(3),
+        username: randomString(4),
       });
     });
 

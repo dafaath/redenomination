@@ -225,18 +225,21 @@ export async function finishSession(
     const buyersUsername = session.simulation.buyers.map(buyer => (buyer.username))
     const sellersUsername = session.simulation.sellers.map(seller => (seller.username))
     let participants = [...buyersUsername, ...sellersUsername]
-    for (const buyer of session.simulation.buyers) {
+
+    await session.simulation.buyers.reduce(async (a, buyer) => {
+      await a;
       let randomNum = Math.floor(Math.random() * participants.length);
       buyer.username = participants[randomNum];
       participants.splice(randomNum, 1);
       await buyer.save();
-    }
-    for (const seller of session.simulation.sellers) {
+    }, Promise.resolve());
+    await session.simulation.sellers.reduce(async (a, seller) => {
+      await a;
       let randomNum = Math.floor(Math.random() * participants.length);
       seller.username = participants[randomNum];
       participants.splice(randomNum, 1);
       await seller.save();
-    }
+    }, Promise.resolve());
 
     return finishedSession;
   } catch (error) {
