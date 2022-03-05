@@ -6,16 +6,16 @@ dotenv.config({
 
 module.exports = {
   server: {
-    port: 3000,
+    port: 8000,
     host: "localhost",
   },
   database: {
     type: "mysql",
     port: 3306,
-    username: "mysql",
+    username: "root",
     password: "",
     host: "localhost",
-    name: "redenomination",
+    name: "experime_redenomination",
   },
   admin: {
     password: "ekonomi123"
