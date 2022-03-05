@@ -40,10 +40,11 @@ export function inputSellerPriceHandler(io: Server, socket: Socket) {
         const isDone = await checkIfIsDone(request.phaseId, postedOffers.length);
         checkIfError(isDone);
         io.to(joinedRoom).emit("po:isDone", isDone);
-
-        const sessionData = await updatePhaseStage(request.phaseId);
-        checkIfError(sessionData);
-        io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+        if (isDone && !(isDone instanceof Error)) {
+          const sessionData = await updatePhaseStage(request.phaseId);
+          checkIfError(sessionData);
+          io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+        }
       }
 
       socketHandleSuccessResponse(
@@ -95,7 +96,6 @@ export function requestListHandler(io: Server, socket: Socket) {
       checkIfError(isValid);
 
       const postedOffers = await requestList(request.phaseId);
-      console.log(postedOffers)
       socket.emit("postedOfferList", postedOffers);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
