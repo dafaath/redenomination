@@ -368,7 +368,6 @@ export async function getAnovaSummaryCSV() {
     }
 
     const header = [
-      "Nama Barang",
       "Jenis Inflasi", "A",
       "Sistem Transaksi", "B",
       "Jenis Barang", "C",
@@ -437,7 +436,6 @@ export async function getAnovaSummaryCSV() {
 
       const phases = sortPhases(session.phases);
       return [
-        session.simulation.goodsName,
         session.simulation.inflationType, inflationCode,
         session.simulation.simulationType, simulationCode,
         session.simulation.goodsType, goodsCode,
