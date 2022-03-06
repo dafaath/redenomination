@@ -54,11 +54,8 @@ export function startPhaseHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, startPhaseSchema);
       checkIfError(validationError);
 
-      const startObject = await startPhase(request.phaseId)
-      if (!(startObject instanceof Error)) {
-        const joinedRoom = Array.from(socket.rooms);
-        io.to(joinedRoom).emit("sessionDataUpdate", startObject.sessionData);
-      }
+      const startError = startPhase(request.phaseId)
+      checkIfError(startError);
 
       socketHandleSuccessResponse(
         socket,
