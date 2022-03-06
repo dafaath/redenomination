@@ -78,17 +78,13 @@ export async function toggleReady(
   }
 }
 
-export class ReadyObject {
-  readyCount: ReadyCount;
-  sessionData: SessionData;
-}
 type ReadyCount = {
   numberOfReadyPlayer: number;
   totalPlayer: number;
 };
 export async function countReadyUser(
   loginToken: string
-): Promise<ReadyObject | ReadyCount | Error> {
+): Promise<ReadyCount | Error> {
   try {
     const chosenHost = await getManager().transaction(
       async (transactionalEntityManager) => {
@@ -124,19 +120,6 @@ export async function countReadyUser(
             numberOfReadyPlayer: numberOfReadyBuyers + numberOfReadySellers,
             totalPlayer: buyersCount + sellersCount,
           };
-
-          const sessionDataIndex = runningSessions.findIndex(item => item.token === loginToken);
-          if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
-
-          if (readyCount.numberOfReadyPlayer === readyCount.totalPlayer) {
-            const updatedSessionData = new SessionData(loginToken, "READY", true);
-            runningSessions[sessionDataIndex] = updatedSessionData;
-            const returnable: ReadyObject = {
-              readyCount,
-              sessionData: updatedSessionData,
-            };
-            return returnable;
-          }
 
           return readyCount;
         } catch (error) {
