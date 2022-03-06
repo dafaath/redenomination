@@ -143,7 +143,7 @@ export async function checkIfSellerBidMatch(
 
           const successBuyer = Profit.create({
             session: phase.session,
-            username: buyer.username!,
+            username: buyer.username,
             unitValue: buyer.unitValue,
             price: sellerBid,
             profit: buyer.unitValue - sellerBid,
@@ -152,7 +152,7 @@ export async function checkIfSellerBidMatch(
 
           const successSeller = Profit.create({
             session: phase.session,
-            username: seller.username!,
+            username: seller.username,
             unitCost: seller.unitCost,
             price: sellerBid,
             profit: sellerBid - seller.unitCost,
@@ -323,7 +323,7 @@ export async function checkIfBuyerBidMatch(
 
           const successBuyer = Profit.create({
             session: phase.session,
-            username: buyer.username!,
+            username: buyer.username,
             unitValue: buyer.unitValue,
             price: buyerBid,
             profit: buyer.unitValue - buyerBid,
@@ -332,7 +332,7 @@ export async function checkIfBuyerBidMatch(
 
           const successSeller = Profit.create({
             session: phase.session,
-            username: seller.username!,
+            username: seller.username,
             unitCost: seller.unitCost,
             price: buyerBid,
             profit: buyerBid - seller.unitCost,

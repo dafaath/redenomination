@@ -6,9 +6,9 @@ import Buyer from "../db/entities/buyer.entity";
 import Simulation from "../db/entities/simulation.entity";
 import Seller from "../db/entities/seller.entity";
 import { getManager } from "typeorm";
+import { getRandomNumberBetween } from "../common/utils/other";
 import Phase from "../db/entities/phase.entity";
 import Session from "../db/entities/session.entity";
-import { runningSessions, SessionData } from "../db/shortLived";
 
 export async function loginAdmin(password: string): Promise<string | Error> {
   try {
@@ -30,9 +30,7 @@ export type ChosenHost = {
   type: ChosenHostType;
   detail: Buyer | Seller;
   simulationType: string;
-  participantNumber: number;
   isSessionRunning: boolean;
-  sessionData: SessionData;
   goodsType: string;
   goodsPic: string | null;
   goodsName: string;
@@ -106,9 +104,6 @@ export async function loginTokenSocket(
             );
           }
 
-          const sessionData = runningSessions.find(sd => sd.token === token);
-          if (sessionData === undefined) { throw createHttpError(404, "Session hasnt been run"); }
-
           let chosenHost: undefined | ChosenHost = undefined;
           if (buyer) {
             if (buyer.isLoggedIn) {
@@ -126,11 +121,9 @@ export async function loginTokenSocket(
               goodsPic: simulation.goodsPic,
               inflationType: simulation.inflationType,
               simulationType: simulation.simulationType,
-              participantNumber: simulation.participantNumber,
               timer: session.timer,
               phases: session.phases,
               isSessionRunning: session.isRunning,
-              sessionData: sessionData,
             };
           } else if (seller) {
             if (seller.isLoggedIn) {
@@ -148,11 +141,9 @@ export async function loginTokenSocket(
               goodsPic: simulation.goodsPic,
               inflationType: simulation.inflationType,
               simulationType: simulation.simulationType,
-              participantNumber: simulation.participantNumber,
               timer: session.timer,
               phases: session.phases,
               isSessionRunning: session.isRunning,
-              sessionData: sessionData,
             };
           }
 
@@ -223,7 +214,10 @@ export async function disconnectTokenSocket(
       .getOne();
 
     if (!buyer && !seller) {
-      throw createHttpError(404, `No logged user with socket id of ${socketId}`);
+      throw createHttpError(
+        404,
+        `No logged user with socket id of ${socketId}`
+      );
     }
 
     let success: Buyer | Seller | undefined = undefined;

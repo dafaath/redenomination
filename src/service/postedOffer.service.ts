@@ -18,8 +18,18 @@ export async function inputSellerPrice(
   phaseId: string
 ): Promise<Array<PostedOffer> | Error> {
   try {
-    const seller = await Seller.findOne({ socketId: socketId }, { relations: ["simulation"], });
-    if (!seller) { throw createHttpError(403, "This socket has not been logged in or not a seller"); }
+    const seller = await Seller.findOne(
+      { socketId: socketId },
+      {
+        relations: ["simulation"],
+      }
+    );
+    if (!seller) {
+      throw createHttpError(
+        403,
+        "This socket has not been logged in or not a seller"
+      );
+    }
 
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) {
@@ -134,7 +144,7 @@ export async function buyPostedOffer(
 
         const successBuyer = Profit.create({
           session: phase.session,
-          username: buyer.username!,
+          username: buyer.username,
           unitValue: buyer.unitValue,
           price: price,
           profit: buyer.unitValue - price,
@@ -144,7 +154,7 @@ export async function buyPostedOffer(
         if (seller) {
           const successSeller = Profit.create({
             session: phase.session,
-            username: seller.username!,
+            username: seller.username,
             unitCost: seller.unitCost,
             price: price,
             profit: price - seller.unitCost,
@@ -204,21 +214,6 @@ export async function checkIfIsDone(
     }
 
     return false;
-  } catch (error) {
-    return errorReturnHandler(error);
-  }
-}
-
-
-export async function requestList(
-  phaseId: string
-): Promise<Array<PostedOffer> | Error> {
-  try {
-    const phase = await Phase.findOne({ id: phaseId });
-
-    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
-
-    return postedOffers.filter((po) => po.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
   }

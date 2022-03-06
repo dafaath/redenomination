@@ -58,6 +58,7 @@ export async function createSimulation(
   data: createSimulationBody
 ): Promise<Simulation | Error> {
   try {
+    console.log("data", data);
     let simulationTypeId = "";
     if (data.simulationType === SimulationType.POSTED_OFFER) {
       simulationTypeId = "PO";
@@ -99,6 +100,7 @@ export async function createSimulation(
     });
 
     const savedSimulation = await simulation.save();
+    console.log("savedSimulation", savedSimulation);
 
     return savedSimulation;
   } catch (error) {
@@ -328,14 +330,18 @@ export async function getSimulationSummary(
       relations: ["buyers", "sellers", "sessions", "sessions.phases"],
     });
 
-    if (!simulation) { throw createHttpError(404, "Simulation with id " + simulationId + " is not found"); }
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        "Simulation with id " + simulationId + " is not found"
+      );
+    }
 
     const sessionSummaries: SessionSummary[] = [];
 
     for (let i = 0; i < simulation.sessions.length; i++) {
       const session = simulation.sessions[i];
       const sessionSummary = await getSessionSummary(session);
-
       if (sessionSummary instanceof Error) {
         throw sessionSummary;
       }
@@ -368,7 +374,6 @@ export async function getAnovaSummaryCSV() {
     }
 
     const header = [
-      "Nama Barang",
       "Jenis Inflasi", "A",
       "Sistem Transaksi", "B",
       "Jenis Barang", "C",
@@ -437,7 +442,6 @@ export async function getAnovaSummaryCSV() {
 
       const phases = sortPhases(session.phases);
       return [
-        session.simulation.goodsName,
         session.simulation.inflationType, inflationCode,
         session.simulation.simulationType, simulationCode,
         session.simulation.goodsType, goodsCode,
