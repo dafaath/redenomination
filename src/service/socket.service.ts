@@ -11,12 +11,13 @@ import {
   doubleAuctionBuyerBid,
   doubleAuctionSellerBid,
   postedOffers,
+  runningSessions,
+  SessionData,
   setDoubleAuctionBid,
   setDoubleAuctionOffer,
 } from "../db/shortLived";
 import Simulation from "../db/entities/simulation.entity";
 import Profit from "../db/entities/profit.entity";
-import Session from "../db/entities/session.entity";
 
 export async function toggleReady(
   socketId: string
@@ -77,13 +78,27 @@ export async function toggleReady(
   }
 }
 
-type ReadyCount = {
+export class ReadyObject {
+  readyCount: ReadyCount;
+  sessionData: SessionData;
+
+  constructor(readyCount: ReadyCount, sessionData: SessionData) {
+    this.readyCount = readyCount;
+    this.sessionData = sessionData;
+  }
+}
+export class ReadyCount {
   numberOfReadyPlayer: number;
   totalPlayer: number;
+
+  constructor(numberOfReadyPlayer: number, totalPlayer: number) {
+    this.numberOfReadyPlayer = numberOfReadyPlayer
+    this.totalPlayer = totalPlayer
+  }
 };
 export async function countReadyUser(
   loginToken: string
-): Promise<ReadyCount | Error> {
+): Promise<ReadyObject | ReadyCount | Error> {
   try {
     const chosenHost = await getManager().transaction(
       async (transactionalEntityManager) => {
@@ -115,10 +130,20 @@ export async function countReadyUser(
             (s) => s.isReady === true
           ).length;
 
-          const readyCount: ReadyCount = {
-            numberOfReadyPlayer: numberOfReadyBuyers + numberOfReadySellers,
-            totalPlayer: buyersCount + sellersCount,
-          };
+          const readyCount = new ReadyCount(numberOfReadyBuyers + numberOfReadySellers, buyersCount + sellersCount);
+
+          const sessionDataIndex = runningSessions.findIndex(item => item.token === loginToken);
+          if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
+
+          if (
+            readyCount.numberOfReadyPlayer === readyCount.totalPlayer &&
+            runningSessions[sessionDataIndex].phaseId === "READY"
+          ) {
+            const updatedSessionData = new SessionData(loginToken, "READY", false);
+            runningSessions[sessionDataIndex] = updatedSessionData;
+            const returnable = new ReadyObject(readyCount, updatedSessionData);
+            return returnable;
+          }
 
           return readyCount;
         } catch (error) {
@@ -232,23 +257,62 @@ export async function deleteShortLivedData(
   }
 }
 
+export class Start {
+  phase: Phase;
+  sessionData: SessionData;
+}
 export async function startPhase(
   phaseId: string
-): Promise<Phase | Error> {
+): Promise<Start | Error> {
   try {
-    const phase = await Phase.findOne(phaseId);
+    const phase = await Phase.findOne(phaseId, { relations: ["session", "session.simulation"] });
+    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
 
-    if (!phase) {
-      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
-    }
+    const token = phase.session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
 
     // Run Phase
     if (phase.isRunning === false) {
       phase.isRunning = true;
       await phase.save();
+
+      lock.acquire("startPhaseSessionDataUpdate", (done) => {
+        try {
+          const sessionData = new SessionData(token, phaseId, false);
+          runningSessions[sessionDataIndex] = sessionData;
+          done();
+        } catch (error) {
+          if (error instanceof Error) { done(error); }
+          errorThrowUtils(error);
+        }
+      });
     }
 
-    return phase;
+    return {
+      phase: phase,
+      sessionData: runningSessions[sessionDataIndex],
+    };
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function updatePhaseStage(
+  phaseId: string
+): Promise<SessionData | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, { relations: ["session", "session.simulation"] });
+    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
+
+    const token = phase.session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
+
+    const updatedSessionData = new SessionData(token, phaseId, true);
+    runningSessions[sessionDataIndex] = updatedSessionData;
+
+    return updatedSessionData;
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -278,9 +342,9 @@ export async function finishPhase(
         throw createHttpError(404, `There is no recorded transactions for this phase`);
       }
 
-      const sumTrxPrices = trxList.reduce((prev, t) => prev + Number(t.price), 0)
-      phase.avgTrxOccurrence = Number(trxList.length);
-      phase.avgTrxPrice = Number(sumTrxPrices) / trxList.length;
+      const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
+      phase.avgTrxOccurrence = trxList.length;
+      phase.avgTrxPrice = isNaN(sumTrxPrices / trxList.length) ? 0 : sumTrxPrices / trxList.length;
       phase.timeLastRun = new Date(Date.now());
       await phase.save();
     }
@@ -348,3 +412,5 @@ export async function activePlayers(
     return errorReturnHandler(error);
   }
 }
+
+export async function phaseInit() { }
