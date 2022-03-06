@@ -12,8 +12,6 @@ import {
   finishPhase,
   collectedProfit,
   activePlayers,
-  ReadyObject,
-  ReadyCount,
 } from "../service/socket.service";
 import yup from "yup";
 import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
@@ -28,25 +26,19 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
       checkIfError(user);
 
       if (!(user instanceof Error)) {
-        const object = await countReadyUser(user.loginToken);
-        checkIfError(object);
-
-        if (object instanceof ReadyObject) {
-          io.to(user.loginToken).emit("sessionDataUpdate", object.sessionData);
-          io.to(user.loginToken).emit("readyCount", object.readyCount);
-        }
-        else if (object instanceof ReadyCount) {
-          io.to(user.loginToken).emit("readyCount", object);
-        }
+        const readyCount = await countReadyUser(user.loginToken);
+        checkIfError(readyCount);
 
         const active = await activePlayers(user.loginToken);
-        io.to(user.loginToken).emit("admin:activePlayers", active);
+        io.emit("admin:activePlayers", active)
+
+        io.to(user.loginToken).emit("readyCount", readyCount);
 
         socketHandleSuccessResponse(
           socket,
           200,
           `Successfully set user to ${user.isReady}`,
-          { user, object }
+          { user, readyCount }
         );
       }
     } catch (error) {
@@ -62,11 +54,8 @@ export function startPhaseHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, startPhaseSchema);
       checkIfError(validationError);
 
-      const startObject = await startPhase(request.phaseId)
-      if (!(startObject instanceof Error)) {
-        const joinedRoom = Array.from(socket.rooms);
-        io.to(joinedRoom).emit("sessionDataUpdate", startObject.sessionData);
-      }
+      const startError = startPhase(request.phaseId)
+      checkIfError(startError);
 
       socketHandleSuccessResponse(
         socket,
@@ -92,7 +81,7 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       const phase = await finishPhase(request.phaseId)
       checkIfError(phase);
 
-      // // check if last phase
+      // check if last phase
       // if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)) {
       //   await finishSession(phase.session.id);
       //   io.emit("admin:isSessionDone")
