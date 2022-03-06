@@ -81,20 +81,10 @@ export async function toggleReady(
 export class ReadyObject {
   readyCount: ReadyCount;
   sessionData: SessionData;
-
-  constructor(readyCount: ReadyCount, sessionData: SessionData) {
-    this.readyCount = readyCount;
-    this.sessionData = sessionData;
-  }
 }
 export class ReadyCount {
   numberOfReadyPlayer: number;
   totalPlayer: number;
-
-  constructor(numberOfReadyPlayer: number, totalPlayer: number) {
-    this.numberOfReadyPlayer = numberOfReadyPlayer
-    this.totalPlayer = totalPlayer
-  }
 };
 export async function countReadyUser(
   loginToken: string
@@ -130,7 +120,10 @@ export async function countReadyUser(
             (s) => s.isReady === true
           ).length;
 
-          const readyCount = new ReadyCount(numberOfReadyBuyers + numberOfReadySellers, buyersCount + sellersCount);
+          const readyCount: ReadyCount = {
+            numberOfReadyPlayer: numberOfReadyBuyers + numberOfReadySellers,
+            totalPlayer: buyersCount + sellersCount,
+          };
 
           const sessionDataIndex = runningSessions.findIndex(item => item.token === loginToken);
           if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
@@ -141,7 +134,10 @@ export async function countReadyUser(
           ) {
             const updatedSessionData = new SessionData(loginToken, "READY", false);
             runningSessions[sessionDataIndex] = updatedSessionData;
-            const returnable = new ReadyObject(readyCount, updatedSessionData);
+            const returnable: ReadyObject = {
+              readyCount: readyCount,
+              sessionData: updatedSessionData,
+            };
             return returnable;
           }
 
