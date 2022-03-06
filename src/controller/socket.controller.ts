@@ -32,7 +32,8 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
         checkIfError(readyCount);
 
         if (readyCount instanceof ReadyObject) {
-          io.to(user.loginToken).emit("sessionDataUpdate", readyCount.sessionData);
+          const joinedRoom = Array.from(socket.rooms);
+          io.to(joinedRoom).emit("sessionDataUpdate", readyCount.sessionData);
           io.to(user.loginToken).emit("readyCount", readyCount.readyCount);
         } else if (readyCount instanceof ReadyCount) {
           io.to(user.loginToken).emit("readyCount", readyCount);

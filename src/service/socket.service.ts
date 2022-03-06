@@ -130,12 +130,13 @@ export async function countReadyUser(
 
           if (
             readyCount.numberOfReadyPlayer === readyCount.totalPlayer &&
-            runningSessions[sessionDataIndex].phaseId === "READY"
+            runningSessions[sessionDataIndex].phaseId === "READY" &&
+            runningSessions[sessionDataIndex].stageCode === false
           ) {
             const updatedSessionData = new SessionData(loginToken, "READY", false);
             runningSessions[sessionDataIndex] = updatedSessionData;
             const returnable: ReadyObject = {
-              readyCount: readyCount,
+              readyCount,
               sessionData: updatedSessionData,
             };
             return returnable;
