@@ -82,10 +82,10 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       checkIfError(phase);
 
       // check if last phase
-      if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)) {
-        await finishSession(phase.session.id);
-        io.emit("admin:isSessionDone")
-      }
+      // if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)) {
+      //   await finishSession(phase.session.id);
+      //   io.emit("admin:isSessionDone")
+      // }
 
       const error = await deleteShortLivedData(request.phaseId);
       checkIfError(error);
