@@ -9,6 +9,7 @@ import Transaction from "../db/entities/transaction.entity";
 import Bargain from "../db/entities/bargain.entity";
 import { calcSimulation } from "./simulation.service";
 import { sortPhases } from "../common/utils/other";
+import { runningSessions, SessionData } from "../db/shortLived";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -171,6 +172,17 @@ export async function runSession(sessionId: string): Promise<Session | Error> {
     if (session.isRunning === false) {
       session.isRunning = true;
       await session.save();
+
+      const token = session.simulation.token;
+      const sessionData = new SessionData(token, "READY", false);
+
+      const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+      if (sessionDataIndex !== -1) {
+        runningSessions[sessionDataIndex] = sessionData
+      } else {
+        runningSessions.push(sessionData)
+      }
+
     }
 
     return session;
@@ -186,13 +198,15 @@ export async function finishSession(
     const session = await Session.findOne(sessionId, {
       relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases"],
     });
-
-    if (!session) {
-      throw createHttpError(404, "Session with id " + sessionId + " is not found");
-    }
+    if (!session) { throw createHttpError(404, "Session with id " + sessionId + " is not found"); }
 
     // Finish Session
     session.isRunning = false;
+
+    // Delete sessionData
+    const token = session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex !== -1) { runningSessions.splice(sessionDataIndex, 1); }
 
     // Calculate Session Summary
     const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true);
@@ -201,15 +215,15 @@ export async function finishSession(
       session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
     }
-    const finishedSession = session.save();
+    const finishedSession = await session.save();
 
     // Calculate Simulation Summary
-    const calculatedSimulation = calcSimulation(session.simulation.id);
+    const calculatedSimulation = await calcSimulation(session.simulation.id);
     checkIfError(calculatedSimulation);
 
     // Randomize participant role
-    const buyersUsername = session.simulation.buyers.map(buyer => buyer.username)
-    const sellersUsername = session.simulation.sellers.map(seller => seller.username)
+    const buyersUsername = session.simulation.buyers.map(buyer => (buyer.username))
+    const sellersUsername = session.simulation.sellers.map(seller => (seller.username))
     let participants = [...buyersUsername, ...sellersUsername]
 
     await session.simulation.buyers.reduce(async (a, buyer) => {

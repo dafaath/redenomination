@@ -19,6 +19,7 @@ import {
   inputSellerPrice,
   allSold,
 } from "../service/doubleAuction.service";
+import { updatePhaseStage } from "../service/socket.service";
 
 type PostBuyerRequest = yup.InferType<typeof postBuyerSchema>;
 export function postBuyerHandler(io: Server, socket: Socket) {
@@ -79,9 +80,11 @@ export function postBuyerHandler(io: Server, socket: Socket) {
 
       const isDone = await allSold(request.phaseId);
       checkIfError(isDone);
-      if (isDone) {
-        io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
-      }
+      io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
+
+      const sessionData = await updatePhaseStage(request.phaseId);
+      checkIfError(sessionData);
+      io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
@@ -147,9 +150,11 @@ export function postSellerHandler(io: Server, socket: Socket) {
 
       const isDone = await allSold(request.phaseId);
       checkIfError(isDone);
-      if (isDone) {
-        io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
-      }
+      io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
+
+      const sessionData = await updatePhaseStage(request.phaseId);
+      checkIfError(sessionData);
+      io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

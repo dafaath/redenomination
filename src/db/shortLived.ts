@@ -1,5 +1,21 @@
 import { randomString } from "../common/utils/other";
 
+export const runningSessions: Array<SessionData> = [];
+
+export class SessionData {
+  token: string;
+  phaseId: string;
+  stageCode: boolean;
+  startTime: Date;
+
+  constructor(token: string, phaseId: string, stageCode: boolean) {
+    this.token = token;
+    this.phaseId = phaseId;
+    this.stageCode = stageCode;
+    this.startTime = new Date(Date.now());
+  }
+}
+
 export const postedOffers: Array<PostedOffer> = [];
 
 export class PostedOffer {
