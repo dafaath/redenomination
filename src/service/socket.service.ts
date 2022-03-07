@@ -277,16 +277,8 @@ export async function startPhase(
       phase.isRunning = true;
       await phase.save();
 
-      lock.acquire("startPhaseSessionDataUpdate", (done) => {
-        try {
-          const sessionData = new SessionData(token, phaseId, false);
-          runningSessions[sessionDataIndex] = sessionData;
-          done();
-        } catch (error) {
-          if (error instanceof Error) { done(error); }
-          errorThrowUtils(error);
-        }
-      });
+      const sessionData = new SessionData(token, phaseId, false);
+      runningSessions[sessionDataIndex] = sessionData;
     }
 
     return {

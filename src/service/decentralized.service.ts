@@ -34,8 +34,6 @@ export async function inputSellerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
-    } else if (phase.isRunning === false) {
-      throw createHttpError(404, `This phase is not running`);
     }
 
     const priceAdjusted = validatePrice(phase, seller, price);
@@ -120,8 +118,6 @@ export async function buyDecentralized(
         const phase = await Phase.findOne(phaseId, { relations: ["session"] });
         if (!phase) {
           throw createHttpError(404, `There is no phase with id ${phaseId}`);
-        } else if (phase.isRunning === false) {
-          throw createHttpError(404, `This phase is not running`);
         }
 
         const transaction = Transaction.create({
@@ -177,8 +173,6 @@ export async function checkIfIsDone(
     });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
-    } else if (phase.isRunning === false) {
-      throw createHttpError(404, `This phase is not running`);
     }
 
     const session = await Session.findOne(phase.session.id, {
