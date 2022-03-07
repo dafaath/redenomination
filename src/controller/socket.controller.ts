@@ -14,12 +14,11 @@ import {
   activePlayers,
   ReadyObject,
   ReadyCount,
+  updatePhaseStage,
 } from "../service/socket.service";
 import yup from "yup";
-import { finishPhaseSchema, startPhaseSchema, collectProfitSchema } from "../schema/socket.schema";
+import { finishPhaseSchema, startPhaseSchema, collectProfitSchema, updatePhaseSchema } from "../schema/socket.schema";
 import { validateSocketInput } from "../middleware/validateSocketInput";
-import { PhaseType } from "../db/entities/phase.entity";
-import { finishSession } from "../service/session.service";
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
   return async () => {
@@ -72,6 +71,33 @@ export function startPhaseHandler(io: Server, socket: Socket) {
         socket,
         200,
         "Successfully start this phase",
+        {
+          phaseId: request.phaseId,
+        }
+      );
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+type updatePhaseRequest = yup.InferType<typeof updatePhaseSchema>;
+export function updatePhaseHandler(io: Server, socket: Socket) {
+  return async (request: updatePhaseRequest) => {
+    try {
+      const validationError = validateSocketInput(request, updatePhaseSchema);
+      checkIfError(validationError);
+
+      const sessionData = await updatePhaseStage(request.phaseId);
+      checkIfError(sessionData);
+
+      const joinedRoom = Array.from(socket.rooms);
+      io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+
+      socketHandleSuccessResponse(
+        socket,
+        200,
+        "Successfully updated this phase",
         {
           phaseId: request.phaseId,
         }

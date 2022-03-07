@@ -1,6 +1,13 @@
-import { object, string, number } from "yup";
+import { object, string } from "yup";
 
 export const startPhaseSchema = object({
+  phaseId: string().uuid().required(),
+})
+  .noUnknown(true)
+  .required()
+  .strict();
+
+export const updatePhaseSchema = object({
   phaseId: string().uuid().required(),
 })
   .noUnknown(true)
