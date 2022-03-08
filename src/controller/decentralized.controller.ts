@@ -6,6 +6,7 @@ import {
 import {
   buySchema,
   inputSellerPriceSchema,
+  requestListDSSchema,
 } from "../schema/decentralized.schema";
 import yup from "yup";
 import { validateSocketInput } from "../middleware/validateSocketInput";
@@ -14,6 +15,7 @@ import {
   buyDecentralized,
   checkIfIsDone,
   inputSellerPrice,
+  requestListDS,
 } from "../service/decentralized.service";
 import { updatePhaseStage } from "../service/socket.service";
 
@@ -79,6 +81,21 @@ export function buyHandler(io: Server, socket: Socket) {
         "Successfully buy transaction",
         decentralizeds
       );
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+type requestListRequest = yup.InferType<typeof requestListDSSchema>;
+export function requestListHandlerDS(io: Server, socket: Socket) {
+  return async (request: requestListRequest) => {
+    try {
+      const isValid = validateSocketInput(request, requestListDSSchema);
+      checkIfError(isValid);
+
+      const decentralizeds = await requestListDS(request.phaseId);
+      socket.emit("decentralizedList", decentralizeds);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

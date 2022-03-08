@@ -18,37 +18,27 @@ export async function inputSellerPrice(
   phaseId: string
 ): Promise<Array<Decentralized> | Error> {
   try {
-    const seller = await Seller.findOne(
-      { socketId: socketId },
-      {
-        relations: ["simulation"],
-      }
-    );
-    if (!seller) {
-      throw createHttpError(
-        403,
-        "This socket has not been logged in or not a seller"
-      );
-    }
-
+    const seller = await Seller.findOne({ socketId: socketId }, { relations: ["simulation"], });
+    if (!seller) { throw createHttpError(403, "This socket has not been logged in or not a seller"); }
     const phase = await Phase.findOne({ id: phaseId });
-    if (!phase) {
-      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
+
+    const decentralizedIndex = decentralizeds.findIndex((item) => { return ((item.sellerId === seller.id) && (item.phaseId === phaseId)); });
+    if (decentralizedIndex === -1) {
+      const priceAdjusted = validatePrice(phase, seller, price);
+
+      const bargain = Bargain.create({
+        phase: phase,
+        seller: seller,
+        postedBy: seller.id,
+        price: priceAdjusted,
+      });
+      await bargain.save();
+
+      const decentralized = new Decentralized(seller.id, priceAdjusted, phaseId);
+      decentralizeds.push(decentralized);
     }
 
-    const priceAdjusted = validatePrice(phase, seller, price);
-
-    const decentralized = new Decentralized(seller.id, priceAdjusted, phaseId);
-    const bargain = Bargain.create({
-      phase: phase,
-      seller: seller,
-      postedBy: seller.id,
-      price: priceAdjusted,
-    });
-
-    await bargain.save();
-
-    decentralizeds.push(decentralized);
     return decentralizeds.filter((po) => po.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
@@ -196,6 +186,19 @@ export async function checkIfIsDone(
     }
 
     return false;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function requestListDS(
+  phaseId: string
+): Promise<Array<Decentralized> | Error> {
+  try {
+    const phase = await Phase.findOne({ id: phaseId });
+    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
+
+    return decentralizeds.filter((ds) => ds.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
   }
