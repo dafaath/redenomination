@@ -20,33 +20,22 @@ export async function inputSellerPrice(
   try {
     const seller = await Seller.findOne({ socketId: socketId }, { relations: ["simulation"], });
     if (!seller) { throw createHttpError(403, "This socket has not been logged in or not a seller"); }
-
     const phase = await Phase.findOne({ id: phaseId });
-    if (!phase) {
-      throw createHttpError(404, `There is no phase with id ${phaseId}`);
-    }
+    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
 
-    const priceAdjusted = validatePrice(phase, seller, price);
+    const postedOfferIndex = postedOffers.findIndex((item) => { return ((item.sellerId === seller.id) && (item.phaseId === phaseId)); });
+    if (postedOfferIndex === -1) {
+      const priceAdjusted = validatePrice(phase, seller, price);
 
-    const postedOffer = new PostedOffer(seller.id, priceAdjusted, phaseId);
-    const bargain = Bargain.create({
-      phase: phase,
-      seller: seller,
-      postedBy: seller.id,
-      price: priceAdjusted,
-    });
+      const bargain = Bargain.create({
+        phase: phase,
+        seller: seller,
+        postedBy: seller.id,
+        price: priceAdjusted,
+      });
+      await bargain.save();
 
-    await bargain.save();
-
-    const postedOfferIndex = postedOffers.findIndex(
-      (item) => {
-        return item.sellerId === seller.id;
-      }
-    );
-
-    if (postedOfferIndex !== -1) {
-      postedOffers[postedOfferIndex] = postedOffer;
-    } else {
+      const postedOffer = new PostedOffer(seller.id, priceAdjusted, phaseId);
       postedOffers.push(postedOffer);
     }
 
@@ -203,13 +192,11 @@ export async function checkIfIsDone(
   }
 }
 
-
 export async function requestList(
   phaseId: string
 ): Promise<Array<PostedOffer> | Error> {
   try {
     const phase = await Phase.findOne({ id: phaseId });
-
     if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
 
     return postedOffers.filter((po) => po.phaseId === phaseId);
