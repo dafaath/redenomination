@@ -23,7 +23,7 @@ export async function inputSellerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
 
-    const postedOfferIndex = postedOffers.findIndex((item) => { return ((item.sellerId === seller.id) && (item.phaseId === phaseId)); });
+    const postedOfferIndex = postedOffers.findIndex((item) => item.sellerId === seller.id);
     if (postedOfferIndex === -1) {
       const priceAdjusted = validatePrice(phase, seller, price);
 
