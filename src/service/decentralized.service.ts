@@ -37,7 +37,7 @@ export async function inputSellerPrice(
 
       const decentralized = new Decentralized(seller.id, priceAdjusted, phaseId);
       decentralizeds.push(decentralized);
-    } else { throw createHttpError(500, "This socket has inputted price"); }
+    }
 
     return decentralizeds.filter((po) => po.phaseId === phaseId);
   } catch (error) {

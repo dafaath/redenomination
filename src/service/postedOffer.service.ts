@@ -37,7 +37,7 @@ export async function inputSellerPrice(
 
       const postedOffer = new PostedOffer(seller.id, priceAdjusted, phaseId);
       postedOffers.push(postedOffer);
-    } else { throw createHttpError(500, "This socket has inputted price"); }
+    }
 
     return postedOffers.filter((po) => po.phaseId === phaseId);
   } catch (error) {
