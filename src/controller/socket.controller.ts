@@ -118,23 +118,10 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       const phase = await finishPhase(request.phaseId)
       checkIfError(phase);
 
-      // // check if last phase
-      // if (!(phase instanceof Error) && (phase.phaseType === PhaseType.POST_REDENOM_PRICE)) {
-      //   await finishSession(phase.session.id);
-      //   io.emit("admin:isSessionDone")
-      // }
-
       const error = await deleteShortLivedData(request.phaseId);
       checkIfError(error);
 
-      socketHandleSuccessResponse(
-        socket,
-        200,
-        "Successfully finish this phase",
-        {
-          phaseId: request.phaseId,
-        }
-      );
+      socketHandleSuccessResponse(socket, 200, "Successfully finish this phase", { phaseId: request.phaseId, });
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

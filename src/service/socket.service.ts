@@ -170,13 +170,10 @@ export async function deleteShortLivedData(
         let postedOfferIndex: number;
 
         do {
-          postedOfferIndex = postedOffers.findIndex(
-            (po) => po.phaseId === phaseId
-          );
-          if (postedOfferIndex !== -1) {
-            postedOffers.splice(postedOfferIndex, 1);
-          }
-        } while (postedOfferIndex !== -1);
+          postedOfferIndex = postedOffers.findIndex((po) => po.phaseId === phaseId);
+          if (postedOfferIndex !== -1) { postedOffers.splice(postedOfferIndex, 1); }
+        }
+        while (postedOfferIndex !== -1);
 
         done();
       } catch (error) {
@@ -190,15 +187,15 @@ export async function deleteShortLivedData(
     lock.acquire("deleteDoubleAuctionBuyer", (done) => {
       try {
         let doubleAuctionBuyerIndex: number;
-        do {
-          doubleAuctionBuyerIndex = doubleAuctionBuyerBid.findIndex(
-            (po) => po.phaseId === phaseId
-          );
 
+        do {
+          doubleAuctionBuyerIndex = doubleAuctionBuyerBid.findIndex((po) => po.phaseId === phaseId);
           if (doubleAuctionBuyerIndex !== -1) {
             doubleAuctionBuyerBid.splice(doubleAuctionBuyerIndex, 1);
           }
-        } while (doubleAuctionBuyerIndex !== -1);
+        }
+        while (doubleAuctionBuyerIndex !== -1);
+
         setDoubleAuctionBid(0);
         done();
       } catch (error) {
@@ -212,15 +209,15 @@ export async function deleteShortLivedData(
     lock.acquire("deleteDoubleAuctionSeller", (done) => {
       try {
         let doubleAuctionSellerIndex: number;
-        do {
-          doubleAuctionSellerIndex = doubleAuctionSellerBid.findIndex(
-            (po) => po.phaseId === phaseId
-          );
 
+        do {
+          doubleAuctionSellerIndex = doubleAuctionSellerBid.findIndex((po) => po.phaseId === phaseId);
           if (doubleAuctionSellerIndex !== -1) {
             doubleAuctionSellerBid.splice(doubleAuctionSellerIndex, 1);
           }
-        } while (doubleAuctionSellerIndex !== -1);
+        }
+        while (doubleAuctionSellerIndex !== -1);
+
         setDoubleAuctionOffer(0);
         done();
       } catch (error) {
@@ -234,15 +231,15 @@ export async function deleteShortLivedData(
     lock.acquire("deleteDecentralized", (done) => {
       try {
         let decentralizedIndex: number;
-        do {
-          decentralizedIndex = decentralizeds.findIndex(
-            (ds) => ds.phaseId === phaseId
-          );
 
+        do {
+          decentralizedIndex = decentralizeds.findIndex((ds) => ds.phaseId === phaseId);
           if (decentralizedIndex !== -1) {
             decentralizeds.splice(decentralizedIndex, 1);
           }
-        } while (decentralizedIndex !== -1);
+        }
+        while (decentralizedIndex !== -1);
+
         done();
       } catch (error) {
         if (error instanceof Error) {
@@ -330,13 +327,11 @@ export async function finishPhase(
         .where("transaction.phase.id=:phaseId", { phaseId })
         .getMany();
 
-      if (!trxList) {
-        throw createHttpError(404, `There is no recorded transactions for this phase`);
+      if (trxList) {
+        const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
+        phase.avgTrxOccurrence = trxList.length;
+        phase.avgTrxPrice = isNaN(sumTrxPrices / trxList.length) ? 0 : sumTrxPrices / trxList.length;
       }
-
-      const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
-      phase.avgTrxOccurrence = trxList.length;
-      phase.avgTrxPrice = isNaN(sumTrxPrices / trxList.length) ? 0 : sumTrxPrices / trxList.length;
       phase.timeLastRun = new Date(Date.now());
       await phase.save();
     }
