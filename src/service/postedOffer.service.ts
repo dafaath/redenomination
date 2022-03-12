@@ -23,21 +23,32 @@ export async function inputSellerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
 
-    const postedOfferIndex = postedOffers.findIndex((item) => item.sellerId === seller.id && item.phaseId === phaseId);
-    if (postedOfferIndex === -1) {
-      const priceAdjusted = validatePrice(phase, seller, price);
+    await lock.acquire("postedOfferInput", async (done) => {
+      try {
+        const postedOfferIndex = postedOffers.findIndex((item) => item.sellerId === seller.id && item.phaseId === phaseId);
+        if (postedOfferIndex === -1) {
+          const priceAdjusted = validatePrice(phase, seller, price);
 
-      const bargain = Bargain.create({
-        phase: phase,
-        seller: seller,
-        postedBy: seller.id,
-        price: priceAdjusted,
-      });
-      await bargain.save();
+          const bargain = Bargain.create({
+            phase: phase,
+            seller: seller,
+            postedBy: seller.id,
+            price: priceAdjusted,
+          });
+          await bargain.save();
 
-      const postedOffer = new PostedOffer(seller.id, priceAdjusted, phaseId);
-      postedOffers.push(postedOffer);
-    }
+          const postedOffer = new PostedOffer(seller.id, priceAdjusted, phaseId);
+          postedOffers.push(postedOffer);
+        }
+
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
+        errorThrowUtils(error);
+      }
+    });
 
     return postedOffers.filter((po) => po.phaseId === phaseId);
   } catch (error) {

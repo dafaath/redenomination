@@ -23,21 +23,32 @@ export async function inputSellerPrice(
     const phase = await Phase.findOne({ id: phaseId });
     if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
 
-    const decentralizedIndex = decentralizeds.findIndex((item) => item.sellerId === seller.id && item.phaseId === phaseId);
-    if (decentralizedIndex === -1) {
-      const priceAdjusted = validatePrice(phase, seller, price);
+    await lock.acquire("decentralizedInput", async (done) => {
+      try {
+        const decentralizedIndex = decentralizeds.findIndex((item) => item.sellerId === seller.id && item.phaseId === phaseId);
+        if (decentralizedIndex === -1) {
+          const priceAdjusted = validatePrice(phase, seller, price);
 
-      const bargain = Bargain.create({
-        phase: phase,
-        seller: seller,
-        postedBy: seller.id,
-        price: priceAdjusted,
-      });
-      await bargain.save();
+          const bargain = Bargain.create({
+            phase: phase,
+            seller: seller,
+            postedBy: seller.id,
+            price: priceAdjusted,
+          });
+          await bargain.save();
 
-      const decentralized = new Decentralized(seller.id, priceAdjusted, phaseId);
-      decentralizeds.push(decentralized);
-    }
+          const decentralized = new Decentralized(seller.id, priceAdjusted, phaseId);
+          decentralizeds.push(decentralized);
+        }
+
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
+        errorThrowUtils(error);
+      }
+    });
 
     return decentralizeds.filter((po) => po.phaseId === phaseId);
   } catch (error) {
