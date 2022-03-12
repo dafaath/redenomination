@@ -112,7 +112,7 @@ export async function loginTokenSocket(
           let chosenHost: undefined | ChosenHost = undefined;
           if (buyer) {
             if (buyer.isLoggedIn) {
-              throw createHttpError(403, `This user is already logged in`);
+              throw createHttpError(405, `This user is already logged in`);
             }
 
             buyer.isLoggedIn = true;
@@ -134,7 +134,7 @@ export async function loginTokenSocket(
             };
           } else if (seller) {
             if (seller.isLoggedIn) {
-              throw createHttpError(403, `This user is already logged in`);
+              throw createHttpError(405, `This user is already logged in`);
             }
 
             seller.isLoggedIn = true;

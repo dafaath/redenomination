@@ -35,7 +35,7 @@ const validateAuthentication =
         const isJwtFromAdmin = decodedJwt.decoded?.role === ROLE.ADMIN;
 
         if (!isJwtFromAdmin) {
-          throw createNewError(403, "This request need admin privileges");
+          throw createNewError(401, "This request need admin privileges");
         }
       }
 

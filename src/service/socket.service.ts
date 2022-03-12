@@ -296,12 +296,16 @@ export async function updatePhaseStage(
 
     const token = phase.session.simulation.token;
     const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
-    if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
+    if (sessionDataIndex === -1) {
+      throw createHttpError(404, "Session hasnt been run");
+    } else if (runningSessions[sessionDataIndex].stageCode === true) {
+      return runningSessions[sessionDataIndex];
+    } else {
+      const updatedSessionData = new SessionData(token, phaseId, true);
+      runningSessions[sessionDataIndex] = updatedSessionData;
+      return updatedSessionData;
+    }
 
-    const updatedSessionData = new SessionData(token, phaseId, true);
-    runningSessions[sessionDataIndex] = updatedSessionData;
-
-    return updatedSessionData;
   } catch (error) {
     return errorReturnHandler(error);
   }
