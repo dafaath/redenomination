@@ -10,6 +10,7 @@ import Bargain from "../db/entities/bargain.entity";
 import { calcSimulation } from "./simulation.service";
 import { sortPhases } from "../common/utils/other";
 import { runningSessions, SessionData } from "../db/shortLived";
+import { finishPhase } from "./socket.service";
 
 export async function getAllSession(): Promise<Array<Session> | Error> {
   try {
@@ -150,6 +151,11 @@ export async function deleteSession(
       );
     }
 
+    // Delete sessionData
+    const token = session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    if (sessionDataIndex !== -1) { runningSessions.splice(sessionDataIndex, 1); }
+
     const deletedSession = await session.remove();
 
     return deletedSession;
@@ -202,6 +208,12 @@ export async function finishSession(
 
     // Finish Session
     session.isRunning = false;
+
+    // Finish Phases
+    await session.phases.reduce(async (a, phase) => {
+      await a;
+      await finishPhase(phase.id);
+    }, Promise.resolve());
 
     // Delete sessionData
     const token = session.simulation.token;

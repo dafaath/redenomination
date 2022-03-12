@@ -315,9 +315,7 @@ export async function finishPhase(
       relations: ["session"],
     });
 
-    if (!phase) {
-      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
-    }
+    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
 
     // End Phase
     if (phase.isRunning === true) {
