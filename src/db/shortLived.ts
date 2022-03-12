@@ -1,6 +1,8 @@
 import { randomString } from "../common/utils/other";
 
+// Session Data
 export const runningSessions: Array<SessionData> = [];
+export function clearSesionData() { runningSessions.splice(0, runningSessions.length); }
 
 export class SessionData {
   token: string;
@@ -16,7 +18,10 @@ export class SessionData {
   }
 }
 
+
+// Posted Offer
 export const postedOffers: Array<PostedOffer> = [];
+export function clearPO() { postedOffers.splice(0, postedOffers.length); }
 
 export class PostedOffer {
   id: string;
@@ -39,8 +44,14 @@ export class PostedOffer {
   }
 }
 
+
+// Double Auction
 export const doubleAuctionSellerBid: Array<SellerBid> = [];
 export const doubleAuctionBuyerBid: Array<BuyerBid> = [];
+export function clearDA() {
+  doubleAuctionSellerBid.splice(0, doubleAuctionSellerBid.length);
+  doubleAuctionBuyerBid.splice(0, doubleAuctionBuyerBid.length);
+}
 
 class DoubleAuction {
   id: string;
@@ -86,15 +97,13 @@ export class BuyerBid extends DoubleAuction {
 
 export let doubleAuctionBid: number = 0;
 export let doubleAuctionOffer: number = 0;
+export function setDoubleAuctionBid(num: number) { doubleAuctionBid = !isNaN(num) && num !== Infinity ? num : 0; }
+export function setDoubleAuctionOffer(num: number) { doubleAuctionOffer = !isNaN(num) && num !== Infinity ? num : 0; }
 
-export function setDoubleAuctionBid(num: number) {
-  doubleAuctionBid = !isNaN(num) && num !== Infinity ? num : 0;
-}
-export function setDoubleAuctionOffer(num: number) {
-  doubleAuctionOffer = !isNaN(num) && num !== Infinity ? num : 0;
-}
 
+// Decentralized
 export const decentralizeds: Array<Decentralized> = [];
+export function clearDS() { decentralizeds.splice(0, decentralizeds.length); }
 
 export class Decentralized {
   id: string;
@@ -115,4 +124,12 @@ export class Decentralized {
     this.buyerId = null;
     this.timeCreated = new Date(Date.now());
   }
+}
+
+export function consolelogshortlived() {
+  console.log(runningSessions)
+  console.log(postedOffers)
+  console.log(doubleAuctionSellerBid)
+  console.log(doubleAuctionBuyerBid)
+  console.log(decentralizeds)
 }

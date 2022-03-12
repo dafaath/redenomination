@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ROLE } from "../common/utils/jwt";
 import {
+  clearShortlivedHandler,
   createGoodsPictureHandler,
   createSimulationHandler,
   deleteSimulationHandler,
@@ -22,6 +23,8 @@ const simulationRouter = Router();
 simulationRouter.use(validateAuthentication(ROLE.ADMIN));
 
 simulationRouter.get("/api/anova", getAnovaSummaryHandler);
+
+simulationRouter.get("/api/clear-shortlived", clearShortlivedHandler);
 
 simulationRouter.get("/api/simulations", getAllSimulationHandler);
 

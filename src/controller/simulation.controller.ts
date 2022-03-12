@@ -6,6 +6,7 @@ import { Request, Response } from "express";
 import yup from "yup";
 import { createSimulationSchema } from "../schema/simulation.schema";
 import {
+  clearShortlived,
   countReadyUser,
   createSimulation,
   deleteSimulation,
@@ -176,6 +177,17 @@ export async function getAnovaSummaryHandler(req: Request, res: Response) {
       "Successfully get anova Summary",
       anovaSummary
     );
+  } catch (error) {
+    handleErrorResponse(res, error);
+  }
+}
+
+export async function clearShortlivedHandler(req: Request, res: Response) {
+  try {
+    const msg = await clearShortlived();
+    checkIfError(msg);
+
+    handleSuccessResponse(res, 200, "Successfully deleted");
   } catch (error) {
     handleErrorResponse(res, error);
   }

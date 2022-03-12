@@ -14,6 +14,7 @@ import Session from "../db/entities/session.entity";
 import path from "path";
 import fs from "fs";
 import { appRoot } from "../app";
+import { clearDA, clearDS, clearPO, clearSesionData, consolelogshortlived } from "../db/shortLived";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -450,6 +451,25 @@ export async function getAnovaSummaryCSV() {
     });
 
     return [header, ...data];
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function clearShortlived() {
+  try {
+    console.log("before")
+    consolelogshortlived()
+
+    clearSesionData()
+    clearPO()
+    clearDA()
+    clearDS()
+
+    console.log("after")
+    consolelogshortlived()
+
+    return true;
   } catch (error) {
     return errorReturnHandler(error);
   }
