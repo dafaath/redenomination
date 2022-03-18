@@ -98,7 +98,10 @@ export async function checkIfSellerBidMatch(
 
     await lock.acquire("buyersBid", async (done) => {
       try {
-        const phase = await Phase.findOne({ id: phaseId }, { relations: ["session"] });
+        const phase = await Phase.findOne(
+          { id: phaseId },
+          { relations: ["session"] }
+        );
         if (!phase) {
           throw createHttpError(404, `There is no phase with id ${phaseId}`);
         }
@@ -143,7 +146,7 @@ export async function checkIfSellerBidMatch(
             unitValue: buyer.unitValue,
             price: sellerBid,
             profit: buyer.unitValue - sellerBid,
-          })
+          });
           await successBuyer.save();
 
           const successSeller = Profit.create({
@@ -152,7 +155,7 @@ export async function checkIfSellerBidMatch(
             unitCost: seller.unitCost,
             price: sellerBid,
             profit: sellerBid - seller.unitCost,
-          })
+          });
           await successSeller.save();
 
           transaction = await newTransaction.save();
@@ -271,7 +274,10 @@ export async function checkIfBuyerBidMatch(
 
     await lock.acquire("sellersBid", async (done) => {
       try {
-        const phase = await Phase.findOne({ id: phaseId }, { relations: ["session"] });
+        const phase = await Phase.findOne(
+          { id: phaseId },
+          { relations: ["session"] }
+        );
         if (!phase) {
           throw createHttpError(404, `There is no phase with id ${phaseId}`);
         }
@@ -319,7 +325,7 @@ export async function checkIfBuyerBidMatch(
             unitValue: buyer.unitValue,
             price: buyerBid,
             profit: buyer.unitValue - buyerBid,
-          })
+          });
           await successBuyer.save();
 
           const successSeller = Profit.create({
@@ -328,7 +334,7 @@ export async function checkIfBuyerBidMatch(
             unitCost: seller.unitCost,
             price: buyerBid,
             profit: buyerBid - seller.unitCost,
-          })
+          });
           await successSeller.save();
 
           transaction = await newTransaction.save();
@@ -420,20 +426,15 @@ export async function allSold(phaseId: string): Promise<boolean | Error> {
       .getCount();
 
     const phase = await Phase.findOne(phaseId, {
-      relations: ["session"],
+      relations: ["session", "session.simulation"],
     });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
     }
 
-    const session = await Session.findOne(phase.session.id, {
-      relations: ["simulation"],
-    });
-    if (!session) {
-      throw createHttpError(404, `There is no session with id ${phase.session.id}`);
-    }
-
-    const playersNumber = Math.floor(session.simulation.participantNumber / 2);
+    const playersNumber = Math.floor(
+      phase.session.simulation.participantNumber / 2
+    );
     if (numOfTrx >= playersNumber) {
       return true;
     } else if (numOfTrx < playersNumber) {

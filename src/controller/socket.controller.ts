@@ -17,7 +17,12 @@ import {
   updatePhaseStage,
 } from "../service/socket.service";
 import yup from "yup";
-import { finishPhaseSchema, startPhaseSchema, collectProfitSchema, updatePhaseSchema } from "../schema/socket.schema";
+import {
+  finishPhaseSchema,
+  startPhaseSchema,
+  collectProfitSchema,
+  updatePhaseSchema,
+} from "../schema/socket.schema";
 import { validateSocketInput } from "../middleware/validateSocketInput";
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
@@ -33,8 +38,7 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
         if (object instanceof ReadyObject) {
           io.to(user.loginToken).emit("sessionDataUpdate", object.sessionData);
           io.to(user.loginToken).emit("readyCount", object.readyCount);
-        }
-        else if (object instanceof ReadyCount) {
+        } else if (object instanceof ReadyCount) {
           io.to(user.loginToken).emit("readyCount", object);
         }
 
@@ -61,7 +65,7 @@ export function startPhaseHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, startPhaseSchema);
       checkIfError(validationError);
 
-      const startObject = await startPhase(request.phaseId)
+      const startObject = await startPhase(request.phaseId);
       if (!(startObject instanceof Error)) {
         const joinedRoom = Array.from(socket.rooms);
         io.to(joinedRoom).emit("sessionDataUpdate", startObject.sessionData);
@@ -115,13 +119,18 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, finishPhaseSchema);
       checkIfError(validationError);
 
-      const phase = await finishPhase(request.phaseId)
+      const phase = await finishPhase(request.phaseId);
       checkIfError(phase);
 
       const error = await deleteShortLivedData(request.phaseId);
       checkIfError(error);
 
-      socketHandleSuccessResponse(socket, 200, "Successfully finish this phase", { phaseId: request.phaseId, });
+      socketHandleSuccessResponse(
+        socket,
+        200,
+        "Successfully finish this phase",
+        { phaseId: request.phaseId }
+      );
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
@@ -135,7 +144,10 @@ export function collectProfitHandler(io: Server, socket: Socket) {
       const validationError = validateSocketInput(request, collectProfitSchema);
       checkIfError(validationError);
 
-      const clientCollectedProfit = await collectedProfit(request.phaseId, request.username);
+      const clientCollectedProfit = await collectedProfit(
+        request.phaseId,
+        request.username
+      );
       checkIfError(clientCollectedProfit);
 
       socket.emit("collectedProfit", clientCollectedProfit);

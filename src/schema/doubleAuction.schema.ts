@@ -15,3 +15,10 @@ export const postBuyerSchema = object({
   .noUnknown(true)
   .required()
   .strict();
+
+export const requestListDASchema = object({
+  phaseId: string().uuid().required(),
+})
+  .noUnknown(true)
+  .required()
+  .strict();

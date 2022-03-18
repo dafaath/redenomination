@@ -92,10 +92,10 @@ export class ReadyCount {
   totalPlayer: number;
 
   constructor(numberOfReadyPlayer: number, totalPlayer: number) {
-    this.numberOfReadyPlayer = numberOfReadyPlayer
-    this.totalPlayer = totalPlayer
+    this.numberOfReadyPlayer = numberOfReadyPlayer;
+    this.totalPlayer = totalPlayer;
   }
-};
+}
 export async function countReadyUser(
   loginToken: string
 ): Promise<ReadyObject | ReadyCount | Error> {
@@ -130,16 +130,27 @@ export async function countReadyUser(
             (s) => s.isReady === true
           ).length;
 
-          const readyCount = new ReadyCount(numberOfReadyBuyers + numberOfReadySellers, buyersCount + sellersCount);
+          const readyCount = new ReadyCount(
+            numberOfReadyBuyers + numberOfReadySellers,
+            buyersCount + sellersCount
+          );
 
-          const sessionDataIndex = runningSessions.findIndex(item => item.token === loginToken);
-          if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
+          const sessionDataIndex = runningSessions.findIndex(
+            (item) => item.token === loginToken
+          );
+          if (sessionDataIndex === -1) {
+            throw createHttpError(404, "Session hasnt been run");
+          }
 
           if (
             readyCount.numberOfReadyPlayer === readyCount.totalPlayer &&
             runningSessions[sessionDataIndex].phaseId === "READY"
           ) {
-            const updatedSessionData = new SessionData(loginToken, "READY", false);
+            const updatedSessionData = new SessionData(
+              loginToken,
+              "READY",
+              false
+            );
             runningSessions[sessionDataIndex] = updatedSessionData;
             const returnable = new ReadyObject(readyCount, updatedSessionData);
             return returnable;
@@ -170,10 +181,13 @@ export async function deleteShortLivedData(
         let postedOfferIndex: number;
 
         do {
-          postedOfferIndex = postedOffers.findIndex((po) => po.phaseId === phaseId);
-          if (postedOfferIndex !== -1) { postedOffers.splice(postedOfferIndex, 1); }
-        }
-        while (postedOfferIndex !== -1);
+          postedOfferIndex = postedOffers.findIndex(
+            (po) => po.phaseId === phaseId
+          );
+          if (postedOfferIndex !== -1) {
+            postedOffers.splice(postedOfferIndex, 1);
+          }
+        } while (postedOfferIndex !== -1);
 
         done();
       } catch (error) {
@@ -189,12 +203,13 @@ export async function deleteShortLivedData(
         let doubleAuctionBuyerIndex: number;
 
         do {
-          doubleAuctionBuyerIndex = doubleAuctionBuyerBid.findIndex((po) => po.phaseId === phaseId);
+          doubleAuctionBuyerIndex = doubleAuctionBuyerBid.findIndex(
+            (po) => po.phaseId === phaseId
+          );
           if (doubleAuctionBuyerIndex !== -1) {
             doubleAuctionBuyerBid.splice(doubleAuctionBuyerIndex, 1);
           }
-        }
-        while (doubleAuctionBuyerIndex !== -1);
+        } while (doubleAuctionBuyerIndex !== -1);
 
         setDoubleAuctionBid(0);
         done();
@@ -211,12 +226,13 @@ export async function deleteShortLivedData(
         let doubleAuctionSellerIndex: number;
 
         do {
-          doubleAuctionSellerIndex = doubleAuctionSellerBid.findIndex((po) => po.phaseId === phaseId);
+          doubleAuctionSellerIndex = doubleAuctionSellerBid.findIndex(
+            (po) => po.phaseId === phaseId
+          );
           if (doubleAuctionSellerIndex !== -1) {
             doubleAuctionSellerBid.splice(doubleAuctionSellerIndex, 1);
           }
-        }
-        while (doubleAuctionSellerIndex !== -1);
+        } while (doubleAuctionSellerIndex !== -1);
 
         setDoubleAuctionOffer(0);
         done();
@@ -233,12 +249,13 @@ export async function deleteShortLivedData(
         let decentralizedIndex: number;
 
         do {
-          decentralizedIndex = decentralizeds.findIndex((ds) => ds.phaseId === phaseId);
+          decentralizedIndex = decentralizeds.findIndex(
+            (ds) => ds.phaseId === phaseId
+          );
           if (decentralizedIndex !== -1) {
             decentralizeds.splice(decentralizedIndex, 1);
           }
-        }
-        while (decentralizedIndex !== -1);
+        } while (decentralizedIndex !== -1);
 
         done();
       } catch (error) {
@@ -248,7 +265,6 @@ export async function deleteShortLivedData(
         errorThrowUtils(error);
       }
     });
-
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -258,16 +274,22 @@ export class Start {
   phase: Phase;
   sessionData: SessionData;
 }
-export async function startPhase(
-  phaseId: string
-): Promise<Start | Error> {
+export async function startPhase(phaseId: string): Promise<Start | Error> {
   try {
-    const phase = await Phase.findOne(phaseId, { relations: ["session", "session.simulation"] });
-    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session", "session.simulation"],
+    });
+    if (!phase) {
+      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
+    }
 
     const token = phase.session.simulation.token;
-    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
-    if (sessionDataIndex === -1) { throw createHttpError(404, "Session hasnt been run"); }
+    const sessionDataIndex = runningSessions.findIndex(
+      (item) => item.token === token
+    );
+    if (sessionDataIndex === -1) {
+      throw createHttpError(404, "Session hasnt been run");
+    }
 
     // Run Phase
     if (phase.isRunning === false) {
@@ -291,11 +313,17 @@ export async function updatePhaseStage(
   phaseId: string
 ): Promise<SessionData | Error> {
   try {
-    const phase = await Phase.findOne(phaseId, { relations: ["session", "session.simulation"] });
-    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session", "session.simulation"],
+    });
+    if (!phase) {
+      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
+    }
 
     const token = phase.session.simulation.token;
-    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+    const sessionDataIndex = runningSessions.findIndex(
+      (item) => item.token === token
+    );
     if (sessionDataIndex === -1) {
       throw createHttpError(404, "Session hasnt been run");
     } else if (runningSessions[sessionDataIndex].stageCode === true) {
@@ -305,21 +333,20 @@ export async function updatePhaseStage(
       runningSessions[sessionDataIndex] = updatedSessionData;
       return updatedSessionData;
     }
-
   } catch (error) {
     return errorReturnHandler(error);
   }
 }
 
-export async function finishPhase(
-  phaseId: string
-): Promise<Phase | Error> {
+export async function finishPhase(phaseId: string): Promise<Phase | Error> {
   try {
     const phase = await Phase.findOne(phaseId, {
       relations: ["session"],
     });
 
-    if (!phase) { throw createHttpError(404, "Phase with id " + phaseId + " is not found"); }
+    if (!phase) {
+      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
+    }
 
     // End Phase
     if (phase.isRunning === true) {
@@ -330,9 +357,11 @@ export async function finishPhase(
         .getMany();
 
       if (trxList) {
-        const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0)
+        const sumTrxPrices = trxList.reduce((prev, t) => prev + t.price, 0);
         phase.avgTrxOccurrence = trxList.length;
-        phase.avgTrxPrice = isNaN(sumTrxPrices / trxList.length) ? 0 : sumTrxPrices / trxList.length;
+        phase.avgTrxPrice = isNaN(sumTrxPrices / trxList.length)
+          ? 0
+          : sumTrxPrices / trxList.length;
       }
       phase.timeLastRun = new Date(Date.now());
       await phase.save();
@@ -346,25 +375,36 @@ export async function finishPhase(
 
 export async function collectedProfit(
   phaseId: string,
-  username: string,
+  username: string
 ): Promise<number | Error> {
   try {
-    const phase = await Phase.findOne(phaseId, { relations: ["session"] })
-    if (!phase) { throw createHttpError(404, `There is no phase with id ${phaseId}`); }
+    const phase = await Phase.findOne(phaseId, { relations: ["session"] });
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
 
     let clientProfit: number = 0;
 
     const clientProfits = await Profit.find({
       where: { username: username },
-      relations: ["session"]
+      relations: ["session"],
     });
-    if (clientProfits) { clientProfit = clientProfits.reduce((prev, item) => prev + Number(item.profit), 0); }
+    if (clientProfits) {
+      clientProfit = clientProfits.reduce(
+        (prev, item) => prev + Number(item.profit),
+        0
+      );
+    }
 
     const allProfits = await Profit.find({ where: { session: phase.session } });
-    const totalProfit = allProfits.reduce((prev, profit) => prev + Number(profit.profit), 0);
+    const totalProfit = allProfits.reduce(
+      (prev, profit) => prev + Number(profit.profit),
+      0
+    );
 
     // calculate
-    const calculatedProfit = (clientProfit / totalProfit) * phase.session.sessionBudget;
+    const calculatedProfit =
+      (clientProfit / totalProfit) * phase.session.sessionBudget;
     const adjustedProfit = Math.floor(calculatedProfit / 100) * 100;
 
     return adjustedProfit;
@@ -388,7 +428,10 @@ export async function activePlayers(
       .getOne();
 
     if (!simulation) {
-      throw createHttpError(404, `Login token ${token} is not found in database`);
+      throw createHttpError(
+        404,
+        `Login token ${token} is not found in database`
+      );
     }
 
     const activePlayers: activePlayersType = {
@@ -402,4 +445,4 @@ export async function activePlayers(
   }
 }
 
-export async function phaseInit() { }
+export async function phaseInit() {}

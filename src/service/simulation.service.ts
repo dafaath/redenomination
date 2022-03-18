@@ -14,7 +14,13 @@ import Session from "../db/entities/session.entity";
 import path from "path";
 import fs from "fs";
 import { appRoot } from "../app";
-import { clearDA, clearDS, clearPO, clearSesionData, consolelogshortlived } from "../db/shortLived";
+import {
+  clearDA,
+  clearDS,
+  clearPO,
+  clearSesionData,
+  consolelogshortlived,
+} from "../db/shortLived";
 
 export async function getAllSimulation(): Promise<Array<Simulation> | Error> {
   try {
@@ -54,7 +60,9 @@ export async function getOneSimulation(
   }
 }
 
-type createSimulationBody = yup.InferType<typeof createSimulationSchema>["body"];
+type createSimulationBody = yup.InferType<
+  typeof createSimulationSchema
+>["body"];
 export async function createSimulation(
   data: createSimulationBody
 ): Promise<Simulation | Error> {
@@ -329,7 +337,12 @@ export async function getSimulationSummary(
       relations: ["buyers", "sellers", "sessions", "sessions.phases"],
     });
 
-    if (!simulation) { throw createHttpError(404, "Simulation with id " + simulationId + " is not found"); }
+    if (!simulation) {
+      throw createHttpError(
+        404,
+        "Simulation with id " + simulationId + " is not found"
+      );
+    }
 
     const sessionSummaries: SessionSummary[] = [];
 
@@ -370,14 +383,23 @@ export async function getAnovaSummaryCSV() {
 
     const header = [
       "Nama Barang",
-      "Jenis Inflasi", "A",
-      "Sistem Transaksi", "B",
-      "Jenis Barang", "C",
-      "Jenis Pertumbuhan Ekonomi", "D",
-      "Ulangan", "P", "Q",
-      "P PraRedenominasi", "Q PraRedenominasi",
-      "P Transisi Redenominasi", "Q Transisi Redenominasi",
-      "P PascaRedenominasi", "Q PascaRedenominasi",
+      "Jenis Inflasi",
+      "A",
+      "Sistem Transaksi",
+      "B",
+      "Jenis Barang",
+      "C",
+      "Jenis Pertumbuhan Ekonomi",
+      "D",
+      "Ulangan",
+      "P",
+      "Q",
+      "P PraRedenominasi",
+      "Q PraRedenominasi",
+      "P Transisi Redenominasi",
+      "Q Transisi Redenominasi",
+      "P PascaRedenominasi",
+      "Q PascaRedenominasi",
     ];
     const data = sessions.map((session) => {
       let simulationCode: number;
@@ -397,7 +419,10 @@ export async function getAnovaSummaryCSV() {
           break;
 
         default:
-          throw createHttpError(404, "Simulation Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Simulation Type for session " + session.id + " not Found"
+          );
       }
 
       switch (session.simulation.inflationType) {
@@ -409,7 +434,10 @@ export async function getAnovaSummaryCSV() {
           break;
 
         default:
-          throw createHttpError(404, "Inflation Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Inflation Type for session " + session.id + " not Found"
+          );
       }
 
       switch (session.simulation.goodsType) {
@@ -421,7 +449,10 @@ export async function getAnovaSummaryCSV() {
           break;
 
         default:
-          throw createHttpError(404, "Goods Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Goods Type for session " + session.id + " not Found"
+          );
       }
 
       switch (session.simulation.growthType) {
@@ -433,20 +464,32 @@ export async function getAnovaSummaryCSV() {
           break;
 
         default:
-          throw createHttpError(404, "Growth Type for session " + session.id + " not Found");
+          throw createHttpError(
+            404,
+            "Growth Type for session " + session.id + " not Found"
+          );
       }
 
       const phases = sortPhases(session.phases);
       return [
         session.simulation.goodsName,
-        session.simulation.inflationType, inflationCode,
-        session.simulation.simulationType, simulationCode,
-        session.simulation.goodsType, goodsCode,
-        session.simulation.growthType, growthCode,
-        session.sessionType, session.avgTrxPrice, session.avgTrxOccurrence,
-        phases[0].avgTrxPrice, phases[0].avgTrxOccurrence,
-        phases[1].avgTrxPrice, phases[1].avgTrxOccurrence,
-        phases[2].avgTrxPrice, phases[2].avgTrxOccurrence,
+        session.simulation.inflationType,
+        inflationCode,
+        session.simulation.simulationType,
+        simulationCode,
+        session.simulation.goodsType,
+        goodsCode,
+        session.simulation.growthType,
+        growthCode,
+        session.sessionType,
+        session.avgTrxPrice,
+        session.avgTrxOccurrence,
+        phases[0].avgTrxPrice,
+        phases[0].avgTrxOccurrence,
+        phases[1].avgTrxPrice,
+        phases[1].avgTrxOccurrence,
+        phases[2].avgTrxPrice,
+        phases[2].avgTrxOccurrence,
       ];
     });
 
@@ -458,16 +501,16 @@ export async function getAnovaSummaryCSV() {
 
 export async function clearShortlived() {
   try {
-    console.log("before")
-    consolelogshortlived()
+    console.log("before");
+    consolelogshortlived();
 
-    clearSesionData()
-    clearPO()
-    clearDA()
-    clearDS()
+    clearSesionData();
+    clearPO();
+    clearDA();
+    clearDS();
 
-    console.log("after")
-    consolelogshortlived()
+    console.log("after");
+    consolelogshortlived();
 
     return true;
   } catch (error) {

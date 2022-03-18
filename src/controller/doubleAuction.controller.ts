@@ -10,6 +10,7 @@ import {
   postBuyerSchema,
   postSellerSchema as PostSellerRequest,
   postSellerSchema,
+  requestListDASchema,
 } from "../schema/doubleAuction.schema";
 import {
   checkIfBuyerBidMatch,
@@ -19,7 +20,10 @@ import {
   inputSellerPrice,
   allSold,
 } from "../service/doubleAuction.service";
-import { updatePhaseStage } from "../service/socket.service";
+import {
+  deleteShortLivedData,
+  updatePhaseStage,
+} from "../service/socket.service";
 
 type PostBuyerRequest = yup.InferType<typeof postBuyerSchema>;
 export function postBuyerHandler(io: Server, socket: Socket) {
@@ -57,6 +61,7 @@ export function postBuyerHandler(io: Server, socket: Socket) {
         if (matchData.seller?.socketId) {
           io.to(matchData.seller.socketId).emit("bidMatch", matchData);
         }
+
         socketHandleSuccessResponse(
           socket,
           201,
@@ -80,11 +85,19 @@ export function postBuyerHandler(io: Server, socket: Socket) {
 
       const isDone = await allSold(request.phaseId);
       checkIfError(isDone);
-      io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
+      if (isDone === true) {
+        io.to(joinedRoom).emit("da:isDone", {
+          isDone: isDone,
+          phaseId: request.phaseId,
+        });
 
-      const sessionData = await updatePhaseStage(request.phaseId);
-      checkIfError(sessionData);
-      io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+        const error = await deleteShortLivedData(request.phaseId);
+        checkIfError(error);
+
+        const sessionData = await updatePhaseStage(request.phaseId);
+        checkIfError(sessionData);
+        io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+      }
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
@@ -122,11 +135,9 @@ export function postSellerHandler(io: Server, socket: Socket) {
 
       if (matchData.match) {
         if (matchData.buyer?.socketId) {
-          console.log(`emit to ${matchData.buyer.socketId}`);
           io.to(matchData.buyer.socketId).emit("bidMatch", matchData);
         }
         if (matchData.seller?.socketId) {
-          console.log(`emit to ${matchData.seller.socketId}`);
           io.to(matchData.seller.socketId).emit("bidMatch", matchData);
         }
 
@@ -150,11 +161,36 @@ export function postSellerHandler(io: Server, socket: Socket) {
 
       const isDone = await allSold(request.phaseId);
       checkIfError(isDone);
-      io.to(joinedRoom).emit("da:isDone", { isDone: true, phaseId: request.phaseId });
+      if (isDone === true) {
+        io.to(joinedRoom).emit("da:isDone", {
+          isDone: isDone,
+          phaseId: request.phaseId,
+        });
 
-      const sessionData = await updatePhaseStage(request.phaseId);
-      checkIfError(sessionData);
-      io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+        const error = await deleteShortLivedData(request.phaseId);
+        checkIfError(error);
+
+        const sessionData = await updatePhaseStage(request.phaseId);
+        checkIfError(sessionData);
+        io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+      }
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+type requestListRequest = yup.InferType<typeof requestListDASchema>;
+export function requestListHandler(io: Server, socket: Socket) {
+  return async (request: requestListRequest) => {
+    try {
+      const isValid = validateSocketInput(request, requestListDASchema);
+      checkIfError(isValid);
+
+      const doubleAuction = await getBidOffer(request.phaseId);
+      checkIfError(doubleAuction);
+
+      socket.emit("doubleAuctionList", doubleAuction);
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }
