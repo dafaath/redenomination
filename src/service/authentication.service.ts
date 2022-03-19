@@ -106,8 +106,10 @@ export async function loginTokenSocket(
             );
           }
 
-          const sessionData = runningSessions.find(sd => sd.token === token);
-          if (sessionData === undefined) { throw createHttpError(404, "Session hasnt been run"); }
+          const sessionData = runningSessions.find((sd) => sd.token === token);
+          if (sessionData === undefined) {
+            throw createHttpError(404, "Session hasnt been run");
+          }
 
           let chosenHost: undefined | ChosenHost = undefined;
           if (buyer) {
@@ -223,7 +225,10 @@ export async function disconnectTokenSocket(
       .getOne();
 
     if (!buyer && !seller) {
-      throw createHttpError(404, `No logged user with socket id of ${socketId}`);
+      throw createHttpError(
+        404,
+        `No logged user with socket id of ${socketId}`
+      );
     }
 
     let success: Buyer | Seller | undefined = undefined;

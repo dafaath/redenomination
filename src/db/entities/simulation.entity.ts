@@ -103,13 +103,13 @@ export default class Simulation extends BaseEntity {
 
   @Column({
     type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP"
+    default: () => "CURRENT_TIMESTAMP",
   })
   timeCreated: Date;
 
   @Column({
     type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP"
+    default: () => "CURRENT_TIMESTAMP",
   })
   timeLastRun: Date;
 

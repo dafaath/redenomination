@@ -37,7 +37,10 @@ export function inputSellerPriceHandler(io: Server, socket: Socket) {
       io.to(joinedRoom).emit("postedOfferList", postedOffers);
 
       if (!(postedOffers instanceof Error)) {
-        const isDone = await checkIfIsDone(request.phaseId, postedOffers.length);
+        const isDone = await checkIfIsDone(
+          request.phaseId,
+          postedOffers.length
+        );
         checkIfError(isDone);
         io.to(joinedRoom).emit("po:isDone", isDone);
         if (isDone && !(isDone instanceof Error)) {

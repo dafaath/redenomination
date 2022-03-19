@@ -67,7 +67,7 @@ export default class Session extends BaseEntity {
 
   @Column({
     type: "timestamp",
-    default: () => "CURRENT_TIMESTAMP"
+    default: () => "CURRENT_TIMESTAMP",
   })
   timeCreated: Date;
 

@@ -36,7 +36,13 @@ export async function getOneSession(
 ): Promise<Session | Error> {
   try {
     const session = await Session.findOne(sessionId, {
-      relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases", "profits"],
+      relations: [
+        "simulation",
+        "simulation.buyers",
+        "simulation.sellers",
+        "phases",
+        "profits",
+      ],
     });
 
     if (!session) {
@@ -153,8 +159,12 @@ export async function deleteSession(
 
     // Delete sessionData
     const token = session.simulation.token;
-    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
-    if (sessionDataIndex !== -1) { runningSessions.splice(sessionDataIndex, 1); }
+    const sessionDataIndex = runningSessions.findIndex(
+      (item) => item.token === token
+    );
+    if (sessionDataIndex !== -1) {
+      runningSessions.splice(sessionDataIndex, 1);
+    }
 
     const deletedSession = await session.remove();
 
@@ -171,7 +181,10 @@ export async function runSession(sessionId: string): Promise<Session | Error> {
     });
 
     if (!session) {
-      throw createHttpError(404, "Session with id " + sessionId + " is not found");
+      throw createHttpError(
+        404,
+        "Session with id " + sessionId + " is not found"
+      );
     }
 
     // Run Session
@@ -182,13 +195,14 @@ export async function runSession(sessionId: string): Promise<Session | Error> {
       const token = session.simulation.token;
       const sessionData = new SessionData(token, "READY", false);
 
-      const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
+      const sessionDataIndex = runningSessions.findIndex(
+        (item) => item.token === token
+      );
       if (sessionDataIndex !== -1) {
-        runningSessions[sessionDataIndex] = sessionData
+        runningSessions[sessionDataIndex] = sessionData;
       } else {
-        runningSessions.push(sessionData)
+        runningSessions.push(sessionData);
       }
-
     }
 
     return session;
@@ -202,9 +216,19 @@ export async function finishSession(
 ): Promise<Session | Error> {
   try {
     const session = await Session.findOne(sessionId, {
-      relations: ["simulation", "simulation.buyers", "simulation.sellers", "phases"],
+      relations: [
+        "simulation",
+        "simulation.buyers",
+        "simulation.sellers",
+        "phases",
+      ],
     });
-    if (!session) { throw createHttpError(404, "Session with id " + sessionId + " is not found"); }
+    if (!session) {
+      throw createHttpError(
+        404,
+        "Session with id " + sessionId + " is not found"
+      );
+    }
 
     // Finish Session
     session.isRunning = false;
@@ -217,14 +241,29 @@ export async function finishSession(
 
     // Delete sessionData
     const token = session.simulation.token;
-    const sessionDataIndex = runningSessions.findIndex(item => item.token === token);
-    if (sessionDataIndex !== -1) { runningSessions.splice(sessionDataIndex, 1); }
+    const sessionDataIndex = runningSessions.findIndex(
+      (item) => item.token === token
+    );
+    if (sessionDataIndex !== -1) {
+      runningSessions.splice(sessionDataIndex, 1);
+    }
 
     // Calculate Session Summary
-    const allPhasesRunned = session.phases.reduce((prev, phase) => prev && phase.isDone(), true);
+    const allPhasesRunned = session.phases.reduce(
+      (prev, phase) => prev && phase.isDone(),
+      true
+    );
     if (allPhasesRunned) {
-      session.avgTrxPrice = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxPrice), 0) / Number(session.phases.length);
-      session.avgTrxOccurrence = session.phases.reduce((prev, phase) => prev + Number(phase.avgTrxOccurrence), 0) / Number(session.phases.length);
+      session.avgTrxPrice =
+        session.phases.reduce(
+          (prev, phase) => prev + Number(phase.avgTrxPrice),
+          0
+        ) / Number(session.phases.length);
+      session.avgTrxOccurrence =
+        session.phases.reduce(
+          (prev, phase) => prev + Number(phase.avgTrxOccurrence),
+          0
+        ) / Number(session.phases.length);
       session.timeLastRun = new Date(Date.now());
     }
     const finishedSession = await session.save();
@@ -234,9 +273,13 @@ export async function finishSession(
     checkIfError(calculatedSimulation);
 
     // Randomize participant role
-    const buyersUsername = session.simulation.buyers.map(buyer => (buyer.username))
-    const sellersUsername = session.simulation.sellers.map(seller => (seller.username))
-    let participants = [...buyersUsername, ...sellersUsername]
+    const buyersUsername = session.simulation.buyers.map(
+      (buyer) => buyer.username
+    );
+    const sellersUsername = session.simulation.sellers.map(
+      (seller) => seller.username
+    );
+    let participants = [...buyersUsername, ...sellersUsername];
 
     await session.simulation.buyers.reduce(async (a, buyer) => {
       await a;
@@ -277,7 +320,10 @@ export async function getPhaseSummary(
       .getMany();
 
     if (!bargains) {
-      throw createHttpError(404, "There is no bargain with phaseId " + phase.id);
+      throw createHttpError(
+        404,
+        "There is no bargain with phaseId " + phase.id
+      );
     }
 
     const transactions = await Transaction.createQueryBuilder("transaction")
@@ -286,7 +332,10 @@ export async function getPhaseSummary(
       .getMany();
 
     if (!transactions) {
-      throw createHttpError(404, "There is no transaction with phaseId " + phase.id);
+      throw createHttpError(
+        404,
+        "There is no transaction with phaseId " + phase.id
+      );
     }
 
     const phaseSummary: PhaseSummary = {
@@ -317,7 +366,7 @@ export async function getSessionSummary(
   try {
     const phaseSummaries: PhaseSummary[] = [];
 
-    const sortedPhases = sortPhases(session.phases)
+    const sortedPhases = sortPhases(session.phases);
     for (let i = 0; i < sortedPhases.length; i++) {
       const phase = sortedPhases[i];
       const phaseSummary = await getPhaseSummary(phase);

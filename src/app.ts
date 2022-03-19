@@ -106,7 +106,7 @@ export const onConnection = (socket: Socket) => {
 
       if (!(token instanceof Error)) {
         const active = await activePlayers(token);
-        io.emit("admin:activePlayers", active)
+        io.emit("admin:activePlayers", active);
       }
 
       socket.disconnect();

@@ -39,11 +39,23 @@ export function getRandomNumberBetween(min: number, max: number) {
 }
 
 export function sortPhases(phases: Phase[]): Phase[] {
-  const phase0 = phases.find((item) => { return item.phaseType === PhaseType.PRE_REDENOM_PRICE })
-  if (!phase0) { throw createHttpError(404, "no preRedenomPrice phase"); }
-  const phase1 = phases.find((item) => { return item.phaseType === PhaseType.TRANSITION_PRICE })
-  if (!phase1) { throw createHttpError(404, "no transitionPrice phase"); }
-  const phase2 = phases.find((item) => { return item.phaseType === PhaseType.POST_REDENOM_PRICE })
-  if (!phase2) { throw createHttpError(404, "no postRedenomPrice phase"); }
+  const phase0 = phases.find((item) => {
+    return item.phaseType === PhaseType.PRE_REDENOM_PRICE;
+  });
+  if (!phase0) {
+    throw createHttpError(404, "no preRedenomPrice phase");
+  }
+  const phase1 = phases.find((item) => {
+    return item.phaseType === PhaseType.TRANSITION_PRICE;
+  });
+  if (!phase1) {
+    throw createHttpError(404, "no transitionPrice phase");
+  }
+  const phase2 = phases.find((item) => {
+    return item.phaseType === PhaseType.POST_REDENOM_PRICE;
+  });
+  if (!phase2) {
+    throw createHttpError(404, "no postRedenomPrice phase");
+  }
   return [phase0, phase1, phase2];
 }

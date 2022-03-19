@@ -48,7 +48,10 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
       log.info(`socket ${socket.id} requested to join room`);
 
       if (socket.rooms.has(request.token)) {
-        throw createHttpError(409, `User ${socket.id} already join room ${request.token}`);
+        throw createHttpError(
+          409,
+          `User ${socket.id} already join room ${request.token}`
+        );
       }
 
       const chosenHost = await loginTokenSocket(
@@ -59,7 +62,7 @@ export function socketTokenLoginHandler(io: Server, socket: Socket) {
       checkIfError(chosenHost);
 
       const active = await activePlayers(request.token);
-      io.emit("admin:activePlayers", active)
+      io.emit("admin:activePlayers", active);
 
       const message = `User ${socket.id} has join room ${request.token}`;
       socket.join(request.token);
@@ -94,7 +97,7 @@ export function socketAdminTokenLoginHandler(io: Server, socket: Socket) {
       socket.join(request.token);
       log.info(message);
 
-      socket.emit("adminLoginToken", sessionInfo)
+      socket.emit("adminLoginToken", sessionInfo);
 
       socketHandleSuccessResponse(socket, 200, message, sessionInfo);
     } catch (error) {
