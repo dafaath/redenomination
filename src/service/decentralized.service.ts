@@ -7,8 +7,6 @@ import Buyer from "../db/entities/buyer.entity";
 import Phase from "../db/entities/phase.entity";
 import Profit from "../db/entities/profit.entity";
 import Seller from "../db/entities/seller.entity";
-import Session from "../db/entities/session.entity";
-import Simulation from "../db/entities/simulation.entity";
 import Transaction from "../db/entities/transaction.entity";
 import { Decentralized, decentralizeds } from "../db/shortLived";
 
@@ -66,7 +64,7 @@ export async function inputSellerPrice(
       }
     });
 
-    return decentralizeds.filter((po) => po.phaseId === phaseId);
+    return decentralizeds.filter((ds) => ds.phaseId === phaseId);
   } catch (error) {
     return errorReturnHandler(error);
   }
