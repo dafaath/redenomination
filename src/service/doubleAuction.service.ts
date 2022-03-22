@@ -7,16 +7,15 @@ import Buyer from "../db/entities/buyer.entity";
 import Phase from "../db/entities/phase.entity";
 import Profit from "../db/entities/profit.entity";
 import Seller from "../db/entities/seller.entity";
-import Session from "../db/entities/session.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
   BuyerBid,
-  doubleAuctionBid,
   doubleAuctionBuyerBid,
-  doubleAuctionOffer,
-  doubleAuctionSellerBid,
   SellerBid,
+  doubleAuctionSellerBid,
+  doubleAuctionBid,
   setDoubleAuctionBid,
+  doubleAuctionOffer,
   setDoubleAuctionOffer,
 } from "../db/shortLived";
 
@@ -46,6 +45,10 @@ export async function inputSellerPrice(
     }
 
     const priceAdjusted = validatePrice(phase, seller, price);
+
+    if (priceAdjusted >= doubleAuctionOffer && doubleAuctionOffer !== 0) {
+      throw createHttpError(400, `Exceed`);
+    }
 
     const bargain = Bargain.create({
       phase: phase,
@@ -140,6 +143,9 @@ export async function checkIfSellerBidMatch(
             buyer: buyer,
           });
 
+          setDoubleAuctionBid(0);
+          setDoubleAuctionOffer(0);
+
           const successBuyer = Profit.create({
             session: phase.session,
             username: buyer.username!,
@@ -216,6 +222,11 @@ export async function inputBuyerPrice(
     }
 
     const priceAdjusted = validatePrice(phase, buyer, price);
+
+    if (priceAdjusted <= doubleAuctionBid && doubleAuctionBid !== 0) {
+      throw createHttpError(400, `lack`);
+    }
+
     const bargain = Bargain.create({
       phase: phase,
       buyer: buyer,
@@ -318,6 +329,9 @@ export async function checkIfBuyerBidMatch(
             seller: seller,
             buyer: buyer,
           });
+
+          setDoubleAuctionBid(0);
+          setDoubleAuctionOffer(0);
 
           const successBuyer = Profit.create({
             session: phase.session,
