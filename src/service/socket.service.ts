@@ -8,8 +8,8 @@ import Phase from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
   decentralizeds,
-  doubleAuctionBuyerBid,
-  doubleAuctionSellerBid,
+  doubleAuctionBids,
+  doubleAuctionOffers,
   postedOffers,
   runningSessions,
   SessionData,
@@ -203,11 +203,11 @@ export async function deleteShortLivedData(
         let doubleAuctionBuyerIndex: number;
 
         do {
-          doubleAuctionBuyerIndex = doubleAuctionBuyerBid.findIndex(
+          doubleAuctionBuyerIndex = doubleAuctionBids.findIndex(
             (po) => po.phaseId === phaseId
           );
           if (doubleAuctionBuyerIndex !== -1) {
-            doubleAuctionBuyerBid.splice(doubleAuctionBuyerIndex, 1);
+            doubleAuctionBids.splice(doubleAuctionBuyerIndex, 1);
           }
         } while (doubleAuctionBuyerIndex !== -1);
 
@@ -226,11 +226,11 @@ export async function deleteShortLivedData(
         let doubleAuctionSellerIndex: number;
 
         do {
-          doubleAuctionSellerIndex = doubleAuctionSellerBid.findIndex(
+          doubleAuctionSellerIndex = doubleAuctionOffers.findIndex(
             (po) => po.phaseId === phaseId
           );
           if (doubleAuctionSellerIndex !== -1) {
-            doubleAuctionSellerBid.splice(doubleAuctionSellerIndex, 1);
+            doubleAuctionOffers.splice(doubleAuctionSellerIndex, 1);
           }
         } while (doubleAuctionSellerIndex !== -1);
 

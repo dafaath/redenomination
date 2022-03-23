@@ -19,10 +19,7 @@ import config from "../configHandler";
 import Bargain from "../db/entities/bargain.entity";
 import { PhaseType } from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
-import {
-  doubleAuctionBuyerBid,
-  doubleAuctionSellerBid,
-} from "../db/shortLived";
+import { doubleAuctionBids, doubleAuctionOffers } from "../db/shortLived";
 
 type PostedOfferResponse = {
   id: string;
@@ -688,14 +685,14 @@ describe("Double Auction", () => {
                             response.data.matchData.buyer.socketId
                           );
 
-                          const sellerBidMatchIndex = doubleAuctionSellerBid
+                          const sellerBidMatchIndex = doubleAuctionOffers
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
                                 sb.sellerBid.sellerId ===
                                 response.data.matchData.seller.id
                             );
-                          const buyerBidMatchIndex = doubleAuctionBuyerBid
+                          const buyerBidMatchIndex = doubleAuctionBids
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
@@ -932,14 +929,14 @@ describe("Double Auction", () => {
                               cs.id === response.data.matchData.buyer.socketId
                           );
 
-                          const sellerBidMatchIndex = doubleAuctionSellerBid
+                          const sellerBidMatchIndex = doubleAuctionOffers
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
                                 sb.sellerBid.sellerId ===
                                 response.data.matchData.seller.id
                             );
-                          const buyerBidMatchIndex = doubleAuctionBuyerBid
+                          const buyerBidMatchIndex = doubleAuctionBids
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
@@ -1094,10 +1091,10 @@ describe("Double Auction", () => {
           socketIdWithFinishedTransaction.includes(csd.detail.socketId)
         ).length;
 
-      expect(doubleAuctionBuyerBid.length).to.equal(
+      expect(doubleAuctionBids.length).to.equal(
         totalBuyerSocket - finishedBuyerSocket
       );
-      expect(doubleAuctionSellerBid.length).to.equal(
+      expect(doubleAuctionOffers.length).to.equal(
         totalSellerSocket - finishedSellerSocket
       );
     });

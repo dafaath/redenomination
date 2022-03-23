@@ -10,14 +10,15 @@ import Seller from "../db/entities/seller.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
   BuyerBid,
-  doubleAuctionBuyerBid,
+  doubleAuctionBids,
   SellerBid,
-  doubleAuctionSellerBid,
+  doubleAuctionOffers,
   doubleAuctionBid,
   setDoubleAuctionBid,
   doubleAuctionOffer,
   setDoubleAuctionOffer,
 } from "../db/shortLived";
+import { deleteShortLivedData } from "./socket.service";
 
 export async function inputSellerPrice(
   price: number,
@@ -46,8 +47,8 @@ export async function inputSellerPrice(
 
     const priceAdjusted = validatePrice(phase, seller, price);
 
-    if (priceAdjusted >= doubleAuctionOffer && doubleAuctionOffer !== 0) {
-      throw createHttpError(400, `Exceed`);
+    if (priceAdjusted > doubleAuctionOffer && doubleAuctionOffer !== 0) {
+      throw createHttpError(400, `Price exceeds Offer`);
     }
 
     const bargain = Bargain.create({
@@ -63,16 +64,16 @@ export async function inputSellerPrice(
       try {
         const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
 
-        const doubleAuctionSellerBidIndex = doubleAuctionSellerBid.findIndex(
+        const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
           (item) => {
-            return item.sellerBid.sellerId === seller.id;
+            return item.phaseId === phaseId;
           }
         );
 
-        if (doubleAuctionSellerBidIndex !== -1) {
-          doubleAuctionSellerBid[doubleAuctionSellerBidIndex] = sellerBid;
+        if (doubleAuctionOffersIndex !== -1) {
+          doubleAuctionOffers[doubleAuctionOffersIndex] = sellerBid;
         } else {
-          doubleAuctionSellerBid.push(sellerBid);
+          doubleAuctionOffers.push(sellerBid);
         }
 
         done();
@@ -118,23 +119,22 @@ export async function checkIfSellerBidMatch(
         }
 
         sellerBid = validatePrice(phase, seller, sellerBid);
-        buyerBidMatchIndex = doubleAuctionBuyerBid
+        buyerBidMatchIndex = doubleAuctionBids
           .filter((bb) => bb.phaseId === phaseId)
-          .findIndex((bb) => bb.buyerBid.price === sellerBid);
+          .findIndex((bb) => bb.price === sellerBid);
 
         if (buyerBidMatchIndex !== -1) {
-          const buyerId =
-            doubleAuctionBuyerBid[buyerBidMatchIndex].buyerBid.buyerId;
+          const buyerId = doubleAuctionBids[buyerBidMatchIndex].buyerId;
           buyer = await Buyer.findOne({ id: buyerId });
           if (!buyer) {
             throw createHttpError(404, `There is no buyer with id ${buyerId}`);
           }
 
-          const sellerBidMatchIndex = doubleAuctionSellerBid
+          const sellerBidMatchIndex = doubleAuctionOffers
             .filter((sb) => sb.phaseId === phaseId)
-            .findIndex((sb) => sb.sellerBid.sellerId === seller?.id);
-          doubleAuctionBuyerBid.splice(buyerBidMatchIndex, 1);
-          doubleAuctionSellerBid.splice(sellerBidMatchIndex, 1);
+            .findIndex((sb) => sb.sellerId === seller?.id);
+          doubleAuctionBids.splice(buyerBidMatchIndex, 1);
+          doubleAuctionOffers.splice(sellerBidMatchIndex, 1);
 
           const newTransaction = Transaction.create({
             phase: phase,
@@ -143,8 +143,7 @@ export async function checkIfSellerBidMatch(
             buyer: buyer,
           });
 
-          setDoubleAuctionBid(0);
-          setDoubleAuctionOffer(0);
+          deleteShortLivedData(phaseId);
 
           const successBuyer = Profit.create({
             session: phase.session,
@@ -223,8 +222,8 @@ export async function inputBuyerPrice(
 
     const priceAdjusted = validatePrice(phase, buyer, price);
 
-    if (priceAdjusted <= doubleAuctionBid && doubleAuctionBid !== 0) {
-      throw createHttpError(400, `lack`);
+    if (priceAdjusted < doubleAuctionBid && doubleAuctionBid !== 0) {
+      throw createHttpError(400, `Price under Bid`);
     }
 
     const bargain = Bargain.create({
@@ -240,16 +239,14 @@ export async function inputBuyerPrice(
       try {
         const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
 
-        const doubleAuctionBuyerBidIndex = doubleAuctionBuyerBid.findIndex(
-          (item) => {
-            return item.buyerBid.buyerId === buyer.id;
-          }
-        );
+        const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
+          return item.phaseId === phaseId;
+        });
 
-        if (doubleAuctionBuyerBidIndex !== -1) {
-          doubleAuctionBuyerBid[doubleAuctionBuyerBidIndex] = buyerBid;
+        if (doubleAuctionBidsIndex !== -1) {
+          doubleAuctionBids[doubleAuctionBidsIndex] = buyerBid;
         } else {
-          doubleAuctionBuyerBid.push(buyerBid);
+          doubleAuctionBids.push(buyerBid);
         }
 
         done();
@@ -302,13 +299,12 @@ export async function checkIfBuyerBidMatch(
         }
 
         buyerBid = validatePrice(phase, buyer, buyerBid);
-        sellerBidMatchIndex = doubleAuctionSellerBid
+        sellerBidMatchIndex = doubleAuctionOffers
           .filter((sb) => sb.phaseId === phaseId)
-          .findIndex((sb) => sb.sellerBid.price === buyerBid);
+          .findIndex((sb) => sb.price === buyerBid);
 
         if (sellerBidMatchIndex !== -1) {
-          const sellerId =
-            doubleAuctionSellerBid[sellerBidMatchIndex].sellerBid.sellerId;
+          const sellerId = doubleAuctionOffers[sellerBidMatchIndex].sellerId;
           seller = await Seller.findOne({ id: sellerId });
           if (!seller) {
             throw createHttpError(
@@ -317,11 +313,11 @@ export async function checkIfBuyerBidMatch(
             );
           }
 
-          const buyerBidMatchIndex = doubleAuctionBuyerBid
+          const buyerBidMatchIndex = doubleAuctionBids
             .filter((bb) => bb.phaseId === phaseId)
-            .findIndex((bb) => bb.buyerBid.buyerId === buyer?.id);
-          doubleAuctionSellerBid.splice(sellerBidMatchIndex, 1);
-          doubleAuctionBuyerBid.splice(buyerBidMatchIndex, 1);
+            .findIndex((bb) => bb.buyerId === buyer?.id);
+          doubleAuctionOffers.splice(sellerBidMatchIndex, 1);
+          doubleAuctionBids.splice(buyerBidMatchIndex, 1);
 
           const newTransaction = Transaction.create({
             phase: phase,
@@ -330,8 +326,7 @@ export async function checkIfBuyerBidMatch(
             buyer: buyer,
           });
 
-          setDoubleAuctionBid(0);
-          setDoubleAuctionOffer(0);
+          deleteShortLivedData(phaseId);
 
           const successBuyer = Profit.create({
             session: phase.session,
@@ -395,12 +390,12 @@ export async function getBidOffer(
     let doubleAuctionBidOffer: DoubleAuctionBidOffer | undefined = undefined;
     await lock.acquire("getMaxMinPrice", async (done) => {
       try {
-        const sellerBidPrice = doubleAuctionSellerBid
+        const sellerBidPrice = doubleAuctionOffers
           .filter((sb) => sb.phaseId === phaseId)
-          .map((sb) => sb.sellerBid.price);
-        const buyerBidPrice = doubleAuctionBuyerBid
+          .map((sb) => sb.price);
+        const buyerBidPrice = doubleAuctionBids
           .filter((bb) => bb.phaseId === phaseId)
-          .map((bb) => bb.buyerBid.price);
+          .map((bb) => bb.price);
 
         const buyerMax = Math.max(...buyerBidPrice);
         if (doubleAuctionBid === 0 || doubleAuctionBid < buyerMax)

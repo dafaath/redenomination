@@ -48,11 +48,11 @@ export class PostedOffer {
 }
 
 // Double Auction
-export const doubleAuctionSellerBid: Array<SellerBid> = [];
-export const doubleAuctionBuyerBid: Array<BuyerBid> = [];
+export const doubleAuctionOffers: Array<SellerBid> = [];
+export const doubleAuctionBids: Array<BuyerBid> = [];
 export function clearDA() {
-  doubleAuctionSellerBid.splice(0, doubleAuctionSellerBid.length);
-  doubleAuctionBuyerBid.splice(0, doubleAuctionBuyerBid.length);
+  doubleAuctionOffers.splice(0, doubleAuctionOffers.length);
+  doubleAuctionBids.splice(0, doubleAuctionBids.length);
 }
 
 class DoubleAuction {
@@ -69,31 +69,24 @@ class DoubleAuction {
 }
 
 export class SellerBid extends DoubleAuction {
-  sellerBid: {
-    sellerId: string;
-    price: number;
-  };
+  sellerId: string;
+  price: number;
 
   constructor(phaseId: string, sellerId: string, price: number) {
     super(phaseId);
-    this.sellerBid = {
-      sellerId: sellerId,
-      price: price,
-    };
+    this.sellerId = sellerId;
+    this.price = price;
   }
 }
 
 export class BuyerBid extends DoubleAuction {
-  buyerBid: {
-    buyerId: string;
-    price: number;
-  };
+  buyerId: string;
+  price: number;
+
   constructor(phaseId: string, buyerId: string, price: number) {
     super(phaseId);
-    this.buyerBid = {
-      buyerId: buyerId,
-      price: price,
-    };
+    this.buyerId = buyerId;
+    this.price = price;
   }
 }
 
@@ -136,7 +129,7 @@ export class Decentralized {
 export function consolelogshortlived() {
   console.log(runningSessions);
   console.log(postedOffers);
-  console.log(doubleAuctionSellerBid);
-  console.log(doubleAuctionBuyerBid);
+  console.log(doubleAuctionOffers);
+  console.log(doubleAuctionBids);
   console.log(decentralizeds);
 }
