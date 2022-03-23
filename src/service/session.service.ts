@@ -316,6 +316,7 @@ export async function getPhaseSummary(
   try {
     const bargains = await Bargain.createQueryBuilder("bargain")
       .where("bargain.phase_id=:phaseId", { phaseId: phase.id })
+      .leftJoinAndSelect("bargain.buyer", "buyer")
       .orderBy("bargain.time_created")
       .getMany();
 
@@ -338,11 +339,18 @@ export async function getPhaseSummary(
       );
     }
 
+    const adjustedBargains = bargains.map((item) => {
+      return Bargain.create({
+        ...item,
+        postedBy: Boolean(item.buyer) ? "buyer" : "seller",
+      });
+    });
+
     const phaseSummary: PhaseSummary = {
       id: phase.id,
       avgTrxOccurrence: phase.avgTrxOccurrence,
       avgTrxPrice: phase.avgTrxPrice,
-      bargainList: bargains,
+      bargainList: adjustedBargains,
       transactionList: transactions,
     };
 
