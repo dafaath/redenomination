@@ -689,15 +689,14 @@ describe("Double Auction", () => {
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
-                                sb.sellerBid.sellerId ===
+                                sb.sellerId ===
                                 response.data.matchData.seller.id
                             );
                           const buyerBidMatchIndex = doubleAuctionBids
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
-                                sb.buyerBid.buyerId ===
-                                response.data.matchData.seller.id
+                                sb.buyerId === response.data.matchData.seller.id
                             );
                           expect(sellerBidMatchIndex).to.equal(-1);
                           expect(buyerBidMatchIndex).to.equal(-1);
@@ -933,15 +932,14 @@ describe("Double Auction", () => {
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
-                                sb.sellerBid.sellerId ===
+                                sb.sellerId ===
                                 response.data.matchData.seller.id
                             );
                           const buyerBidMatchIndex = doubleAuctionBids
                             .filter((sb) => sb.phaseId === phaseId)
                             .findIndex(
                               (sb) =>
-                                sb.buyerBid.buyerId ===
-                                response.data.matchData.seller.id
+                                sb.buyerId === response.data.matchData.seller.id
                             );
                           expect(sellerBidMatchIndex).to.equal(-1);
                           expect(buyerBidMatchIndex).to.equal(-1);
