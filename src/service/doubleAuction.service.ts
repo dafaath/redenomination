@@ -24,7 +24,7 @@ export async function inputSellerPrice(
   price: number,
   socketId: string,
   phaseId: string
-): Promise<undefined | Error> {
+): Promise<boolean | Error> {
   try {
     const seller = await Seller.findOne({ socketId: socketId });
     if (!seller) {
@@ -45,45 +45,86 @@ export async function inputSellerPrice(
       throw createHttpError(403, `You already sold your item`);
     }
 
-    const priceAdjusted = validatePrice(phase, seller, price);
+    if (doubleAuctionOffer !== 0) {
+      // Main stage
+      const priceAdjusted = validatePrice(phase, seller, price);
 
-    if (priceAdjusted > doubleAuctionOffer && doubleAuctionOffer !== 0) {
-      throw createHttpError(400, `Price exceeds Offer`);
-    }
-
-    const bargain = Bargain.create({
-      phase: phase,
-      seller: seller,
-      postedBy: seller.id,
-      price: priceAdjusted,
-    });
-
-    await bargain.save();
-
-    await lock.acquire("sellersBid", async (done) => {
-      try {
-        const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
-
-        const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
-          (item) => {
-            return item.phaseId === phaseId;
-          }
-        );
-
-        if (doubleAuctionOffersIndex !== -1) {
-          doubleAuctionOffers[doubleAuctionOffersIndex] = sellerBid;
-        } else {
-          doubleAuctionOffers.push(sellerBid);
-        }
-
-        done();
-      } catch (error) {
-        if (error instanceof Error) {
-          done(error);
-        }
-        errorThrowUtils(error);
+      if (priceAdjusted > doubleAuctionOffer) {
+        throw createHttpError(400, `Price exceeds Offer`);
       }
-    });
+
+      const bargain = Bargain.create({
+        phase: phase,
+        seller: seller,
+        postedBy: seller.id,
+        price: priceAdjusted,
+      });
+
+      await bargain.save();
+
+      await lock.acquire("sellersBid", async (done) => {
+        try {
+          const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
+
+          const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
+            (item) => {
+              return item.phaseId === phaseId;
+            }
+          );
+
+          if (doubleAuctionOffersIndex !== -1) {
+            doubleAuctionOffers[doubleAuctionOffersIndex] = sellerBid;
+          } else {
+            doubleAuctionOffers.push(sellerBid);
+          }
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+      return true;
+    } else {
+      // initial Stage
+      await lock.acquire("sellersBid", async (done) => {
+        try {
+          const priceAdjusted = validatePrice(phase, seller, price);
+          const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
+
+          const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
+            (item) => {
+              return item.sellerId === seller.id;
+            }
+          );
+
+          if (doubleAuctionOffersIndex !== -1) {
+            done(createHttpError(500, `Seller has inputted initial Price`));
+          } else {
+            doubleAuctionOffers.push(sellerBid);
+
+            const bargain = Bargain.create({
+              phase: phase,
+              seller: seller,
+              postedBy: seller.id,
+              price: priceAdjusted,
+            });
+
+            await bargain.save();
+          }
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+      return false;
+    }
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -199,7 +240,7 @@ export async function inputBuyerPrice(
   price: number,
   socketId: string,
   phaseId: string
-): Promise<undefined | Error> {
+): Promise<boolean | Error> {
   try {
     const buyer = await Buyer.findOne({ socketId: socketId });
     if (!buyer) {
@@ -220,43 +261,82 @@ export async function inputBuyerPrice(
       throw createHttpError(403, `You already bought your item`);
     }
 
-    const priceAdjusted = validatePrice(phase, buyer, price);
+    if (doubleAuctionBid !== 0) {
+      // Main stage
+      const priceAdjusted = validatePrice(phase, buyer, price);
 
-    if (priceAdjusted < doubleAuctionBid && doubleAuctionBid !== 0) {
-      throw createHttpError(400, `Price under Bid`);
-    }
-
-    const bargain = Bargain.create({
-      phase: phase,
-      buyer: buyer,
-      postedBy: buyer.id,
-      price: priceAdjusted,
-    });
-
-    await bargain.save();
-
-    return await lock.acquire("buyersBid", async (done) => {
-      try {
-        const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
-
-        const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
-          return item.phaseId === phaseId;
-        });
-
-        if (doubleAuctionBidsIndex !== -1) {
-          doubleAuctionBids[doubleAuctionBidsIndex] = buyerBid;
-        } else {
-          doubleAuctionBids.push(buyerBid);
-        }
-
-        done();
-      } catch (error) {
-        if (error instanceof Error) {
-          done(error);
-        }
-        errorThrowUtils(error);
+      if (priceAdjusted < doubleAuctionBid) {
+        throw createHttpError(400, `Price under Bid`);
       }
-    });
+
+      const bargain = Bargain.create({
+        phase: phase,
+        buyer: buyer,
+        postedBy: buyer.id,
+        price: priceAdjusted,
+      });
+
+      await bargain.save();
+
+      await lock.acquire("buyersBid", async (done) => {
+        try {
+          const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
+
+          const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
+            return item.phaseId === phaseId;
+          });
+
+          if (doubleAuctionBidsIndex !== -1) {
+            doubleAuctionBids[doubleAuctionBidsIndex] = buyerBid;
+          } else {
+            doubleAuctionBids.push(buyerBid);
+          }
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+      return true;
+    } else {
+      // initial Stage
+      await lock.acquire("buyersBid", async (done) => {
+        try {
+          const priceAdjusted = validatePrice(phase, buyer, price);
+          const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
+
+          const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
+            return item.buyerId === buyer.id;
+          });
+
+          if (doubleAuctionBidsIndex !== -1) {
+            done(createHttpError(500, `Buyer has inputted initial Price`));
+          } else {
+            doubleAuctionBids.push(buyerBid);
+
+            const bargain = Bargain.create({
+              phase: phase,
+              buyer: buyer,
+              postedBy: buyer.id,
+              price: priceAdjusted,
+            });
+
+            await bargain.save();
+          }
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+      return false;
+    }
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -450,6 +530,86 @@ export async function allSold(phaseId: string): Promise<boolean | Error> {
       return false;
     } else {
       throw new Error("Something gone wrong");
+    }
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function initialStageFinishCheck(
+  phaseId: string
+): Promise<DoubleAuctionBidOffer | undefined | Error> {
+  try {
+    const phase = await Phase.findOne(
+      { id: phaseId },
+      {
+        relations: ["session", "session.simulation"],
+      }
+    );
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
+
+    const soldPlayers =
+      (await Transaction.createQueryBuilder("transaction")
+        .where("transaction.phase_id=:phaseId", { phaseId })
+        .getCount()) * 2;
+
+    const inputtedNums =
+      doubleAuctionOffers.filter((item) => item.phaseId === phaseId).length +
+      doubleAuctionBids.filter((item) => item.phaseId === phaseId).length +
+      soldPlayers;
+    if (inputtedNums === phase.session.simulation.participantNumber) {
+      const bidoffer = await getBidOffer(phaseId);
+      if (bidoffer instanceof Error) {
+        throw bidoffer;
+      }
+
+      lock.acquire("deleteDoubleAuctionBuyer", (done) => {
+        try {
+          let doubleAuctionBuyerIndex: number;
+
+          do {
+            doubleAuctionBuyerIndex = doubleAuctionBids.findIndex(
+              (po) => po.phaseId === phaseId
+            );
+            if (doubleAuctionBuyerIndex !== -1) {
+              doubleAuctionBids.splice(doubleAuctionBuyerIndex, 1);
+            }
+          } while (doubleAuctionBuyerIndex !== -1);
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+
+      lock.acquire("deleteDoubleAuctionSeller", (done) => {
+        try {
+          let doubleAuctionSellerIndex: number;
+
+          do {
+            doubleAuctionSellerIndex = doubleAuctionOffers.findIndex(
+              (po) => po.phaseId === phaseId
+            );
+            if (doubleAuctionSellerIndex !== -1) {
+              doubleAuctionOffers.splice(doubleAuctionSellerIndex, 1);
+            }
+          } while (doubleAuctionSellerIndex !== -1);
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+
+      return bidoffer;
     }
   } catch (error) {
     return errorReturnHandler(error);

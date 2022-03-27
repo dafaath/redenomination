@@ -15,15 +15,21 @@ import {
   ReadyObject,
   ReadyCount,
   updatePhaseStage,
+  validateClientDone,
+  checkIsAllClientDone,
 } from "../service/socket.service";
 import yup from "yup";
 import {
-  finishPhaseSchema,
-  startPhaseSchema,
+  phaseIdSchema,
   collectProfitSchema,
-  updatePhaseSchema,
+  clientDoneSchema,
 } from "../schema/socket.schema";
 import { validateSocketInput } from "../middleware/validateSocketInput";
+import log from "../common/utils/logger";
+
+type phaseRequest = yup.InferType<typeof phaseIdSchema>;
+type collectProfitRequest = yup.InferType<typeof collectProfitSchema>;
+type clientDoneRequest = yup.InferType<typeof clientDoneSchema>;
 
 export function toggleReadyHandler(io: Server, socket: Socket) {
   return async () => {
@@ -58,11 +64,10 @@ export function toggleReadyHandler(io: Server, socket: Socket) {
   };
 }
 
-type startPhaseRequest = yup.InferType<typeof startPhaseSchema>;
 export function startPhaseHandler(io: Server, socket: Socket) {
-  return async (request: startPhaseRequest) => {
+  return async (request: phaseRequest) => {
     try {
-      const validationError = validateSocketInput(request, startPhaseSchema);
+      const validationError = validateSocketInput(request, phaseIdSchema);
       checkIfError(validationError);
 
       const startObject = await startPhase(request.phaseId);
@@ -85,11 +90,10 @@ export function startPhaseHandler(io: Server, socket: Socket) {
   };
 }
 
-type updatePhaseRequest = yup.InferType<typeof updatePhaseSchema>;
 export function updatePhaseHandler(io: Server, socket: Socket) {
-  return async (request: updatePhaseRequest) => {
+  return async (request: phaseRequest) => {
     try {
-      const validationError = validateSocketInput(request, updatePhaseSchema);
+      const validationError = validateSocketInput(request, phaseIdSchema);
       checkIfError(validationError);
 
       const sessionData = await updatePhaseStage(request.phaseId);
@@ -112,11 +116,10 @@ export function updatePhaseHandler(io: Server, socket: Socket) {
   };
 }
 
-type finishPhaseRequest = yup.InferType<typeof finishPhaseSchema>;
 export function finishPhaseHandler(io: Server, socket: Socket) {
-  return async (request: finishPhaseRequest) => {
+  return async (request: phaseRequest) => {
     try {
-      const validationError = validateSocketInput(request, finishPhaseSchema);
+      const validationError = validateSocketInput(request, phaseIdSchema);
       checkIfError(validationError);
 
       const phase = await finishPhase(request.phaseId);
@@ -137,7 +140,6 @@ export function finishPhaseHandler(io: Server, socket: Socket) {
   };
 }
 
-type collectProfitRequest = yup.InferType<typeof collectProfitSchema>;
 export function collectProfitHandler(io: Server, socket: Socket) {
   return async (request: collectProfitRequest) => {
     try {
@@ -158,6 +160,34 @@ export function collectProfitHandler(io: Server, socket: Socket) {
         "Successfully get client profit",
         { clientCollectedProfit }
       );
+    } catch (error) {
+      socketHandleErrorResponse(socket, error);
+    }
+  };
+}
+
+export function clientDoneHandler(io: Server, socket: Socket) {
+  return async (request: clientDoneRequest) => {
+    try {
+      const isValid = validateSocketInput(request, clientDoneSchema);
+      checkIfError(isValid);
+
+      // validate client done
+      const isClientDone = await validateClientDone(
+        request.phaseId,
+        request.clientId
+      );
+      checkIfError(isClientDone);
+
+      // check if all client done
+      const isAllDone = await checkIsAllClientDone(request.phaseId);
+      if (isAllDone instanceof Error) {
+        checkIfError(isAllDone);
+      } else if (isAllDone === true) {
+        log.info(`${request.phaseId} allClientDone`);
+        const joinedRoom = Array.from(socket.rooms);
+        io.to(joinedRoom).emit("allClientDone", true);
+      }
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

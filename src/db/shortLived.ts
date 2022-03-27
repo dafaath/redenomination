@@ -6,6 +6,27 @@ export function clearSesionData() {
   runningSessions.splice(0, runningSessions.length);
 }
 
+export const phaseFinishedPlayers: Array<PhaseInstance> = [];
+export function clearphaseFinishedPlayers() {
+  phaseFinishedPlayers.splice(0, phaseFinishedPlayers.length);
+}
+
+export class PhaseInstance {
+  phaseId: string;
+  donePlayers: Array<ClientInstance>;
+
+  constructor(phaseId: string) {
+    this.phaseId = phaseId;
+    this.donePlayers = [];
+  }
+}
+export class ClientInstance {
+  id: string;
+  isDone: boolean;
+  constructor(clientId: string) {
+    this.id = clientId;
+  }
+}
 export class SessionData {
   token: string;
   phaseId: string;
@@ -48,13 +69,6 @@ export class PostedOffer {
 }
 
 // Double Auction
-export const doubleAuctionOffers: Array<SellerBid> = [];
-export const doubleAuctionBids: Array<BuyerBid> = [];
-export function clearDA() {
-  doubleAuctionOffers.splice(0, doubleAuctionOffers.length);
-  doubleAuctionBids.splice(0, doubleAuctionBids.length);
-}
-
 class DoubleAuction {
   id: string;
   phaseId: string;
@@ -90,11 +104,17 @@ export class BuyerBid extends DoubleAuction {
   }
 }
 
-export let doubleAuctionBid: number = 0;
-export let doubleAuctionOffer: number = 0;
+export const doubleAuctionOffers: Array<SellerBid> = [];
+export const doubleAuctionBids: Array<BuyerBid> = [];
+export function clearDA() {
+  doubleAuctionOffers.splice(0, doubleAuctionOffers.length);
+  doubleAuctionBids.splice(0, doubleAuctionBids.length);
+}
+export let doubleAuctionBid = 0;
 export function setDoubleAuctionBid(num: number) {
   doubleAuctionBid = !isNaN(num) && isFinite(num) ? num : 0;
 }
+export let doubleAuctionOffer = 0;
 export function setDoubleAuctionOffer(num: number) {
   doubleAuctionOffer = !isNaN(num) && isFinite(num) ? num : 0;
 }

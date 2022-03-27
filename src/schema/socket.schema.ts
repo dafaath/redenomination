@@ -1,21 +1,15 @@
 import { object, string } from "yup";
 
-export const startPhaseSchema = object({
+export const phaseIdSchema = object({
   phaseId: string().uuid().required(),
 })
   .noUnknown(true)
   .required()
   .strict();
 
-export const updatePhaseSchema = object({
+export const clientDoneSchema = object({
   phaseId: string().uuid().required(),
-})
-  .noUnknown(true)
-  .required()
-  .strict();
-
-export const finishPhaseSchema = object({
-  phaseId: string().uuid().required(),
+  clientId: string().required(),
 })
   .noUnknown(true)
   .required()

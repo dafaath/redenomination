@@ -7,9 +7,12 @@ import Seller from "../db/entities/seller.entity";
 import Phase from "../db/entities/phase.entity";
 import Transaction from "../db/entities/transaction.entity";
 import {
+  ClientInstance,
   decentralizeds,
   doubleAuctionBids,
   doubleAuctionOffers,
+  phaseFinishedPlayers,
+  PhaseInstance,
   postedOffers,
   runningSessions,
   SessionData,
@@ -298,6 +301,9 @@ export async function startPhase(phaseId: string): Promise<Start | Error> {
 
       const sessionData = new SessionData(token, phaseId, false);
       runningSessions[sessionDataIndex] = sessionData;
+
+      const phaseInstance = new PhaseInstance(phaseId);
+      phaseFinishedPlayers.push(phaseInstance);
     }
 
     return {
@@ -363,7 +369,15 @@ export async function finishPhase(phaseId: string): Promise<Phase | Error> {
           ? 0
           : sumTrxPrices / trxList.length;
       }
+
       phase.timeLastRun = new Date(Date.now());
+      const phaseFinishedPlayersIndex = phaseFinishedPlayers.findIndex(
+        (item) => item.phaseId === phaseId
+      );
+      if (phaseFinishedPlayersIndex !== -1) {
+        phaseFinishedPlayers.splice(phaseFinishedPlayersIndex, 1);
+      }
+
       await phase.save();
     }
 
@@ -383,7 +397,7 @@ export async function collectedProfit(
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
     }
 
-    let clientProfit: number = 0;
+    let clientProfit = 0;
 
     const clientProfits = await Profit.find({
       where: { username: username },
@@ -421,7 +435,7 @@ export async function activePlayers(
   token: string
 ): Promise<activePlayersType | Error> {
   try {
-    let simulation = await Simulation.createQueryBuilder("simulation")
+    const simulation = await Simulation.createQueryBuilder("simulation")
       .where("simulation.token=:token", { token })
       .leftJoinAndSelect("simulation.sellers", "seller")
       .leftJoinAndSelect("simulation.buyers", "buyer")
@@ -445,4 +459,83 @@ export async function activePlayers(
   }
 }
 
-export async function phaseInit() {}
+export async function validateClientDone(
+  phaseId: string,
+  clientId: string
+): Promise<boolean | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session", "session.simulation"],
+    });
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
+
+    const phaseInstance = phaseFinishedPlayers.find(
+      (item) => item.phaseId === phaseId
+    );
+    if (phaseInstance === undefined) {
+      throw createHttpError(404, `phase with id ${phaseId} is not running`);
+    }
+
+    lock.acquire("validateClientDone", (done) => {
+      try {
+        const clientNotExist =
+          phaseInstance.donePlayers.findIndex(
+            (item) => item.id === clientId
+          ) === -1;
+        if (clientNotExist) {
+          const clientInstance = new ClientInstance(clientId);
+          phaseInstance.donePlayers.push(clientInstance);
+        }
+
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
+        errorThrowUtils(error);
+      }
+    });
+
+    return true;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function checkIsAllClientDone(
+  phaseId: string
+): Promise<boolean | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session", "session.simulation"],
+    });
+    if (!phase) {
+      throw createHttpError(404, `There is no phase with id ${phaseId}`);
+    }
+
+    const phaseInstance = phaseFinishedPlayers.find(
+      (item) => item.phaseId === phaseId
+    );
+    if (phaseInstance === undefined) {
+      throw createHttpError(404, `phase with id ${phaseId} is not running`);
+    }
+
+    if (
+      phaseInstance.donePlayers.length ===
+      phase.session.simulation.participantNumber
+    ) {
+      return true;
+    } else if (
+      phaseInstance.donePlayers.length >
+      phase.session.simulation.participantNumber
+    ) {
+      throw createHttpError(500, `Error occurred`);
+    }
+
+    return false;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
