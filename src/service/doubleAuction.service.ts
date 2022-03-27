@@ -49,7 +49,10 @@ export async function inputSellerPrice(
       // Main stage
       const priceAdjusted = validatePrice(phase, seller, price);
 
-      if (priceAdjusted > doubleAuctionOffer) {
+      if (
+        priceAdjusted > doubleAuctionOffer &&
+        priceAdjusted < doubleAuctionBid
+      ) {
         throw createHttpError(400, `Price exceeds Offer`);
       }
 
@@ -265,7 +268,10 @@ export async function inputBuyerPrice(
       // Main stage
       const priceAdjusted = validatePrice(phase, buyer, price);
 
-      if (priceAdjusted < doubleAuctionBid) {
+      if (
+        priceAdjusted > doubleAuctionOffer &&
+        priceAdjusted < doubleAuctionBid
+      ) {
         throw createHttpError(400, `Price under Bid`);
       }
 
