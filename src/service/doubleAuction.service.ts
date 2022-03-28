@@ -1,6 +1,7 @@
 import createHttpError from "http-errors";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
+import log from "../common/utils/logger";
 import { validatePrice } from "../common/utils/redenomination";
 import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
@@ -50,10 +51,10 @@ export async function inputSellerPrice(
       const priceAdjusted = validatePrice(phase, seller, price);
 
       if (
-        priceAdjusted > doubleAuctionOffer &&
+        priceAdjusted > doubleAuctionOffer ||
         priceAdjusted < doubleAuctionBid
       ) {
-        throw createHttpError(400, `Price exceeds Offer`);
+        throw createHttpError(400, `Price out of range`);
       }
 
       const bargain = Bargain.create({
@@ -269,10 +270,10 @@ export async function inputBuyerPrice(
       const priceAdjusted = validatePrice(phase, buyer, price);
 
       if (
-        priceAdjusted > doubleAuctionOffer &&
+        priceAdjusted > doubleAuctionOffer ||
         priceAdjusted < doubleAuctionBid
       ) {
-        throw createHttpError(400, `Price under Bid`);
+        throw createHttpError(400, `Price out of range`);
       }
 
       const bargain = Bargain.create({
@@ -566,10 +567,35 @@ export async function initialStageFinishCheck(
       doubleAuctionBids.filter((item) => item.phaseId === phaseId).length +
       soldPlayers;
     if (inputtedNums === phase.session.simulation.participantNumber) {
-      const bidoffer = await getBidOffer(phaseId);
-      if (bidoffer instanceof Error) {
-        throw bidoffer;
-      }
+      let bidoffer: DoubleAuctionBidOffer | undefined = undefined;
+
+      await lock.acquire("getMaxMinPrice", async (done) => {
+        try {
+          const sellerBidPrice = doubleAuctionOffers
+            .filter((sb) => sb.phaseId === phaseId)
+            .map((sb) => sb.price);
+          const buyerBidPrice = doubleAuctionBids
+            .filter((bb) => bb.phaseId === phaseId)
+            .map((bb) => bb.price);
+
+          const buyerMin = Math.min(...buyerBidPrice);
+          setDoubleAuctionBid(buyerMin);
+
+          const sellerMax = Math.max(...sellerBidPrice);
+          setDoubleAuctionOffer(sellerMax);
+
+          bidoffer = {
+            bid: doubleAuctionBid,
+            offer: doubleAuctionOffer,
+          };
+          done(undefined, bidoffer);
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
 
       lock.acquire("deleteDoubleAuctionBuyer", (done) => {
         try {

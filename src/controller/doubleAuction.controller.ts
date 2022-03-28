@@ -20,7 +20,6 @@ import {
   allSold,
   initialStageFinishCheck,
 } from "../service/doubleAuction.service";
-import log from "../common/utils/logger";
 import {
   checkIsAllClientDone,
   updatePhaseStage,
@@ -46,10 +45,8 @@ export function postBuyerHandler(io: Server, socket: Socket) {
         request.phaseId
       );
       if (checkBuyerMatch instanceof Error) {
-        log.info("checkBuyerMatch Error");
         checkIfError(checkBuyerMatch);
       } else if (checkBuyerMatch === true) {
-        log.info("checkBuyerMatch true");
         const matchData = await checkIfBuyerBidMatch(
           socket.id,
           request.buyerBargain,
@@ -85,15 +82,10 @@ export function postBuyerHandler(io: Server, socket: Socket) {
             socket,
             200,
             "Successfully input buyer price",
-            {
-              matchData,
-              ...doubleAuctionMaxMinPrice,
-            }
+            { matchData, ...doubleAuctionMaxMinPrice }
           );
         }
       } else {
-        log.info("checkBuyerMatch false");
-
         const doubleAuctionMaxMinPrice = await initialStageFinishCheck(
           request.phaseId
         );
@@ -179,8 +171,6 @@ export function postSellerHandler(io: Server, socket: Socket) {
           );
         }
       } else {
-        log.info("checkSellerMatch false");
-
         const doubleAuctionMaxMinPrice = await initialStageFinishCheck(
           request.phaseId
         );
@@ -231,7 +221,6 @@ export function requestListHandler(io: Server, socket: Socket) {
 export function clientDoneDAHandler(io: Server, socket: Socket) {
   return async (request: clientDoneRequest) => {
     try {
-      log.info(`${request.phaseId} clientDoneDAHandler`);
       const isValid = validateSocketInput(request, clientDoneSchema);
       checkIfError(isValid);
 
