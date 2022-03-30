@@ -96,6 +96,20 @@ export async function inputSellerPrice(
       await lock.acquire("sellersBid", async (done) => {
         try {
           const priceAdjusted = validatePrice(phase, seller, price);
+          const bidOffer = await getBidOffer(phaseId);
+          if (bidOffer instanceof Error) {
+            throw bidOffer;
+          }
+
+          if (isFinite(bidOffer.bid) || isFinite(bidOffer.offer)) {
+            if (
+              priceAdjusted < bidOffer.bid ||
+              priceAdjusted > bidOffer.offer
+            ) {
+              throw createHttpError(400, `Price out of range`);
+            }
+          }
+
           const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
 
           const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
@@ -470,7 +484,7 @@ export type DoubleAuctionBidOffer = {
   offer: number;
 };
 
-export async function getBidOffer(
+export async function setBidOffer(
   phaseId: string
 ): Promise<DoubleAuctionBidOffer | Error> {
   try {
@@ -510,6 +524,39 @@ export async function getBidOffer(
     } else {
       throw new Error("Something gone wrong");
     }
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function getBidOffer(
+  phaseId: string
+): Promise<DoubleAuctionBidOffer | Error> {
+  try {
+    let bid = doubleAuctionBid;
+    let offer = doubleAuctionOffer;
+
+    const sellerBidPrice = doubleAuctionOffers
+      .filter((sb) => sb.phaseId === phaseId)
+      .map((sb) => sb.price);
+    const buyerBidPrice = doubleAuctionBids
+      .filter((bb) => bb.phaseId === phaseId)
+      .map((bb) => bb.price);
+
+    const buyerMax = Math.max(...buyerBidPrice);
+    if (doubleAuctionBid === 0 || doubleAuctionBid < buyerMax) {
+      bid = buyerMax;
+    }
+
+    const sellerMin = Math.min(...sellerBidPrice);
+    if (doubleAuctionOffer === 0 || doubleAuctionOffer > sellerMin) {
+      offer = sellerMin;
+    }
+
+    return {
+      bid: bid,
+      offer: offer,
+    };
   } catch (error) {
     return errorReturnHandler(error);
   }

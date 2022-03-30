@@ -14,7 +14,7 @@ import {
 import {
   checkIfBuyerBidMatch,
   checkIfSellerBidMatch,
-  getBidOffer,
+  setBidOffer,
   inputBuyerPrice,
   inputSellerPrice,
   allSold,
@@ -56,7 +56,7 @@ export function postBuyerHandler(io: Server, socket: Socket) {
           throw matchData;
         }
 
-        const doubleAuctionMaxMinPrice = await getBidOffer(request.phaseId);
+        const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
         checkIfError(doubleAuctionMaxMinPrice);
         io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
 
@@ -141,7 +141,7 @@ export function postSellerHandler(io: Server, socket: Socket) {
           throw matchData;
         }
 
-        const doubleAuctionMaxMinPrice = await getBidOffer(request.phaseId);
+        const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
         checkIfError(doubleAuctionMaxMinPrice);
         io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
 
@@ -208,7 +208,7 @@ export function requestListHandler(io: Server, socket: Socket) {
       const isValid = validateSocketInput(request, requestListDASchema);
       checkIfError(isValid);
 
-      const doubleAuction = await getBidOffer(request.phaseId);
+      const doubleAuction = await setBidOffer(request.phaseId);
       checkIfError(doubleAuction);
 
       socket.emit("doubleAuctionList", doubleAuction);
