@@ -327,6 +327,20 @@ export async function inputBuyerPrice(
       await lock.acquire("buyersBid", async (done) => {
         try {
           const priceAdjusted = validatePrice(phase, buyer, price);
+          const bidOffer = await getBidOffer(phaseId);
+          if (bidOffer instanceof Error) {
+            throw bidOffer;
+          }
+
+          if (isFinite(bidOffer.bid) || isFinite(bidOffer.offer)) {
+            if (
+              priceAdjusted < bidOffer.bid ||
+              priceAdjusted > bidOffer.offer
+            ) {
+              throw createHttpError(400, `Price out of range`);
+            }
+          }
+
           const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
 
           const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
