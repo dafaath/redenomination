@@ -66,7 +66,7 @@ export async function inputSellerPrice(
 
       await bargain.save();
 
-      await lock.acquire("sellersBid", async (done) => {
+      await lock.acquire("sellersOffer", async (done) => {
         try {
           const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
 
@@ -93,7 +93,7 @@ export async function inputSellerPrice(
       return true;
     } else {
       // initial Stage
-      await lock.acquire("sellersBid", async (done) => {
+      await lock.acquire("sellersOffer", async (done) => {
         try {
           const priceAdjusted = validatePrice(phase, seller, price);
           const bidOffer = await getBidOffer(phaseId);
@@ -101,12 +101,9 @@ export async function inputSellerPrice(
             throw bidOffer;
           }
 
-          if (isFinite(bidOffer.bid) || isFinite(bidOffer.offer)) {
-            if (
-              priceAdjusted < bidOffer.bid ||
-              priceAdjusted > bidOffer.offer
-            ) {
-              throw createHttpError(400, `Price out of range`);
+          if (isFinite(bidOffer.bid)) {
+            if (priceAdjusted < bidOffer.bid) {
+              throw createHttpError(400, `Price under Bid`);
             }
           }
 
@@ -332,12 +329,9 @@ export async function inputBuyerPrice(
             throw bidOffer;
           }
 
-          if (isFinite(bidOffer.bid) || isFinite(bidOffer.offer)) {
-            if (
-              priceAdjusted < bidOffer.bid ||
-              priceAdjusted > bidOffer.offer
-            ) {
-              throw createHttpError(400, `Price out of range`);
+          if (isFinite(bidOffer.offer)) {
+            if (priceAdjusted > bidOffer.offer) {
+              throw createHttpError(400, `Price exceed Offer`);
             }
           }
 
@@ -395,7 +389,7 @@ export async function checkIfBuyerBidMatch(
     let seller: Seller | undefined = undefined;
     let transaction: Transaction | undefined = undefined;
 
-    await lock.acquire("sellersBid", async (done) => {
+    await lock.acquire("sellersOffer", async (done) => {
       try {
         const phase = await Phase.findOne(
           { id: phaseId },
