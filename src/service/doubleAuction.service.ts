@@ -526,12 +526,10 @@ export async function setBidOffer(
           .map((bb) => bb.price);
 
         const buyerMax = Math.max(...buyerBidPrice);
-        if (doubleAuctionBid === 0 || doubleAuctionBid < buyerMax)
-          setDoubleAuctionBid(buyerMax);
+        if (doubleAuctionBid < buyerMax) setDoubleAuctionBid(buyerMax);
 
         const sellerMin = Math.min(...sellerBidPrice);
-        if (doubleAuctionOffer === 0 || doubleAuctionOffer > sellerMin)
-          setDoubleAuctionOffer(sellerMin);
+        if (doubleAuctionOffer > sellerMin) setDoubleAuctionOffer(sellerMin);
 
         doubleAuctionBidOffer = {
           bid: doubleAuctionBid,
