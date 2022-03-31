@@ -18,21 +18,11 @@ import {
   inputBuyerPrice,
   inputSellerPrice,
   allSold,
-  initialStageFinishCheck,
-  updateDAStage,
-  calculateBidOffer,
 } from "../service/doubleAuction.service";
-import {
-  checkIsAllClientDone,
-  updatePhaseStage,
-  validateClientDone,
-} from "../service/socket.service";
-import { clientDoneSchema } from "../schema/socket.schema";
 
 type PostBuyerRequest = yup.InferType<typeof postBuyerSchema>;
 type PostSellerRequest = yup.InferType<typeof postSellerSchema>;
 type utilsRequest = yup.InferType<typeof requestListDASchema>;
-type clientDoneRequest = yup.InferType<typeof clientDoneSchema>;
 
 export function postBuyerHandler(io: Server, socket: Socket) {
   return async (request: PostBuyerRequest) => {
@@ -46,70 +36,44 @@ export function postBuyerHandler(io: Server, socket: Socket) {
         socket.id,
         request.phaseId
       );
-      if (stageCode instanceof Error) {
-        checkIfError(stageCode);
-      } else if (stageCode === false) {
-        const doubleAuctionMaxMinPrice = await initialStageFinishCheck(
-          request.phaseId
-        );
-        if (doubleAuctionMaxMinPrice instanceof Error) {
-          checkIfError(doubleAuctionMaxMinPrice);
-        } else if (doubleAuctionMaxMinPrice !== undefined) {
-          io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-          const sessionData = await updatePhaseStage(request.phaseId);
-          checkIfError(sessionData);
-          io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+      checkIfError(stageCode);
+
+      const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
+      checkIfError(doubleAuctionMaxMinPrice);
+      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
+
+      const matchData = await checkIfBuyerBidMatch(
+        socket.id,
+        request.buyerBargain,
+        request.phaseId
+      );
+
+      if (matchData instanceof Error) {
+        checkIfError(matchData);
+      } else if (matchData.match) {
+        if (matchData.buyer?.socketId) {
+          io.to(matchData.buyer.socketId).emit("bidMatch", matchData);
+        }
+        if (matchData.seller?.socketId) {
+          io.to(matchData.seller.socketId).emit("bidMatch", matchData);
         }
 
         socketHandleSuccessResponse(
           socket,
-          200,
-          "Successfully input buyer price",
-          {}
+          201,
+          `There is a match with seller bargain, successfully buy the product with price of ${request.buyerBargain}`,
+          {
+            matchData,
+            ...doubleAuctionMaxMinPrice,
+          }
         );
       } else {
-        const matchData = await checkIfBuyerBidMatch(
-          socket.id,
-          request.buyerBargain,
-          request.phaseId
+        socketHandleSuccessResponse(
+          socket,
+          200,
+          "Successfully input buyer price",
+          { matchData, ...doubleAuctionMaxMinPrice }
         );
-        if (matchData instanceof Error) {
-          throw matchData;
-        } else if (matchData.match === true) {
-          const sessionData = await updateDAStage(request.phaseId);
-          checkIfError(sessionData);
-          io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
-        }
-
-        const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
-        checkIfError(doubleAuctionMaxMinPrice);
-        io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-
-        if (matchData.match) {
-          if (matchData.buyer?.socketId) {
-            io.to(matchData.buyer.socketId).emit("bidMatch", matchData);
-          }
-          if (matchData.seller?.socketId) {
-            io.to(matchData.seller.socketId).emit("bidMatch", matchData);
-          }
-
-          socketHandleSuccessResponse(
-            socket,
-            201,
-            `There is a match with seller bargain, successfully buy the product with price of ${request.buyerBargain}`,
-            {
-              matchData,
-              ...doubleAuctionMaxMinPrice,
-            }
-          );
-        } else {
-          socketHandleSuccessResponse(
-            socket,
-            200,
-            "Successfully input buyer price",
-            { matchData, ...doubleAuctionMaxMinPrice }
-          );
-        }
       }
 
       const isDone = await allSold(request.phaseId);
@@ -138,69 +102,43 @@ export function postSellerHandler(io: Server, socket: Socket) {
         socket.id,
         request.phaseId
       );
-      if (stageCode instanceof Error) {
-        checkIfError(stageCode);
-      } else if (stageCode === true) {
-        const matchData = await checkIfSellerBidMatch(
-          socket.id,
-          request.sellerBargain,
-          request.phaseId
-        );
-        if (matchData instanceof Error) {
-          throw matchData;
-        } else if (matchData.match === true) {
-          const sessionData = await updateDAStage(request.phaseId);
-          checkIfError(sessionData);
-          io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+      checkIfError(stageCode);
+
+      const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
+      checkIfError(doubleAuctionMaxMinPrice);
+      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
+
+      const matchData = await checkIfSellerBidMatch(
+        socket.id,
+        request.sellerBargain,
+        request.phaseId
+      );
+
+      if (matchData instanceof Error) {
+        checkIfError(matchData);
+      } else if (matchData.match) {
+        if (matchData.buyer?.socketId) {
+          io.to(matchData.buyer.socketId).emit("bidMatch", matchData);
         }
-
-        const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
-        checkIfError(doubleAuctionMaxMinPrice);
-        io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-
-        if (matchData.match) {
-          if (matchData.buyer?.socketId) {
-            io.to(matchData.buyer.socketId).emit("bidMatch", matchData);
-          }
-          if (matchData.seller?.socketId) {
-            io.to(matchData.seller.socketId).emit("bidMatch", matchData);
-          }
-
-          socketHandleSuccessResponse(
-            socket,
-            201,
-            `There is a match with seller bargain, successfully buy the product with price of ${request.sellerBargain}`,
-            {
-              matchData: matchData,
-              ...doubleAuctionMaxMinPrice,
-            }
-          );
-        } else {
-          socketHandleSuccessResponse(
-            socket,
-            200,
-            "Successfully input seller price",
-            { matchData, ...doubleAuctionMaxMinPrice }
-          );
-        }
-      } else {
-        const doubleAuctionMaxMinPrice = await initialStageFinishCheck(
-          request.phaseId
-        );
-        if (doubleAuctionMaxMinPrice instanceof Error) {
-          checkIfError(doubleAuctionMaxMinPrice);
-        } else if (doubleAuctionMaxMinPrice !== undefined) {
-          io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-          const sessionData = await updatePhaseStage(request.phaseId);
-          checkIfError(sessionData);
-          io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
+        if (matchData.seller?.socketId) {
+          io.to(matchData.seller.socketId).emit("bidMatch", matchData);
         }
 
         socketHandleSuccessResponse(
           socket,
+          201,
+          `There is a match with seller bargain, successfully buy the product with price of ${request.sellerBargain}`,
+          {
+            matchData: matchData,
+            ...doubleAuctionMaxMinPrice,
+          }
+        );
+      } else {
+        socketHandleSuccessResponse(
+          socket,
           200,
           "Successfully input seller price",
-          {}
+          { matchData, ...doubleAuctionMaxMinPrice }
         );
       }
 
@@ -228,65 +166,6 @@ export function requestListHandler(io: Server, socket: Socket) {
       checkIfError(doubleAuction);
 
       socket.emit("doubleAuctionList", doubleAuction);
-    } catch (error) {
-      socketHandleErrorResponse(socket, error);
-    }
-  };
-}
-
-export function initStageTimeRunOutHandler(io: Server, socket: Socket) {
-  return async (request: utilsRequest) => {
-    try {
-      const isValid = validateSocketInput(request, requestListDASchema);
-      checkIfError(isValid);
-      const joinedRoom = Array.from(socket.rooms);
-
-      const doubleAuctionMaxMinPrice = await calculateBidOffer(request.phaseId);
-      if (doubleAuctionMaxMinPrice instanceof Error) {
-        checkIfError(doubleAuctionMaxMinPrice);
-      } else if (doubleAuctionMaxMinPrice !== undefined) {
-        io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-        const sessionData = await updatePhaseStage(request.phaseId);
-        checkIfError(sessionData);
-        io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
-      }
-
-      socketHandleSuccessResponse(
-        socket,
-        200,
-        "Successfully calculated available bid offer",
-        {}
-      );
-    } catch (error) {
-      socketHandleErrorResponse(socket, error);
-    }
-  };
-}
-
-export function clientDoneDAHandler(io: Server, socket: Socket) {
-  return async (request: clientDoneRequest) => {
-    try {
-      const isValid = validateSocketInput(request, clientDoneSchema);
-      checkIfError(isValid);
-
-      const isClientDone = await validateClientDone(
-        request.phaseId,
-        request.clientId
-      );
-      checkIfError(isClientDone);
-      const isAllDone = await checkIsAllClientDone(request.phaseId);
-      if (isAllDone instanceof Error) {
-        checkIfError(isAllDone);
-      } else if (isAllDone === true) {
-        const sessionData = await updatePhaseStage(request.phaseId);
-        checkIfError(sessionData);
-        const joinedRoom = Array.from(socket.rooms);
-        io.to(joinedRoom).emit("sessionDataUpdate", sessionData);
-        // create session data
-        // 5 second
-        // finishphase
-        // startphase
-      }
     } catch (error) {
       socketHandleErrorResponse(socket, error);
     }

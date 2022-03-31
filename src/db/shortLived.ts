@@ -117,11 +117,11 @@ export function clearDA() {
 }
 export let doubleAuctionBid = 0;
 export function setDoubleAuctionBid(num: number) {
-  doubleAuctionBid = !isNaN(num) ? num : 0;
+  doubleAuctionBid = !isNaN(num) && isFinite(num) ? num : 0;
 }
 export let doubleAuctionOffer = 0;
 export function setDoubleAuctionOffer(num: number) {
-  doubleAuctionOffer = !isNaN(num) ? num : 0;
+  doubleAuctionOffer = !isNaN(num) && isFinite(num) ? num : 0;
 }
 
 // Decentralized
