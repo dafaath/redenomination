@@ -1,7 +1,6 @@
 import createHttpError from "http-errors";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
-import log from "../common/utils/logger";
 import { validatePrice } from "../common/utils/redenomination";
 import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
@@ -18,6 +17,8 @@ import {
   setDoubleAuctionBid,
   doubleAuctionOffer,
   setDoubleAuctionOffer,
+  runningSessions,
+  SessionData,
 } from "../db/shortLived";
 import { deleteShortLivedData } from "./socket.service";
 
@@ -32,7 +33,10 @@ export async function inputSellerPrice(
       throw createHttpError(403, `You are not a seller or have not logged in`);
     }
 
-    const phase = await Phase.findOne({ id: phaseId });
+    const phase = await Phase.findOne(
+      { id: phaseId },
+      { relations: ["session", "session.simulation"] }
+    );
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
     }
@@ -46,53 +50,13 @@ export async function inputSellerPrice(
       throw createHttpError(403, `You already sold your item`);
     }
 
-    if (doubleAuctionOffer !== 0) {
-      // Main stage
-      const priceAdjusted = validatePrice(phase, seller, price);
-
-      if (
-        priceAdjusted > doubleAuctionOffer ||
-        priceAdjusted < doubleAuctionBid
-      ) {
-        throw createHttpError(400, `Price out of range`);
-      }
-
-      const bargain = Bargain.create({
-        phase: phase,
-        seller: seller,
-        postedBy: seller.id,
-        price: priceAdjusted,
-      });
-
-      await bargain.save();
-
-      await lock.acquire("sellersOffer", async (done) => {
-        try {
-          const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
-
-          const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
-            (item) => {
-              return item.phaseId === phaseId;
-            }
-          );
-
-          if (doubleAuctionOffersIndex !== -1) {
-            doubleAuctionOffers[doubleAuctionOffersIndex] = sellerBid;
-          } else {
-            doubleAuctionOffers.push(sellerBid);
-          }
-
-          done();
-        } catch (error) {
-          if (error instanceof Error) {
-            done(error);
-          }
-          errorThrowUtils(error);
-        }
-      });
-      return true;
-    } else {
-      // initial Stage
+    const sessionData = runningSessions.find(
+      (sd) => sd.token === phase.session.simulation.token
+    );
+    if (sessionData === undefined) {
+      throw createHttpError(404, "Session hasnt been run");
+    } else if (sessionData.stageCode === false) {
+      // Initial Stage
       await lock.acquire("sellersOffer", async (done) => {
         try {
           const priceAdjusted = validatePrice(phase, seller, price);
@@ -139,7 +103,53 @@ export async function inputSellerPrice(
         }
       });
       return false;
+    } else if (sessionData.stageCode === true) {
+      // Main Stage
+      const priceAdjusted = validatePrice(phase, seller, price);
+
+      if (
+        priceAdjusted > doubleAuctionOffer ||
+        priceAdjusted < doubleAuctionBid
+      ) {
+        throw createHttpError(400, `Price out of range`);
+      }
+
+      const bargain = Bargain.create({
+        phase: phase,
+        seller: seller,
+        postedBy: seller.id,
+        price: priceAdjusted,
+      });
+
+      await bargain.save();
+
+      await lock.acquire("sellersOffer", async (done) => {
+        try {
+          const sellerBid = new SellerBid(phaseId, seller.id, priceAdjusted);
+
+          const doubleAuctionOffersIndex = doubleAuctionOffers.findIndex(
+            (item) => {
+              return item.phaseId === phaseId;
+            }
+          );
+
+          if (doubleAuctionOffersIndex !== -1) {
+            doubleAuctionOffers[doubleAuctionOffersIndex] = sellerBid;
+          } else {
+            doubleAuctionOffers.push(sellerBid);
+          }
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+      return true;
     }
+    throw createHttpError(500, `Something Happened`);
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -262,7 +272,10 @@ export async function inputBuyerPrice(
       throw createHttpError(403, `You are not a buyer or have not logged in`);
     }
 
-    const phase = await Phase.findOne({ id: phaseId });
+    const phase = await Phase.findOne(
+      { id: phaseId },
+      { relations: ["session", "session.simulation"] }
+    );
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
     }
@@ -276,51 +289,13 @@ export async function inputBuyerPrice(
       throw createHttpError(403, `You already bought your item`);
     }
 
-    if (doubleAuctionBid !== 0) {
-      // Main stage
-      const priceAdjusted = validatePrice(phase, buyer, price);
-
-      if (
-        priceAdjusted > doubleAuctionOffer ||
-        priceAdjusted < doubleAuctionBid
-      ) {
-        throw createHttpError(400, `Price out of range`);
-      }
-
-      const bargain = Bargain.create({
-        phase: phase,
-        buyer: buyer,
-        postedBy: buyer.id,
-        price: priceAdjusted,
-      });
-
-      await bargain.save();
-
-      await lock.acquire("buyersBid", async (done) => {
-        try {
-          const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
-
-          const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
-            return item.phaseId === phaseId;
-          });
-
-          if (doubleAuctionBidsIndex !== -1) {
-            doubleAuctionBids[doubleAuctionBidsIndex] = buyerBid;
-          } else {
-            doubleAuctionBids.push(buyerBid);
-          }
-
-          done();
-        } catch (error) {
-          if (error instanceof Error) {
-            done(error);
-          }
-          errorThrowUtils(error);
-        }
-      });
-      return true;
-    } else {
-      // initial Stage
+    const sessionData = runningSessions.find(
+      (sd) => sd.token === phase.session.simulation.token
+    );
+    if (sessionData === undefined) {
+      throw createHttpError(404, "Session hasnt been run");
+    } else if (sessionData.stageCode === false) {
+      // Initial Stage
       await lock.acquire("buyersBid", async (done) => {
         try {
           const priceAdjusted = validatePrice(phase, buyer, price);
@@ -365,7 +340,51 @@ export async function inputBuyerPrice(
         }
       });
       return false;
+    } else if (sessionData.stageCode === true) {
+      // Main Stage
+      const priceAdjusted = validatePrice(phase, buyer, price);
+
+      if (
+        priceAdjusted > doubleAuctionOffer ||
+        priceAdjusted < doubleAuctionBid
+      ) {
+        throw createHttpError(400, `Price out of range`);
+      }
+
+      const bargain = Bargain.create({
+        phase: phase,
+        buyer: buyer,
+        postedBy: buyer.id,
+        price: priceAdjusted,
+      });
+
+      await bargain.save();
+
+      await lock.acquire("buyersBid", async (done) => {
+        try {
+          const buyerBid = new BuyerBid(phaseId, buyer.id, priceAdjusted);
+
+          const doubleAuctionBidsIndex = doubleAuctionBids.findIndex((item) => {
+            return item.phaseId === phaseId;
+          });
+
+          if (doubleAuctionBidsIndex !== -1) {
+            doubleAuctionBids[doubleAuctionBidsIndex] = buyerBid;
+          } else {
+            doubleAuctionBids.push(buyerBid);
+          }
+
+          done();
+        } catch (error) {
+          if (error instanceof Error) {
+            done(error);
+          }
+          errorThrowUtils(error);
+        }
+      });
+      return true;
     }
+    throw createHttpError(500, `Something Happened`);
   } catch (error) {
     return errorReturnHandler(error);
   }
@@ -572,16 +591,16 @@ export async function getBidOffer(
 
 export async function allSold(phaseId: string): Promise<boolean | Error> {
   try {
-    const numOfTrx = await Transaction.createQueryBuilder("transaction")
-      .where("transaction.phase.id=:phaseId", { phaseId })
-      .getCount();
-
     const phase = await Phase.findOne(phaseId, {
       relations: ["session", "session.simulation"],
     });
     if (!phase) {
       throw createHttpError(404, `There is no phase with id ${phaseId}`);
     }
+
+    const numOfTrx = await Transaction.createQueryBuilder("transaction")
+      .where("transaction.phase.id=:phaseId", { phaseId })
+      .getCount();
 
     const playersNumber = Math.floor(
       phase.session.simulation.participantNumber / 2
@@ -622,81 +641,133 @@ export async function initialStageFinishCheck(
       doubleAuctionBids.filter((item) => item.phaseId === phaseId).length +
       soldPlayers;
     if (inputtedNums === phase.session.simulation.participantNumber) {
-      let bidoffer: DoubleAuctionBidOffer | undefined = undefined;
+      return calculateBidOffer(phaseId);
+    }
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
 
-      await lock.acquire("getMaxMinPrice", async (done) => {
-        try {
-          const sellerBidPrice = doubleAuctionOffers
-            .filter((sb) => sb.phaseId === phaseId)
-            .map((sb) => sb.price);
-          const buyerBidPrice = doubleAuctionBids
-            .filter((bb) => bb.phaseId === phaseId)
-            .map((bb) => bb.price);
+export async function calculateBidOffer(
+  phaseId: string
+): Promise<DoubleAuctionBidOffer | undefined | Error> {
+  try {
+    let bidoffer: DoubleAuctionBidOffer | undefined = undefined;
 
-          const buyerMin = Math.min(...buyerBidPrice);
-          setDoubleAuctionBid(buyerMin);
+    await lock.acquire("getMaxMinPrice", async (done) => {
+      try {
+        const sellerBidPrice = doubleAuctionOffers
+          .filter((sb) => sb.phaseId === phaseId)
+          .map((sb) => sb.price);
+        const buyerBidPrice = doubleAuctionBids
+          .filter((bb) => bb.phaseId === phaseId)
+          .map((bb) => bb.price);
 
-          const sellerMax = Math.max(...sellerBidPrice);
-          setDoubleAuctionOffer(sellerMax);
+        const buyerMin = Math.min(...buyerBidPrice);
+        setDoubleAuctionBid(buyerMin !== 0 ? buyerMin : 0);
 
-          bidoffer = {
-            bid: doubleAuctionBid,
-            offer: doubleAuctionOffer,
-          };
-          done(undefined, bidoffer);
-        } catch (error) {
-          if (error instanceof Error) {
-            done(error);
-          }
-          errorThrowUtils(error);
+        const sellerMax = Math.max(...sellerBidPrice);
+        setDoubleAuctionOffer(sellerMax !== 0 ? sellerMax : Infinity);
+
+        bidoffer = {
+          bid: doubleAuctionBid,
+          offer: doubleAuctionOffer,
+        };
+        done(undefined, bidoffer);
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
         }
-      });
+        errorThrowUtils(error);
+      }
+    });
 
-      lock.acquire("deleteDoubleAuctionBuyer", (done) => {
-        try {
-          let doubleAuctionBuyerIndex: number;
+    lock.acquire("deleteDoubleAuctionBuyer", (done) => {
+      try {
+        let doubleAuctionBuyerIndex: number;
 
-          do {
-            doubleAuctionBuyerIndex = doubleAuctionBids.findIndex(
-              (po) => po.phaseId === phaseId
-            );
-            if (doubleAuctionBuyerIndex !== -1) {
-              doubleAuctionBids.splice(doubleAuctionBuyerIndex, 1);
-            }
-          } while (doubleAuctionBuyerIndex !== -1);
-
-          done();
-        } catch (error) {
-          if (error instanceof Error) {
-            done(error);
+        do {
+          doubleAuctionBuyerIndex = doubleAuctionBids.findIndex(
+            (po) => po.phaseId === phaseId
+          );
+          if (doubleAuctionBuyerIndex !== -1) {
+            doubleAuctionBids.splice(doubleAuctionBuyerIndex, 1);
           }
-          errorThrowUtils(error);
+        } while (doubleAuctionBuyerIndex !== -1);
+
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
         }
-      });
+        errorThrowUtils(error);
+      }
+    });
 
-      lock.acquire("deleteDoubleAuctionSeller", (done) => {
-        try {
-          let doubleAuctionSellerIndex: number;
+    lock.acquire("deleteDoubleAuctionSeller", (done) => {
+      try {
+        let doubleAuctionSellerIndex: number;
 
-          do {
-            doubleAuctionSellerIndex = doubleAuctionOffers.findIndex(
-              (po) => po.phaseId === phaseId
-            );
-            if (doubleAuctionSellerIndex !== -1) {
-              doubleAuctionOffers.splice(doubleAuctionSellerIndex, 1);
-            }
-          } while (doubleAuctionSellerIndex !== -1);
-
-          done();
-        } catch (error) {
-          if (error instanceof Error) {
-            done(error);
+        do {
+          doubleAuctionSellerIndex = doubleAuctionOffers.findIndex(
+            (po) => po.phaseId === phaseId
+          );
+          if (doubleAuctionSellerIndex !== -1) {
+            doubleAuctionOffers.splice(doubleAuctionSellerIndex, 1);
           }
-          errorThrowUtils(error);
-        }
-      });
+        } while (doubleAuctionSellerIndex !== -1);
 
-      return bidoffer;
+        done();
+      } catch (error) {
+        if (error instanceof Error) {
+          done(error);
+        }
+        errorThrowUtils(error);
+      }
+    });
+
+    return bidoffer;
+  } catch (error) {
+    return errorReturnHandler(error);
+  }
+}
+
+export async function updateDAStage(
+  phaseId: string
+): Promise<SessionData | Error> {
+  try {
+    const phase = await Phase.findOne(phaseId, {
+      relations: ["session", "session.simulation"],
+    });
+    if (!phase) {
+      throw createHttpError(404, "Phase with id " + phaseId + " is not found");
+    }
+
+    const transactions = await Transaction.createQueryBuilder("transaction")
+      .where("transaction.phase_id=:phaseId", { phaseId })
+      .getMany();
+    if (transactions.length === 0) {
+      throw createHttpError(500, `Warning! Something Happened`);
+    }
+
+    // Reset Stage
+    const token = phase.session.simulation.token;
+    const sessionDataIndex = runningSessions.findIndex(
+      (item) => item.token === token
+    );
+    if (sessionDataIndex === -1) {
+      throw createHttpError(404, "Session hasnt been run");
+    } else if (runningSessions[sessionDataIndex].stageCode === false) {
+      return runningSessions[sessionDataIndex];
+    } else {
+      const updatedSessionData = new SessionData(
+        token,
+        phaseId,
+        false,
+        runningSessions[sessionDataIndex].startTime
+      );
+      runningSessions[sessionDataIndex] = updatedSessionData;
+      return updatedSessionData;
     }
   } catch (error) {
     return errorReturnHandler(error);

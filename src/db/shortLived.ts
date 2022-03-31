@@ -33,11 +33,16 @@ export class SessionData {
   stageCode: boolean;
   startTime: Date;
 
-  constructor(token: string, phaseId: string, stageCode: boolean) {
+  constructor(
+    token: string,
+    phaseId: string,
+    stageCode: boolean,
+    startTime: Date | null = null
+  ) {
     this.token = token;
     this.phaseId = phaseId;
     this.stageCode = stageCode;
-    this.startTime = new Date(Date.now());
+    this.startTime = startTime === null ? new Date(Date.now()) : startTime;
   }
 }
 
@@ -112,11 +117,11 @@ export function clearDA() {
 }
 export let doubleAuctionBid = 0;
 export function setDoubleAuctionBid(num: number) {
-  doubleAuctionBid = !isNaN(num) && isFinite(num) ? num : 0;
+  doubleAuctionBid = !isNaN(num) ? num : 0;
 }
 export let doubleAuctionOffer = 0;
 export function setDoubleAuctionOffer(num: number) {
-  doubleAuctionOffer = !isNaN(num) && isFinite(num) ? num : 0;
+  doubleAuctionOffer = !isNaN(num) ? num : 0;
 }
 
 // Decentralized

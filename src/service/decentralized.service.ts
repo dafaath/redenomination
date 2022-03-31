@@ -181,7 +181,7 @@ export async function buyDecentralized(
 export async function checkIfIsDone(
   phaseId: string,
   decentralizedsNumber: number
-): Promise<Boolean | Error> {
+): Promise<boolean | Error> {
   try {
     const phase = await Phase.findOne(phaseId, {
       relations: [
