@@ -14,7 +14,7 @@ import {
 import {
   checkIfBuyerBidMatch,
   checkIfSellerBidMatch,
-  setBidOffer,
+  getBidOffer,
   inputBuyerPrice,
   inputSellerPrice,
   allSold,
@@ -38,15 +38,15 @@ export function postBuyerHandler(io: Server, socket: Socket) {
       );
       checkIfError(stageCode);
 
-      const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
-      checkIfError(doubleAuctionMaxMinPrice);
-      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-
       const matchData = await checkIfBuyerBidMatch(
         socket.id,
         request.buyerBargain,
         request.phaseId
       );
+
+      const doubleAuctionMaxMinPrice = await getBidOffer();
+      checkIfError(doubleAuctionMaxMinPrice);
+      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
 
       if (matchData instanceof Error) {
         checkIfError(matchData);
@@ -104,15 +104,15 @@ export function postSellerHandler(io: Server, socket: Socket) {
       );
       checkIfError(stageCode);
 
-      const doubleAuctionMaxMinPrice = await setBidOffer(request.phaseId);
-      checkIfError(doubleAuctionMaxMinPrice);
-      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
-
       const matchData = await checkIfSellerBidMatch(
         socket.id,
         request.sellerBargain,
         request.phaseId
       );
+
+      const doubleAuctionMaxMinPrice = await getBidOffer();
+      checkIfError(doubleAuctionMaxMinPrice);
+      io.to(joinedRoom).emit("doubleAuctionList", doubleAuctionMaxMinPrice);
 
       if (matchData instanceof Error) {
         checkIfError(matchData);
@@ -162,7 +162,7 @@ export function requestListHandler(io: Server, socket: Socket) {
       const isValid = validateSocketInput(request, requestListDASchema);
       checkIfError(isValid);
 
-      const doubleAuction = await setBidOffer(request.phaseId);
+      const doubleAuction = await getBidOffer();
       checkIfError(doubleAuction);
 
       socket.emit("doubleAuctionList", doubleAuction);

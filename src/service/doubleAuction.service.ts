@@ -1,6 +1,7 @@
 import createHttpError from "http-errors";
 import { errorReturnHandler, errorThrowUtils } from "../common/utils/error";
 import { lock } from "../common/utils/lock";
+import log from "../common/utils/logger";
 import { validatePrice } from "../common/utils/redenomination";
 import Bargain from "../db/entities/bargain.entity";
 import Buyer from "../db/entities/buyer.entity";
@@ -47,12 +48,18 @@ export async function inputSellerPrice(
 
     const priceAdjusted = validatePrice(phase, seller, price);
 
-    if (doubleAuctionOffer === 0) {
+    if (doubleAuctionOffer === 0 && doubleAuctionBid === 0) {
+      setDoubleAuctionOffer(priceAdjusted);
+    } else if (doubleAuctionOffer === 0 && priceAdjusted > doubleAuctionBid) {
+      setDoubleAuctionOffer(priceAdjusted);
+    } else if (doubleAuctionBid === 0 && priceAdjusted < doubleAuctionOffer) {
       setDoubleAuctionOffer(priceAdjusted);
     } else if (
-      priceAdjusted > doubleAuctionOffer ||
-      priceAdjusted < doubleAuctionBid
+      priceAdjusted >= doubleAuctionBid ||
+      priceAdjusted <= doubleAuctionOffer
     ) {
+      setDoubleAuctionOffer(priceAdjusted);
+    } else {
       throw createHttpError(400, `Price out of range`);
     }
 
@@ -227,12 +234,18 @@ export async function inputBuyerPrice(
 
     const priceAdjusted = validatePrice(phase, buyer, price);
 
-    if (doubleAuctionBid === 0) {
+    if (doubleAuctionOffer === 0 && doubleAuctionBid === 0) {
+      setDoubleAuctionBid(priceAdjusted);
+    } else if (doubleAuctionOffer === 0 && priceAdjusted > doubleAuctionBid) {
+      setDoubleAuctionBid(priceAdjusted);
+    } else if (doubleAuctionBid === 0 && priceAdjusted < doubleAuctionOffer) {
       setDoubleAuctionBid(priceAdjusted);
     } else if (
-      priceAdjusted > doubleAuctionOffer ||
-      priceAdjusted < doubleAuctionBid
+      priceAdjusted >= doubleAuctionBid ||
+      priceAdjusted <= doubleAuctionOffer
     ) {
+      setDoubleAuctionBid(priceAdjusted);
+    } else {
       throw createHttpError(400, `Price out of range`);
     }
 
@@ -393,44 +406,12 @@ export type DoubleAuctionBidOffer = {
   offer: number;
 };
 
-export async function setBidOffer(
-  phaseId: string
-): Promise<DoubleAuctionBidOffer | Error> {
+export async function getBidOffer(): Promise<DoubleAuctionBidOffer | Error> {
   try {
-    let doubleAuctionBidOffer: DoubleAuctionBidOffer | undefined = undefined;
-    await lock.acquire("getMaxMinPrice", async (done) => {
-      try {
-        const sellerBidPrice = doubleAuctionOffers
-          .filter((sb) => sb.phaseId === phaseId)
-          .map((sb) => sb.price);
-        const buyerBidPrice = doubleAuctionBids
-          .filter((bb) => bb.phaseId === phaseId)
-          .map((bb) => bb.price);
-
-        const buyerMax = Math.max(...buyerBidPrice);
-        if (doubleAuctionBid < buyerMax) setDoubleAuctionBid(buyerMax);
-
-        const sellerMin = Math.min(...sellerBidPrice);
-        if (doubleAuctionOffer > sellerMin) setDoubleAuctionOffer(sellerMin);
-
-        doubleAuctionBidOffer = {
-          bid: doubleAuctionBid,
-          offer: doubleAuctionOffer,
-        };
-        done(undefined, doubleAuctionBidOffer);
-      } catch (error) {
-        if (error instanceof Error) {
-          done(error);
-        }
-        errorThrowUtils(error);
-      }
-    });
-
-    if (doubleAuctionBidOffer) {
-      return doubleAuctionBidOffer;
-    } else {
-      throw new Error("Something gone wrong");
-    }
+    return {
+      bid: doubleAuctionBid,
+      offer: doubleAuctionOffer,
+    };
   } catch (error) {
     return errorReturnHandler(error);
   }
