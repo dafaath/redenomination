@@ -50,17 +50,17 @@ export async function inputSellerPrice(
 
     if (doubleAuctionOffer === 0 && doubleAuctionBid === 0) {
       setDoubleAuctionOffer(priceAdjusted);
-    } else if (doubleAuctionOffer === 0 && priceAdjusted > doubleAuctionBid) {
-      setDoubleAuctionOffer(priceAdjusted);
-    } else if (doubleAuctionBid === 0 && priceAdjusted < doubleAuctionOffer) {
-      setDoubleAuctionOffer(priceAdjusted);
-    } else if (
-      priceAdjusted >= doubleAuctionBid ||
-      priceAdjusted <= doubleAuctionOffer
-    ) {
-      setDoubleAuctionOffer(priceAdjusted);
     } else {
-      throw createHttpError(400, `Price out of range`);
+      if (priceAdjusted < doubleAuctionBid) {
+        throw createHttpError(400, `Price out of range`);
+      } else if (
+        doubleAuctionOffer !== 0 &&
+        priceAdjusted > doubleAuctionOffer
+      ) {
+        throw createHttpError(400, `Price out of range`);
+      } else {
+        setDoubleAuctionOffer(priceAdjusted);
+      }
     }
 
     const bargain = Bargain.create({
@@ -236,17 +236,17 @@ export async function inputBuyerPrice(
 
     if (doubleAuctionOffer === 0 && doubleAuctionBid === 0) {
       setDoubleAuctionBid(priceAdjusted);
-    } else if (doubleAuctionOffer === 0 && priceAdjusted > doubleAuctionBid) {
-      setDoubleAuctionBid(priceAdjusted);
-    } else if (doubleAuctionBid === 0 && priceAdjusted < doubleAuctionOffer) {
-      setDoubleAuctionBid(priceAdjusted);
-    } else if (
-      priceAdjusted >= doubleAuctionBid ||
-      priceAdjusted <= doubleAuctionOffer
-    ) {
-      setDoubleAuctionBid(priceAdjusted);
     } else {
-      throw createHttpError(400, `Price out of range`);
+      if (priceAdjusted < doubleAuctionBid) {
+        throw createHttpError(400, `Price out of range`);
+      } else if (
+        doubleAuctionOffer !== 0 &&
+        priceAdjusted > doubleAuctionOffer
+      ) {
+        throw createHttpError(400, `Price out of range`);
+      } else {
+        setDoubleAuctionBid(priceAdjusted);
+      }
     }
 
     const bargain = Bargain.create({
