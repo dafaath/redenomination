@@ -279,18 +279,18 @@ export async function finishSession(
     const sellersUsername = session.simulation.sellers.map(
       (seller) => seller.username
     );
-    let participants = [...buyersUsername, ...sellersUsername];
+    const participants = [...buyersUsername, ...sellersUsername];
 
     await session.simulation.buyers.reduce(async (a, buyer) => {
       await a;
-      let randomNum = Math.floor(Math.random() * participants.length);
+      const randomNum = Math.floor(Math.random() * participants.length);
       buyer.username = participants[randomNum];
       participants.splice(randomNum, 1);
       await buyer.save();
     }, Promise.resolve());
     await session.simulation.sellers.reduce(async (a, seller) => {
       await a;
-      let randomNum = Math.floor(Math.random() * participants.length);
+      const randomNum = Math.floor(Math.random() * participants.length);
       seller.username = participants[randomNum];
       participants.splice(randomNum, 1);
       await seller.save();
@@ -341,8 +341,10 @@ export async function getPhaseSummary(
 
     const adjustedBargains = bargains.map((item) => {
       return Bargain.create({
-        ...item,
-        postedBy: Boolean(item.buyer) ? "buyer" : "seller",
+        id: item.id,
+        price: item.price,
+        timeCreated: item.timeCreated,
+        postedBy: item.buyer ? "buyer" : "seller",
       });
     });
 
